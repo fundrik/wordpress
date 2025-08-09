@@ -45,6 +45,8 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 		private LoggerInterface $logger,
 	) {}
 
+
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Applies all pending migrations with versions newer than the last applied.
 	 *
@@ -70,12 +72,25 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 
 		$charset_collate = $this->database->get_charset_collate();
 
+		$applied_count = 0;
+
 		foreach ( $this->get_sorted_classes() as $class ) {
-			$this->maybe_apply_migration( $class, $current_db_version, $charset_collate );
+			$applied_count += $this->maybe_apply_migration( $class, $current_db_version, $charset_collate ) ? 1 : 0;
 		}
 
-		$this->logger->debug( 'Migration process completed.' );
+		$final_version = $this->get_current_db_version();
+
+		$this->logger->info(
+			"Migration process completed: {$applied_count} applied, DB version now {$final_version}.",
+			[
+				'applied' => $applied_count,
+				'from_version' => $current_db_version,
+				'to_version' => $final_version,
+				'target_version' => $target_db_version,
+			],
+		);
 	}
+	// phpcs:enable
 
 	/**
 	 * Determines whether a migration is required based on version comparison.
@@ -107,14 +122,14 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 		string $class_name,
 		string $current_db_version,
 		string $charset_collate,
-	): void {
+	): bool {
 
 		$version = $this->version_reader->get_version( $class_name );
 		$context = LoggerFormatter::migration_context( $class_name, $version );
 
 		if ( version_compare( $version, $current_db_version, '<=' ) ) {
 			$this->logger->debug( 'Skipping already applied migration.', $context );
-			return;
+			return false;
 		}
 
 		$this->logger->debug( 'Applying migration.', $context );
@@ -127,6 +142,7 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 		}
 
 		$this->logger->debug( 'Migration applied and version updated.', $context );
+		return true;
 	}
 
 	/**

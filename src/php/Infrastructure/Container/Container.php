@@ -176,7 +176,7 @@ final class Container implements ContainerInterface {
 	 *
 	 * @param string $abstract The class or interface name to bind.
 	 * @param object $instance The already constructed instance.
-	 * 
+	 *
 	 * @phpstan-param class-string $abstract
 	 */
 	public function instance(

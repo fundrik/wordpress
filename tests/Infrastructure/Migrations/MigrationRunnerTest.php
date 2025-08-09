@@ -17,11 +17,12 @@ use Fundrik\WordPress\Tests\Fixtures\NewMigration1;
 use Fundrik\WordPress\Tests\Fixtures\NewMigration2;
 use Fundrik\WordPress\Tests\Fixtures\OldMigration;
 use Fundrik\WordPress\Tests\Fixtures\TestMigrationTrace;
-use Fundrik\WordPress\Tests\FundrikTestCase;
+use Fundrik\WordPress\Tests\MockeryTestCase;
+use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -30,13 +31,13 @@ use RuntimeException;
 #[UsesClass( MigrationVersion::class )]
 #[UsesClass( MigrationVersionReader::class )]
 #[UsesClass( LoggerFormatter::class )]
-final class MigrationRunnerTest extends FundrikTestCase {
+final class MigrationRunnerTest extends MockeryTestCase {
 
-	private ContainerInterface&MockObject $container;
-	private DatabaseInterface&MockObject $database;
-	private StorageInterface&MockObject $storage;
-	private MigrationRegistry&MockObject $registry;
-	private LoggerInterface&MockObject $logger;
+	private ContainerInterface&MockInterface $container;
+	private DatabaseInterface&MockInterface $database;
+	private StorageInterface&MockInterface $storage;
+	private MigrationRegistry&MockInterface $registry;
+	private LoggerInterface&MockInterface $logger;
 	private MigrationVersionReader $version_reader;
 	private MigrationRunner $runner;
 
@@ -44,11 +45,11 @@ final class MigrationRunnerTest extends FundrikTestCase {
 
 		parent::setUp();
 
-		$this->container = $this->createMock( ContainerInterface::class );
-		$this->database = $this->createMock( DatabaseInterface::class );
-		$this->storage = $this->createMock( StorageInterface::class );
-		$this->registry = $this->createMock( MigrationRegistry::class );
-		$this->logger = $this->createMock( LoggerInterface::class );
+		$this->container = Mockery::mock( ContainerInterface::class );
+		$this->database = Mockery::mock( DatabaseInterface::class );
+		$this->storage = Mockery::mock( StorageInterface::class );
+		$this->registry = Mockery::mock( MigrationRegistry::class );
+		$this->logger = Mockery::mock( LoggerInterface::class )->shouldIgnoreMissing();
 		$this->version_reader = new MigrationVersionReader();
 
 		$this->runner = new MigrationRunner(
@@ -61,23 +62,25 @@ final class MigrationRunnerTest extends FundrikTestCase {
 		);
 
 		$this->registry
-			->expects( $this->once() )
-			->method( 'get_target_db_version' )
-			->willReturn( '2025_06_15_00' );
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
 	}
+
+	// Skips
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function it_skips_migration_if_current_version_is_equal(): void {
 
 		$this->storage
-			->expects( $this->once() )
-			->method( 'get' )
+			->shouldReceive( 'get' )
+			->once()
 			->with( 'fundrik_db_version', '0000_00_00_00' )
-			->willReturn( '2025_06_15_00' );
+			->andReturn( '2400_01_12_01' );
 
-		$this->database
-			->expects( $this->never() )
-			->method( 'get_charset_collate' );
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->logger->shouldNotReceive( 'info' );
 
 		$this->runner->migrate();
 	}
@@ -86,17 +89,19 @@ final class MigrationRunnerTest extends FundrikTestCase {
 	public function it_skips_migration_if_current_version_is_newer(): void {
 
 		$this->storage
-			->expects( $this->once() )
-			->method( 'get' )
+			->shouldReceive( 'get' )
+			->once()
 			->with( 'fundrik_db_version', '0000_00_00_00' )
-			->willReturn( '2400_01_01_00' );
+			->andReturn( '2500_01_01_00' );
 
-		$this->database
-			->expects( $this->never() )
-			->method( 'get_charset_collate' );
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->logger->shouldNotReceive( 'info' );
 
 		$this->runner->migrate();
 	}
+
+	// Applies and updates
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function it_applies_pending_migrations_in_correct_order_and_updates_db_version(): void {
@@ -106,10 +111,10 @@ final class MigrationRunnerTest extends FundrikTestCase {
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
 
 		$this->storage
-			->expects( $this->once() )
-			->method( 'get' )
+			->shouldReceive( 'get' )
+			->twice()
 			->with( 'fundrik_db_version', '0000_00_00_00' )
-			->willReturn( '2025_06_14_00' );
+			->andReturn( '2025_06_14_00', '2400_01_12_01' );
 
 		$old = new OldMigration( $this->database );
 		$new1 = new NewMigration1( $this->database );
@@ -120,29 +125,43 @@ final class MigrationRunnerTest extends FundrikTestCase {
 		$new2_class = $new2::class;
 
 		$this->registry
-			->expects( $this->once() )
-			->method( 'get_migration_classes' )
-			->willReturn( [ $old_class, $new2_class, $new1_class ] ); // wrong order.
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn( [ $old_class, $new2_class, $new1_class ] ); // wrong order.
 
 		$this->container
-			->method( 'get' )
-			->willReturnCallback(
+			->shouldReceive( 'get' )
+			->andReturnUsing(
 				static fn ( string $class ) => match ( $class ) {
-					$new1_class => $new1,
-					$new2_class => $new2,
-					default => throw new RuntimeException( "Unexpected class requested: $class" ),
+				$new1_class => $new1,
+				$new2_class => $new2,
+				default => throw new RuntimeException( "Unexpected class requested: $class" ),
 				},
 			);
 
 		$this->database
-			->expects( $this->once() )
-			->method( 'get_charset_collate' )
-			->willReturn( $charset_collate );
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( $charset_collate );
 
 		$this->storage
-			->expects( $this->exactly( 2 ) )
-			->method( 'set' )
-			->willReturn( true );
+			->shouldReceive( 'set' )
+			->twice()
+			->andReturn( true );
+
+		$final_version = $this->version_reader->get_version( $new2_class );
+		$this->logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				Mockery::pattern( '/^Migration process completed:/' ),
+				[
+					'applied' => 2,
+					'from_version' => '2025_06_14_00',
+					'to_version' => $final_version,
+					'target_version' => '2400_01_12_01',
+				],
+			);
 
 		$this->runner->migrate();
 
@@ -152,6 +171,9 @@ final class MigrationRunnerTest extends FundrikTestCase {
 		);
 	}
 
+	// Warnings
+	// ---------------------------------------------------------------------
+
 	#[Test]
 	public function it_logs_warning_if_version_update_fails(): void {
 
@@ -159,43 +181,44 @@ final class MigrationRunnerTest extends FundrikTestCase {
 
 		$migration = new NewMigration1( $this->database );
 		$migration_class = $migration::class;
+		$migration_version = $this->version_reader->get_version( $migration_class );
 
 		$this->storage
-			->expects( $this->once() )
-			->method( 'get' )
+			->shouldReceive( 'get' )
+			->twice()
 			->with( 'fundrik_db_version', '0000_00_00_00' )
-			->willReturn( '0000_00_00_00' );
+			->andReturn( '0000_00_00_00', '0000_00_00_00' );
 
 		$this->registry
-			->expects( $this->once() )
-			->method( 'get_migration_classes' )
-			->willReturn( [ $migration_class ] );
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn( [ $migration_class ] );
 
 		$this->container
-			->expects( $this->once() )
-			->method( 'get' )
+			->shouldReceive( 'get' )
+			->once()
 			->with( $migration_class )
-			->willReturn( $migration );
+			->andReturn( $migration );
 
 		$this->database
-			->expects( $this->once() )
-			->method( 'get_charset_collate' )
-			->willReturn( 'utf8mb4_unicode_ci' );
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( 'utf8mb4_unicode_ci' );
 
 		$this->storage
-			->expects( $this->once() )
-			->method( 'set' )
-			->with( 'fundrik_db_version', $this->version_reader->get_version( $migration_class ) )
-			->willReturn( false );
+			->shouldReceive( 'set' )
+			->once()
+			->with( 'fundrik_db_version', $migration_version )
+			->andReturn( false );
 
 		$this->logger
-			->expects( $this->once() )
-			->method( 'warning' )
+			->shouldReceive( 'warning' )
+			->once()
 			->with(
 				'Failed to update stored DB version after migration.',
 				[
 					'migration_class' => $migration_class,
-					'migration_version' => $this->version_reader->get_version( $migration_class ),
+					'migration_version' => $migration_version,
 				],
 			);
 
