@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Integration\HookBridges;
+namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\AllowedBlockTypesAllFilterBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\DeletePostActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\InitActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\RestPreInsertCampaignFilterBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\WpAfterInsertPostActionBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\AllowedBlockTypesAllFilterBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\InitActionBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\WpAfterInsertPostActionBridge;
 
 /**
  * Provides the list of bridge classes.

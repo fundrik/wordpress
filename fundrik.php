@@ -32,9 +32,14 @@ use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
 use Fundrik\WordPress\Infrastructure\Container\ServiceBindings;
 use Illuminate\Container\Container as LaravelContainer;
 use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
+use Monolog\Formatter\JsonFormatter as MonologJsonFormatter;
 use Monolog\Handler\StreamHandler as MonologStreamHandler;
 use Monolog\Level as MonologLevel;
 use Monolog\Logger as MonologLogger;
+use Monolog\LogRecord as MonologLogRecord;
+use Monolog\Processor\IntrospectionProcessor;
+use Monolog\Processor\UidProcessor as MonologUidProcessor;
+use Monolog\Processor\WebProcessor as MonologWebProcessor;
 use Psr\Log\LoggerInterface;
 
 defined( 'ABSPATH' ) || die;
@@ -70,10 +75,40 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 
 				$logger = new MonologLogger( 'fundrik' );
 
-				$log_path = FUNDRIK_PATH . '/fundrik.log';
-				$handler = new MonologStreamHandler( $log_path, MonologLevel::Debug );
+				$logs_dir = FUNDRIK_PATH . '/logs';
+				$debug_handler = new MonologStreamHandler( $logs_dir . '/fundrik-debug.json', level: MonologLevel::Debug );
+				$info_handler = new MonologStreamHandler( $logs_dir . '/fundrik.json', level: MonologLevel::Info );
 
-				$logger->pushHandler( $handler );
+				$debug_handler->setFormatter( new MonologJsonFormatter() );
+				$info_handler->setFormatter( new MonologJsonFormatter() );
+
+				$logger->pushProcessor( new MonologUidProcessor() );
+				$logger->pushProcessor( new IntrospectionProcessor() );
+
+				$web = new MonologWebProcessor();
+				$logger->pushProcessor(
+					static function ( MonologLogRecord $record ) use ( $web ): MonologLogRecord {
+
+						$record = $web( $record );
+
+						unset( $record['extra']['server'] );
+
+						$record['extra']['is_admin'] = function_exists( 'is_admin' ) ? is_admin() : null;
+						$record['extra']['is_ajax'] = function_exists( 'wp_doing_ajax' ) ? wp_doing_ajax() : null;
+						$record['extra']['is_cron'] = function_exists( 'wp_doing_cron' ) ? wp_doing_cron() : null;
+						$record['extra']['is_json'] = function_exists( 'wp_is_json_request' ) ? wp_is_json_request() : null;
+						$record['extra']['user_id'] = function_exists( 'get_current_user_id' ) ? get_current_user_id() : null;
+
+						$start = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime( true );
+						$record['extra']['duration_ms'] = (int) round( ( microtime( true ) - $start ) * 1_000 );
+						$record['extra']['memory_peak_mb'] = round( memory_get_peak_usage( true ) / ( 1_024 * 1_024 ), 2 );
+
+						return $record;
+					},
+				);
+
+				$logger->pushHandler( $debug_handler );
+				$logger->pushHandler( $info_handler );
 
 				return $logger;
 			},
@@ -84,18 +119,3 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 }
 
 add_action( 'plugins_loaded', 'fundrik_init' );
-
-/**
- * Temporarily logs a message until a proper logging system is implemented.
- *
- * @since 1.0.0
- *
- * @param string $message The message to log.
- *
- * @todo Replace with proper PSR-3 compatible logger implementation.
- */
-function fundrik_log( string $message ): void {
-
-	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-	error_log( $message );
-}

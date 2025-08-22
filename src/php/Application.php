@@ -7,7 +7,7 @@ namespace Fundrik\WordPress;
 use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrarInterface;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
-use Fundrik\WordPress\Infrastructure\Integration\HookBridges\HookBridgeRegistrarInterface;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrarInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerInterface;
 
 /**

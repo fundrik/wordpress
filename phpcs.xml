@@ -34,7 +34,7 @@
 				<element value="Fundrik\WordPress\Infrastructure\Container\Container"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
+				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext"/>
 			</property>
@@ -54,7 +54,7 @@
 			<property name="excludedClasses" type="array">
 				<element value="Fundrik\WordPress\Infrastructure\Container\ServiceBindings" />
 				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookBridges\HookBridgeRegistry"/>
+				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry"/>
 			</property>
 			<property name="excludedParentClasses" type="array">
 				<element value="Fundrik\WordPress\Infrastructure\Integration\PostTypes\PostTypeInterface"/>

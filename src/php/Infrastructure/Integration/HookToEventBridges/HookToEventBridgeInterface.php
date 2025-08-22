@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Integration\HookBridges;
+namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 
 /**
  * Provides methods for bridging a specific WordPress hook to an internal events.

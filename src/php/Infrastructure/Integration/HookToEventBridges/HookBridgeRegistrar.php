@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Integration\HookBridges;
+namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 
 use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
 
