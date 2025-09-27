@@ -52,6 +52,7 @@
 	<rule ref="FundrikStandard.Classes.RequireAbstractOrFinal">
 		<properties>
 			<property name="excludedClasses" type="array">
+				<element value="Fundrik\WordPress\Components\Campaigns\Application\CampaignServiceLogger" />
 				<element value="Fundrik\WordPress\Infrastructure\Container\ServiceBindings" />
 				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry"/>
@@ -72,10 +73,12 @@
 
 	<rule ref="SlevomatCodingStandard.Classes.EmptyLinesAroundClassBraces.MultipleEmptyLinesAfterOpeningBrace">
 		<exclude-pattern>*Exception.php</exclude-pattern>
+		<exclude-pattern>*ExceptionInterface.php</exclude-pattern>
 	</rule>
 
 	<rule ref="SlevomatCodingStandard.Classes.EmptyLinesAroundClassBraces.IncorrectEmptyLinesBeforeClosingBrace">
 		<exclude-pattern>*Exception.php</exclude-pattern>
+		<exclude-pattern>*ExceptionInterface.php</exclude-pattern>
 	</rule>
 
 	<rule ref="Squiz.Commenting">

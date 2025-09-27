@@ -25,7 +25,7 @@ final readonly class CampaignDtoFactory {
 	 *        - id (int): The campaign ID.
 	 *        - title (string): The campaign title.
 	 *        - slug (string): The campaign slug.
-	 *        - is_enabled (bool): Whether the campaign is enabled.
+	 *        - is_active (bool): Whether the campaign is active.
 	 *        - is_open (bool): Whether the campaign is open.
 	 *        - has_target (bool): Whether the campaign has a target amount.
 	 *        - target_amount (int): The campaign target amount.
@@ -33,6 +33,7 @@ final readonly class CampaignDtoFactory {
 	 * @phpstan-param array{
 	 *   id: int,
 	 *   title: string,
+	 *   slug: string,
 	 *   is_active: bool,
 	 *   is_open: bool,
 	 *   has_target: bool,

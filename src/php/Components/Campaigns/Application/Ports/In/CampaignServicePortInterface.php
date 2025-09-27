@@ -42,10 +42,8 @@ interface CampaignServicePortInterface {
 	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The WordPress campaign to save.
-	 *
-	 * @return bool True if the operation succeeded.
 	 */
-	public function save_campaign( Campaign $campaign ): bool;
+	public function save_campaign( Campaign $campaign ): void;
 
 	/**
 	 * Deletes a WordPress campaign by its ID.
@@ -53,8 +51,6 @@ interface CampaignServicePortInterface {
 	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The ID of the WordPress campaign to delete.
-	 *
-	 * @return bool True if the WordPress campaign was successfully deleted.
 	 */
-	public function delete_campaign( EntityId $id ): bool;
+	public function delete_campaign( EntityId $id ): void;
 }

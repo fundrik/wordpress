@@ -55,10 +55,8 @@ interface CampaignRepositoryPortInterface {
 	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The campaign to insert.
-	 *
-	 * @return bool True on success, false otherwise.
 	 */
-	public function insert( Campaign $campaign ): bool;
+	public function insert( Campaign $campaign ): void;
 
 	/**
 	 * Updates an existing campaign in storage.
@@ -66,10 +64,8 @@ interface CampaignRepositoryPortInterface {
 	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The campaign to update.
-	 *
-	 * @return bool True on success, false otherwise.
 	 */
-	public function update( Campaign $campaign ): bool;
+	public function update( Campaign $campaign ): void;
 
 	/**
 	 * Removes a campaign from storage by its ID.
@@ -77,8 +73,6 @@ interface CampaignRepositoryPortInterface {
 	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The ID of the campaign to delete.
-	 *
-	 * @return bool True on successful deletion, false otherwise.
 	 */
-	public function delete( EntityId $id ): bool;
+	public function delete( EntityId $id ): void;
 }
