@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Components\Campaigns\Application;
 
+use Fundrik\Core\Support\Exceptions\ArrayExtractionException;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDtoFactory;
 use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignDtoFactoryException;
@@ -33,12 +34,13 @@ final class CampaignDtoFactoryTest extends FundrikTestCase {
 		$dto = $this->dto_factory->from_array( $this->make_data_array() );
 
 		$this->assertInstanceOf( CampaignDto::class, $dto );
-		$this->assertEquals( 1, $dto->id );
-		$this->assertEquals( 'Test Campaign', $dto->title );
+		$this->assertSame( 1, $dto->id );
+		$this->assertSame( 'Test Campaign', $dto->title );
+		$this->assertSame( 'test-campaign', $dto->slug );
 		$this->assertTrue( $dto->is_active );
 		$this->assertTrue( $dto->is_open );
 		$this->assertTrue( $dto->has_target );
-		$this->assertEquals( 100, $dto->target_amount );
+		$this->assertSame( 100, $dto->target_amount );
 	}
 
 	#[Test]
@@ -109,13 +111,22 @@ final class CampaignDtoFactoryTest extends FundrikTestCase {
 			$this->assertStringStartsWith(
 				'Failed to create CampaignDto from array:',
 				$e->getMessage(),
-				'Expected message to include description prefix.',
+				'Expected message to start with the factory-level prefix.',
 			);
 
-			$this->assertStringContainsString(
-				'not an int',
-				$e->getMessage(),
-				'Expected original exception value to appear in the message.',
+			$previous = $e->getPrevious();
+			$this->assertNotNull( $previous, 'Expected wrapped (previous) exception to be present.' );
+
+			$this->assertInstanceOf(
+				ArrayExtractionException::class,
+				$previous,
+				'Unexpected previous exception type.',
+			);
+
+			$this->assertNotSame(
+				'',
+				(string) $previous->getMessage(),
+				'Expected previous exception to contain a message.',
 			);
 		}
 	}

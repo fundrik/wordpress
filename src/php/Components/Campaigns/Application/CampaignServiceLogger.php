@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
  *
  * @since 1.0.0
  */
-readonly class CampaignServiceLogger {
+final readonly class CampaignServiceLogger {
 
 	/**
 	 * Constructor.
@@ -27,13 +27,15 @@ readonly class CampaignServiceLogger {
 	) {}
 
 	/**
-	 * Logs the start of a find-by-ID operation.
+	 * Logs the start of a find-by-ID operation (debug).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being searched.
+	 * @param int $id The campaign ID being searched.
+	 *
+	 * @codeCoverageIgnore
 	 */
-	public function log_find_by_id_started( int|string $id ): void {
+	public function log_find_by_id_started( int $id ): void {
 
 		$this->logger->debug(
 			'Finding campaign by ID started.',
@@ -47,14 +49,14 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs repository failure during a find-by-ID operation.
+	 * Logs repository failure during a find-by-ID operation (error).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being searched.
+	 * @param int $id The campaign ID being searched.
 	 * @param CampaignRepositoryExceptionInterface $e The repository exception that occurred.
 	 */
-	public function log_find_by_id_failed_repository( int|string $id, CampaignRepositoryExceptionInterface $e ): void {
+	public function log_find_by_id_failed_repository( int $id, CampaignRepositoryExceptionInterface $e ): void {
 
 		$this->logger->error(
 			'Finding campaign by ID failed (repository error).',
@@ -69,13 +71,15 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs that the requested campaign was not found.
+	 * Logs that the requested campaign was not found (debug).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID that was not found.
+	 * @param int $id The campaign ID that was not found.
+	 *
+	 * @codeCoverageIgnore
 	 */
-	public function log_find_by_id_not_found( int|string $id ): void {
+	public function log_find_by_id_not_found( int $id ): void {
 
 		$this->logger->debug(
 			'Finding campaign by ID not found.',
@@ -89,14 +93,14 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs assembler failure during a find-by-ID operation.
+	 * Logs assembler failure during a find-by-ID operation (error).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being processed.
+	 * @param int $id The campaign ID being processed.
 	 * @param CampaignAssemblerException $e The assembler exception that occurred.
 	 */
-	public function log_find_by_id_failed_assembler( int|string $id, CampaignAssemblerException $e ): void {
+	public function log_find_by_id_failed_assembler( int $id, CampaignAssemblerException $e ): void {
 
 		$this->logger->error(
 			'Finding campaign by ID failed (assembler error).',
@@ -111,13 +115,15 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs successful completion of a find-by-ID operation.
+	 * Logs successful completion of a find-by-ID operation (debug).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID found.
+	 * @param int $id The campaign ID found.
+	 *
+	 * @codeCoverageIgnore
 	 */
-	public function log_find_by_id_succeeded( int|string $id ): void {
+	public function log_find_by_id_succeeded( int $id ): void {
 
 		$this->logger->debug(
 			'Finding campaign by ID succeeded.',
@@ -131,9 +137,11 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs the start of a find-all operation.
+	 * Logs the start of a find-all operation (debug).
 	 *
 	 * @since 1.0.0
+	 *
+	 * @codeCoverageIgnore
 	 */
 	public function log_find_all_started(): void {
 
@@ -148,7 +156,7 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs repository failure during a find-all operation.
+	 * Logs repository failure during a find-all operation (error).
 	 *
 	 * @since 1.0.0
 	 *
@@ -168,7 +176,7 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs assembler failure during a find-all operation.
+	 * Logs assembler failure during a find-all operation (error).
 	 *
 	 * @since 1.0.0
 	 *
@@ -188,11 +196,13 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs successful completion of a find-all operation.
+	 * Logs successful completion of a find-all operation (debug).
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param int $count The number of campaigns retrieved.
+	 *
+	 * @codeCoverageIgnore
 	 */
 	public function log_find_all_succeeded( int $count ): void {
 
@@ -208,13 +218,15 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs the start of a save operation.
+	 * Logs the start of a save operation (debug).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being saved.
+	 * @param int $id The campaign ID being saved.
+	 *
+	 * @codeCoverageIgnore
 	 */
-	public function log_save_started( int|string $id ): void {
+	public function log_save_started( int $id ): void {
 
 		$this->logger->debug(
 			'Saving campaign started.',
@@ -228,14 +240,14 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs repository failure during a save operation.
+	 * Logs repository failure during a save operation (error).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being saved.
+	 * @param int $id The campaign ID being saved.
 	 * @param CampaignRepositoryExceptionInterface $e The repository exception that occurred.
 	 */
-	public function log_save_failed_repository( int|string $id, CampaignRepositoryExceptionInterface $e ): void {
+	public function log_save_failed_repository( int $id, CampaignRepositoryExceptionInterface $e ): void {
 
 		$this->logger->error(
 			'Saving campaign failed (repository error).',
@@ -250,14 +262,14 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs successful completion of a save operation.
+	 * Logs successful completion of a save operation (info).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID saved.
+	 * @param int $id The campaign ID saved.
 	 * @param string $action The type of save performed ("create" or "update").
 	 */
-	public function log_save_succeeded( int|string $id, string $action ): void {
+	public function log_save_succeeded( int $id, string $action ): void {
 
 		$this->logger->info(
 			'Saving campaign succeeded.',
@@ -272,13 +284,15 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs the start of a delete operation.
+	 * Logs the start of a delete operation (debug).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being deleted.
+	 * @param int $id The campaign ID being deleted.
+	 *
+	 * @codeCoverageIgnore
 	 */
-	public function log_delete_started( int|string $id ): void {
+	public function log_delete_started( int $id ): void {
 
 		$this->logger->debug(
 			'Deleting campaign started.',
@@ -292,14 +306,14 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs repository failure during a delete operation.
+	 * Logs repository failure during a delete operation (error).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID being deleted.
+	 * @param int $id The campaign ID being deleted.
 	 * @param CampaignRepositoryExceptionInterface $e The repository exception that occurred.
 	 */
-	public function log_delete_failed_repository( int|string $id, CampaignRepositoryExceptionInterface $e ): void {
+	public function log_delete_failed_repository( int $id, CampaignRepositoryExceptionInterface $e ): void {
 
 		$this->logger->error(
 			'Deleting campaign failed (repository error).',
@@ -314,13 +328,13 @@ readonly class CampaignServiceLogger {
 	}
 
 	/**
-	 * Logs successful completion of a delete operation.
+	 * Logs successful completion of a delete operation (info).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $id The campaign ID deleted.
+	 * @param int $id The campaign ID deleted.
 	 */
-	public function log_delete_succeeded( int|string $id ): void {
+	public function log_delete_succeeded( int $id ): void {
 
 		$this->logger->info(
 			'Deleting campaign succeeded.',

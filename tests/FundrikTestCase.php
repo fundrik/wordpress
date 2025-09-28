@@ -48,6 +48,14 @@ abstract class FundrikTestCase extends PHPUnitTestCase {
 	}
 
 	/**
+	 * Returns a invalid CampaignDto for use in tests.
+	 */
+	protected function make_invalid_campaign_dto(): CampaignDto {
+
+		return $this->make_campaign_dto( id: -1 );
+	}
+
+	/**
 	 * Returns a valid Campaign for use in tests.
 	 * Allows overriding fields to simulate variations.
 	 */

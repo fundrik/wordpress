@@ -6,11 +6,14 @@ namespace Fundrik\WordPress\Tests\Components\Campaigns\Application;
 
 use Fundrik\Core\Components\Campaigns\Application\CampaignAssembler as CoreCampaignAssembler;
 use Fundrik\Core\Components\Campaigns\Application\CampaignDtoFactory as CoreCampaignDtoFactory;
+use Fundrik\Core\Components\Campaigns\Application\Exceptions\CampaignAssemblerException as CoreCampaignAssemblerException;
+use Fundrik\Core\Components\Campaigns\Application\Exceptions\CampaignDtoFactoryException as CoreCampaignDtoFactoryException;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignAssembler;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignAssemblerException;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignSlugException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -97,10 +100,23 @@ final class CampaignAssemblerTest extends FundrikTestCase {
 				'Expected the message to start with the assembler-level prefix.',
 			);
 
-			$this->assertStringContainsString(
-				'positive integer',
-				$e->getMessage(),
-				'Expected the original exception message to be included.',
+			$previous = $e->getPrevious();
+			$this->assertNotNull( $previous, 'Expected wrapped (previous) exception to be present.' );
+
+			$this->assertThat(
+				$previous,
+				$this->logicalOr(
+					$this->isInstanceOf( CoreCampaignDtoFactoryException::class ),
+					$this->isInstanceOf( CoreCampaignAssemblerException::class ),
+					$this->isInstanceOf( InvalidCampaignSlugException::class ),
+				),
+				'Unexpected previous exception type.',
+			);
+
+			$this->assertNotSame(
+				'',
+				(string) $previous->getMessage(),
+				'Expected previous exception to contain a message.',
 			);
 		}
 	}

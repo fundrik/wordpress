@@ -10,9 +10,13 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignAssembler;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignService;
+use Fundrik\WordPress\Components\Campaigns\Application\CampaignServiceLogger;
+use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignAssemblerException;
+use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPortInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
+use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -28,7 +32,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 final class CampaignServiceTest extends MockeryTestCase {
 
 	private CampaignRepositoryPortInterface&MockInterface $repository;
-
+	private CampaignServiceLogger&MockInterface $logger;
 	private CampaignService $service;
 
 	protected function setUp(): void {
@@ -37,12 +41,15 @@ final class CampaignServiceTest extends MockeryTestCase {
 
 		$this->repository = Mockery::mock( CampaignRepositoryPortInterface::class );
 
+		$this->logger = Mockery::mock( CampaignServiceLogger::class )->shouldIgnoreMissing();
+
 		$this->service = new CampaignService(
 			new CampaignAssembler(
 				new CoreCampaignDtoFactory(),
 				new CoreCampaignAssembler(),
 			),
 			$this->repository,
+			$this->logger,
 		);
 	}
 
@@ -79,7 +86,56 @@ final class CampaignServiceTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function find_all_campaigns_campaigns_returns_list_of_campaigns(): void {
+	public function find_campaign_by_id_propagates_repository_exception(): void {
+
+		$e = new FakeCampaignRepositoryException();
+		$campaign_id = EntityId::create( 123 );
+
+		$this->repository
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with( $this->identicalTo( $campaign_id ) )
+			->andThrow( $e );
+
+		$this->logger
+			->shouldReceive( 'log_find_by_id_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign_id->value ),
+				$this->identicalTo( $e ),
+			);
+
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->find_campaign_by_id( $campaign_id );
+	}
+
+	#[Test]
+	public function find_campaign_by_id_propagates_assembler_exception_with_invalid_dto(): void {
+
+		$campaign_id = EntityId::create( 1 );
+
+		$this->repository
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with( $this->identicalTo( $campaign_id ) )
+			->andReturn( $this->make_invalid_campaign_dto() );
+
+		$this->logger
+			->shouldReceive( 'log_find_by_id_failed_assembler' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign_id->value ),
+				Mockery::type( CampaignAssemblerException::class ),
+			);
+
+		$this->expectException( CampaignAssemblerException::class );
+
+		$this->service->find_campaign_by_id( $campaign_id );
+	}
+
+	#[Test]
+	public function find_all_campaigns_returns_list_of_campaigns(): void {
 
 		$dto1 = $this->make_campaign_dto();
 		$dto2 = $this->make_campaign_dto( id: 2 );
@@ -111,7 +167,51 @@ final class CampaignServiceTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function find_all_campaigns_propagates_repository_exception(): void {
+
+		$e = new FakeCampaignRepositoryException();
+
+		$this->repository
+			->shouldReceive( 'find_all' )
+			->once()
+			->andThrow( $e );
+
+		$this->logger
+			->shouldReceive( 'log_find_all_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $e ),
+			);
+
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->find_all_campaigns();
+	}
+
+	#[Test]
+	public function find_all_campaigns_propagates_assembler_exception_with_invalid_dto(): void {
+
+		$this->repository
+			->shouldReceive( 'find_all' )
+			->once()
+			->andReturn( [ $this->make_invalid_campaign_dto() ] );
+
+		$this->logger
+			->shouldReceive( 'log_find_all_failed_assembler' )
+			->once()
+			->with(
+				Mockery::type( CampaignAssemblerException::class ),
+			);
+
+		$this->expectException( CampaignAssemblerException::class );
+
+		$this->service->find_all_campaigns();
+	}
+
+	#[Test]
 	public function save_campaign_inserts_when_campaign_does_not_exist(): void {
+
+		$campaign = $this->make_campaign();
 
 		$this->repository
 			->shouldReceive( 'exists' )
@@ -122,16 +222,25 @@ final class CampaignServiceTest extends MockeryTestCase {
 		$this->repository
 			->shouldReceive( 'insert' )
 			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturn( true );
+			->with( Mockery::type( Campaign::class ) );
 
-		$result = $this->service->save_campaign( $this->make_campaign() );
+		$this->logger
+			->shouldReceive( 'log_save_succeeded' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign->get_id() ),
+				$this->identicalTo( 'create' ),
+			);
 
-		$this->assertTrue( $result );
+		$this->service->save_campaign( $campaign );
+
+		$this->assertTrue( true );
 	}
 
 	#[Test]
 	public function save_campaign_updates_when_campaign_exists(): void {
+
+		$campaign = $this->make_campaign();
 
 		$this->repository
 			->shouldReceive( 'exists' )
@@ -142,43 +251,148 @@ final class CampaignServiceTest extends MockeryTestCase {
 		$this->repository
 			->shouldReceive( 'update' )
 			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturn( true );
+			->with( Mockery::type( Campaign::class ) );
 
-		$result = $this->service->save_campaign( $this->make_campaign() );
+		$this->logger
+			->shouldReceive( 'log_save_succeeded' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign->get_id() ),
+				$this->identicalTo( 'update' ),
+			);
 
-		$this->assertTrue( $result );
+		$this->service->save_campaign( $campaign );
+
+		$this->assertTrue( true );
 	}
 
 	#[Test]
-	public function delete_campaign_returns_true_on_success(): void {
+	public function save_campaign_propagates_repository_exception_from_exists(): void {
+
+		$campaign = $this->make_campaign();
+		$e = new FakeCampaignRepositoryException();
+
+		$this->repository
+			->shouldReceive( 'exists' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andThrow( $e );
+
+		$this->logger
+			->shouldReceive( 'log_save_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign->get_id() ),
+				$this->identicalTo( $e ),
+			);
+
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->save_campaign( $campaign );
+	}
+
+	#[Test]
+	public function save_campaign_propagates_repository_exception_from_insert(): void {
+
+		$campaign = $this->make_campaign();
+		$e = new FakeCampaignRepositoryException();
+
+		$this->repository
+			->shouldReceive( 'exists' )
+			->once()
+			->andReturn( false );
+
+		$this->repository
+			->shouldReceive( 'insert' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andThrow( $e );
+
+		$this->logger
+			->shouldReceive( 'log_save_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign->get_id() ),
+				$this->identicalTo( $e ),
+			);
+
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->save_campaign( $campaign );
+	}
+
+	#[Test]
+	public function save_campaign_propagates_repository_exception_from_update(): void {
+
+		$campaign = $this->make_campaign();
+		$e = new FakeCampaignRepositoryException();
+
+		$this->repository
+			->shouldReceive( 'exists' )
+			->once()
+			->andReturn( true );
+
+		$this->repository
+			->shouldReceive( 'update' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andThrow( $e );
+
+		$this->logger
+			->shouldReceive( 'log_save_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign->get_id() ),
+				$this->identicalTo( $e ),
+			);
+
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->save_campaign( $campaign );
+	}
+
+	#[Test]
+	public function delete_campaign_calls_repository_delete(): void {
 
 		$campaign_id = EntityId::create( 42 );
 
 		$this->repository
 			->shouldReceive( 'delete' )
 			->once()
-			->with( $this->identicalTo( $campaign_id ) )
-			->andReturn( true );
+			->with( $this->identicalTo( $campaign_id ) );
 
-		$result = $this->service->delete_campaign( $campaign_id );
+		$this->logger
+			->shouldReceive( 'log_delete_succeeded' )
+			->once()
+			->with( $this->identicalTo( $campaign_id->value ) );
 
-		$this->assertTrue( $result );
+		$this->service->delete_campaign( $campaign_id );
+
+		$this->assertTrue( true );
 	}
 
 	#[Test]
-	public function delete_campaign_returns_false_on_failure(): void {
+	public function delete_campaign_propagates_repository_exception(): void {
 
-		$campaign_id = EntityId::create( 999 );
+		$campaign_id = EntityId::create( 7 );
+		$e = new FakeCampaignRepositoryException();
 
 		$this->repository
 			->shouldReceive( 'delete' )
 			->once()
 			->with( $this->identicalTo( $campaign_id ) )
-			->andReturn( false );
+			->andThrow( $e );
 
-		$result = $this->service->delete_campaign( $campaign_id );
+		$this->logger
+			->shouldReceive( 'log_delete_failed_repository' )
+			->once()
+			->with(
+				$this->identicalTo( $campaign_id->value ),
+				$this->identicalTo( $e ),
+			);
 
-		$this->assertFalse( $result );
+		$this->expectException( CampaignRepositoryExceptionInterface::class );
+
+		$this->service->delete_campaign( $campaign_id );
 	}
 }

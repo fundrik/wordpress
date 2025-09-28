@@ -21,13 +21,13 @@ final class CampaignTest extends FundrikTestCase {
 
 		$campaign = $this->make_campaign();
 
-		$this->assertEquals( 1, $campaign->get_id() );
-		$this->assertEquals( 'Test Campaign', $campaign->get_title() );
-		$this->assertEquals( 'test-campaign', $campaign->get_slug() );
+		$this->assertSame( 1, $campaign->get_id() );
+		$this->assertSame( 'Test Campaign', $campaign->get_title() );
+		$this->assertSame( 'test-campaign', $campaign->get_slug() );
 		$this->assertTrue( $campaign->is_active() );
 		$this->assertTrue( $campaign->is_open() );
 		$this->assertTrue( $campaign->has_target() );
-		$this->assertEquals( 100, $campaign->get_target_amount() );
+		$this->assertSame( 100, $campaign->get_target_amount() );
 	}
 
 	#[Test]

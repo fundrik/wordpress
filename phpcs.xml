@@ -52,7 +52,6 @@
 	<rule ref="FundrikStandard.Classes.RequireAbstractOrFinal">
 		<properties>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Components\Campaigns\Application\CampaignServiceLogger" />
 				<element value="Fundrik\WordPress\Infrastructure\Container\ServiceBindings" />
 				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry"/>
