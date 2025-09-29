@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Campaigns\Domain\Campaign as CoreCampaign;
+use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Support\TypeCaster;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignException;
 use InvalidArgumentException;
@@ -53,6 +54,18 @@ final readonly class Campaign {
 				previous: $e,
 			);
 		}
+	}
+
+	/**
+	 * Returns the campaign ID value object.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return EntityId The campaign ID value object.
+	 */
+	public function get_entity_id(): EntityId {
+
+		return $this->core_campaign->get_entity_id();
 	}
 
 	/**

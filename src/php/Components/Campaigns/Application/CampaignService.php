@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Components\Campaigns\Application;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\WordPress\Components\Campaigns\Application\Events\CampaignDeletedEvent;
+use Fundrik\WordPress\Components\Campaigns\Application\Events\CampaignSavedEvent;
 use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignAssemblerException;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignServicePortInterface;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPortInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
+use Fundrik\WordPress\Components\Shared\Application\Ports\Out\EventBusPortInterface;
 
 /**
  * Provides application-level operations for managing WordPress campaigns.
@@ -31,6 +34,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 		private CampaignAssembler $assembler,
 		private CampaignRepositoryPortInterface $repository,
 		private CampaignServiceLogger $logger,
+		private EventBusPortInterface $event_bus,
 	) {}
 
 	/**
@@ -135,6 +139,8 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			throw $e;
 		}
 
+		$this->event_bus->publish( new CampaignSavedEvent( $campaign->get_entity_id(), $is_update ) );
+
 		$this->logger->log_save_succeeded(
 			$campaign->get_id(),
 			$is_update ? 'update' : 'create',
@@ -159,6 +165,8 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			$this->logger->log_delete_failed_repository( $id->value, $e );
 			throw $e;
 		}
+
+		$this->event_bus->publish( new CampaignDeletedEvent( $id ) );
 
 		$this->logger->log_delete_succeeded( $id->value );
 	}

@@ -28,6 +28,6 @@ final readonly class PostDeletedEvent {
 	public function __construct(
 		public int $post_id,
 		public WP_Post $post,
-		public readonly WordPressContextInterface $context,
+		public WordPressContextInterface $context,
 	) {}
 }

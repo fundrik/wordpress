@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Components\Campaigns\Domain;
 
+use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignException;
@@ -19,9 +20,13 @@ final class CampaignTest extends FundrikTestCase {
 	#[Test]
 	public function campaign_returns_all_expected_values(): void {
 
-		$campaign = $this->make_campaign();
+		$id = 1;
 
-		$this->assertSame( 1, $campaign->get_id() );
+		$campaign = $this->make_campaign();
+		$entity_id = EntityId::create( $id );
+
+		$this->assertSame( $id, $campaign->get_id() );
+		$this->assertTrue( $entity_id->equals( $campaign->get_entity_id() ) );
 		$this->assertSame( 'Test Campaign', $campaign->get_title() );
 		$this->assertSame( 'test-campaign', $campaign->get_slug() );
 		$this->assertTrue( $campaign->is_active() );

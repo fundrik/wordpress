@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 
 /**
- * Defines the inbound port interface for application-level operations for managing WordPress campaigns.
+ * Provides the inbound port interface for application-level operations for managing WordPress campaigns.
  *
  * @since 1.0.0
  */

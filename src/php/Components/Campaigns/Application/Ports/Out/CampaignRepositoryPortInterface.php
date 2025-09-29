@@ -9,7 +9,7 @@ use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 
 /**
- * Defines the outbound port for accessing campaign persistence.
+ * Provides the outbound port for accessing campaign persistence.
  *
  * This interface represents the storage contract required by the application layer.
  * It allows the service layer to remain decoupled from specific infrastructure details.

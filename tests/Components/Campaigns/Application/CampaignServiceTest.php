@@ -11,11 +11,14 @@ use Fundrik\WordPress\Components\Campaigns\Application\CampaignAssembler;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignService;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignServiceLogger;
+use Fundrik\WordPress\Components\Campaigns\Application\Events\CampaignDeletedEvent;
+use Fundrik\WordPress\Components\Campaigns\Application\Events\CampaignSavedEvent;
 use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignAssemblerException;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPortInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
+use Fundrik\WordPress\Components\Shared\Application\Ports\Out\EventBusPortInterface;
 use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -23,16 +26,21 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 
 #[CoversClass( CampaignService::class )]
 #[UsesClass( CampaignAssembler::class )]
 #[UsesClass( CampaignDto::class )]
 #[UsesClass( Campaign::class )]
 #[UsesClass( CampaignSlug::class )]
+#[UsesClass( CampaignServiceLogger::class )]
+#[UsesClass( CampaignSavedEvent::class )]
+#[UsesClass( CampaignDeletedEvent::class )]
 final class CampaignServiceTest extends MockeryTestCase {
 
 	private CampaignRepositoryPortInterface&MockInterface $repository;
-	private CampaignServiceLogger&MockInterface $logger;
+	private LoggerInterface&MockInterface $psr_logger;
+	private EventBusPortInterface&MockInterface $event_bus;
 	private CampaignService $service;
 
 	protected function setUp(): void {
@@ -40,8 +48,8 @@ final class CampaignServiceTest extends MockeryTestCase {
 		parent::setUp();
 
 		$this->repository = Mockery::mock( CampaignRepositoryPortInterface::class );
-
-		$this->logger = Mockery::mock( CampaignServiceLogger::class )->shouldIgnoreMissing();
+		$this->psr_logger = Mockery::mock( LoggerInterface::class )->shouldIgnoreMissing();
+		$this->event_bus = Mockery::mock( EventBusPortInterface::class );
 
 		$this->service = new CampaignService(
 			new CampaignAssembler(
@@ -49,7 +57,8 @@ final class CampaignServiceTest extends MockeryTestCase {
 				new CoreCampaignAssembler(),
 			),
 			$this->repository,
-			$this->logger,
+			new CampaignServiceLogger( $this->psr_logger ),
+			$this->event_bus,
 		);
 	}
 
@@ -97,12 +106,18 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( $this->identicalTo( $campaign_id ) )
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_find_by_id_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign_id->value ),
-				$this->identicalTo( $e ),
+				'Finding campaign by ID failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'find_campaign_by_id',
+						'id' => $campaign_id->value,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
@@ -121,12 +136,18 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( $this->identicalTo( $campaign_id ) )
 			->andReturn( $this->make_invalid_campaign_dto() );
 
-		$this->logger
-			->shouldReceive( 'log_find_by_id_failed_assembler' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign_id->value ),
-				Mockery::type( CampaignAssemblerException::class ),
+				'Finding campaign by ID failed (assembler error).',
+				$this->array_has(
+					[
+						'operation' => 'find_campaign_by_id',
+						'id' => $campaign_id->value,
+						'exception' => Mockery::type( CampaignAssemblerException::class ),
+					],
+				),
 			);
 
 		$this->expectException( CampaignAssemblerException::class );
@@ -176,11 +197,17 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->once()
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_find_all_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $e ),
+				'Finding campaigns failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'find_all_campaigns',
+						'exception' => $e,
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
@@ -196,11 +223,17 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->once()
 			->andReturn( [ $this->make_invalid_campaign_dto() ] );
 
-		$this->logger
-			->shouldReceive( 'log_find_all_failed_assembler' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				Mockery::type( CampaignAssemblerException::class ),
+				'Finding campaigns failed (assembler error).',
+				$this->array_has(
+					[
+						'operation' => 'find_all_campaigns',
+						'exception' => Mockery::type( CampaignAssemblerException::class ),
+					],
+				),
 			);
 
 		$this->expectException( CampaignAssemblerException::class );
@@ -224,12 +257,29 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->once()
 			->with( Mockery::type( Campaign::class ) );
 
-		$this->logger
-			->shouldReceive( 'log_save_succeeded' )
+		$this->event_bus
+			->shouldReceive( 'publish' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign->get_id() ),
-				$this->identicalTo( 'create' ),
+				Mockery::on(
+					static fn ( $event ) => $event instanceof CampaignSavedEvent
+					&& $event->campaign_id->equals( $campaign->get_entity_id() )
+					&& $event->is_update === false,
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Saving campaign succeeded.',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+						'action' => 'create',
+					],
+				),
 			);
 
 		$this->service->save_campaign( $campaign );
@@ -253,12 +303,29 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->once()
 			->with( Mockery::type( Campaign::class ) );
 
-		$this->logger
-			->shouldReceive( 'log_save_succeeded' )
+		$this->event_bus
+			->shouldReceive( 'publish' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign->get_id() ),
-				$this->identicalTo( 'update' ),
+				Mockery::on(
+					static fn ( $event ) => $event instanceof CampaignSavedEvent
+					&& $event->campaign_id->equals( $campaign->get_entity_id() )
+					&& $event->is_update === true,
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Saving campaign succeeded.',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+						'action' => 'update',
+					],
+				),
 			);
 
 		$this->service->save_campaign( $campaign );
@@ -278,12 +345,17 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( Mockery::type( Campaign::class ) )
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_save_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign->get_id() ),
-				$this->identicalTo( $e ),
+				'Saving campaign failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
@@ -308,12 +380,17 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( Mockery::type( Campaign::class ) )
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_save_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign->get_id() ),
-				$this->identicalTo( $e ),
+				'Saving campaign failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
@@ -338,12 +415,17 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( Mockery::type( Campaign::class ) )
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_save_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign->get_id() ),
-				$this->identicalTo( $e ),
+				'Saving campaign failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
@@ -361,10 +443,28 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->once()
 			->with( $this->identicalTo( $campaign_id ) );
 
-		$this->logger
-			->shouldReceive( 'log_delete_succeeded' )
+		$this->event_bus
+			->shouldReceive( 'publish' )
 			->once()
-			->with( $this->identicalTo( $campaign_id->value ) );
+			->with(
+				Mockery::on(
+					static fn ( $event ) => $event instanceof CampaignDeletedEvent
+					&& $event->campaign_id->equals( $campaign_id ),
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Deleting campaign succeeded.',
+				$this->array_has(
+					[
+						'operation' => 'delete_campaign',
+						'id' => $campaign_id->value,
+					],
+				),
+			);
 
 		$this->service->delete_campaign( $campaign_id );
 
@@ -383,12 +483,18 @@ final class CampaignServiceTest extends MockeryTestCase {
 			->with( $this->identicalTo( $campaign_id ) )
 			->andThrow( $e );
 
-		$this->logger
-			->shouldReceive( 'log_delete_failed_repository' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
-				$this->identicalTo( $campaign_id->value ),
-				$this->identicalTo( $e ),
+				'Deleting campaign failed (repository error).',
+				$this->array_has(
+					[
+						'operation' => 'delete_campaign',
+						'id' => $campaign_id->value,
+						'exception' => $e,
+					],
+				),
 			);
 
 		$this->expectException( CampaignRepositoryExceptionInterface::class );

@@ -33,6 +33,6 @@ final readonly class PostSavedEvent {
 		public WP_Post $post,
 		public bool $update,
 		public WP_Post|null $post_before,
-		public readonly WordPressContextInterface $context,
+		public WordPressContextInterface $context,
 	) {}
 }
