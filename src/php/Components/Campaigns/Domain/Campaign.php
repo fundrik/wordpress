@@ -6,9 +6,8 @@ namespace Fundrik\WordPress\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Campaigns\Domain\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\Core\Support\TypeCaster;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignException;
-use InvalidArgumentException;
 
 /**
  * Represents a fundraising campaign with WordPress-specific data.
@@ -39,17 +38,15 @@ final readonly class Campaign {
 	 */
 	public function get_id(): int {
 
-		$value = $this->core_campaign->get_id();
-
 		try {
-			return TypeCaster::to_int( $value );
-		} catch ( InvalidArgumentException $e ) {
+			return $this->core_campaign->get_entity_id()->to_int();
+		} catch ( InvalidEntityIdException $e ) {
 
 			throw new InvalidCampaignException(
 				sprintf(
 					'Expected int-compatible ID in Campaign, got invalid value: %s',
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
-					var_export( $value, true ),
+					var_export( $this->core_campaign->get_id(), true ),
 				),
 				previous: $e,
 			);

@@ -10,6 +10,8 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
  * Signals that a campaign has been created or updated.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final readonly class CampaignSavedEvent {
 

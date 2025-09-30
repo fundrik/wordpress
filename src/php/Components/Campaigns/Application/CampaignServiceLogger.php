@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Components\Campaigns\Application;
 use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignAssemblerException;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Logs application-level operations of the CampaignService.
@@ -262,6 +263,28 @@ final readonly class CampaignServiceLogger {
 	}
 
 	/**
+	 * Logs a warning when publishing CampaignSavedEvent fails (warning).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $id The campaign ID related to the failed publish.
+	 * @param Throwable $e The exception thrown by a listener or the event bus.
+	 */
+	public function log_publish_saved_event_failed( int $id, Throwable $e ): void {
+
+		$this->logger->warning(
+			'Publishing CampaignSavedEvent failed (event bus error).',
+			$this->logger_context(
+				[
+					'operation' => 'save_campaign',
+					'id' => $id,
+					'exception' => $e,
+				],
+			),
+		);
+	}
+
+	/**
 	 * Logs successful completion of a save operation (info).
 	 *
 	 * @since 1.0.0
@@ -317,6 +340,28 @@ final readonly class CampaignServiceLogger {
 
 		$this->logger->error(
 			'Deleting campaign failed (repository error).',
+			$this->logger_context(
+				[
+					'operation' => 'delete_campaign',
+					'id' => $id,
+					'exception' => $e,
+				],
+			),
+		);
+	}
+
+	/**
+	 * Logs a warning when publishing CampaignDeletedEvent fails (warning).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $id The campaign ID related to the failed publish.
+	 * @param Throwable $e The exception thrown by a listener or the event bus.
+	 */
+	public function log_publish_deleted_event_failed( int $id, Throwable $e ): void {
+
+		$this->logger->warning(
+			'Publishing CampaignDeletedEvent failed (event bus error).',
 			$this->logger_context(
 				[
 					'operation' => 'delete_campaign',

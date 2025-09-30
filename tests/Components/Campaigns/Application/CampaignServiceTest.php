@@ -27,6 +27,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 #[CoversClass( CampaignService::class )]
 #[UsesClass( CampaignAssembler::class )]
@@ -114,7 +115,7 @@ final class CampaignServiceTest extends MockeryTestCase {
 				$this->array_has(
 					[
 						'operation' => 'find_campaign_by_id',
-						'id' => $campaign_id->value,
+						'id' => $campaign_id->to_int(),
 						'exception' => static fn ( $ex ) => $ex === $e,
 					],
 				),
@@ -144,7 +145,7 @@ final class CampaignServiceTest extends MockeryTestCase {
 				$this->array_has(
 					[
 						'operation' => 'find_campaign_by_id',
-						'id' => $campaign_id->value,
+						'id' => $campaign_id->to_int(),
 						'exception' => Mockery::type( CampaignAssemblerException::class ),
 					],
 				),
@@ -434,6 +435,68 @@ final class CampaignServiceTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function save_campaign_logs_warning_when_event_bus_fails_and_still_succeeds(): void {
+
+		$campaign = $this->make_campaign();
+
+		$this->repository
+			->shouldReceive( 'exists' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andReturn( false );
+
+		$this->repository
+			->shouldReceive( 'insert' )
+			->once()
+			->with( Mockery::type( Campaign::class ) );
+
+		$boom = new RuntimeException();
+			$this->event_bus
+			->shouldReceive( 'publish' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( $event ) => $event instanceof CampaignSavedEvent
+					&& $event->campaign_id->equals( $campaign->get_entity_id() )
+					&& $event->is_update === false,
+				),
+			)
+			->andThrow( $boom );
+
+		$this->psr_logger
+			->shouldReceive( 'warning' )
+			->once()
+			->with(
+				'Publishing CampaignSavedEvent failed (event bus error).',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+						'exception' => static fn ( $ex ) => $ex === $boom,
+					],
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Saving campaign succeeded.',
+				$this->array_has(
+					[
+						'operation' => 'save_campaign',
+						'id' => $campaign->get_id(),
+						'action' => 'create',
+					],
+				),
+			);
+
+		$this->service->save_campaign( $campaign );
+
+		$this->assertTrue( true );
+	}
+
+	#[Test]
 	public function delete_campaign_calls_repository_delete(): void {
 
 		$campaign_id = EntityId::create( 42 );
@@ -461,7 +524,7 @@ final class CampaignServiceTest extends MockeryTestCase {
 				$this->array_has(
 					[
 						'operation' => 'delete_campaign',
-						'id' => $campaign_id->value,
+						'id' => $campaign_id->to_int(),
 					],
 				),
 			);
@@ -491,7 +554,7 @@ final class CampaignServiceTest extends MockeryTestCase {
 				$this->array_has(
 					[
 						'operation' => 'delete_campaign',
-						'id' => $campaign_id->value,
+						'id' => $campaign_id->to_int(),
 						'exception' => $e,
 					],
 				),
@@ -500,5 +563,59 @@ final class CampaignServiceTest extends MockeryTestCase {
 		$this->expectException( CampaignRepositoryExceptionInterface::class );
 
 		$this->service->delete_campaign( $campaign_id );
+	}
+
+	#[Test]
+	public function delete_campaign_logs_warning_when_event_bus_fails_and_still_succeeds(): void {
+
+		$campaign_id = EntityId::create( 42 );
+
+		$this->repository
+			->shouldReceive( 'delete' )
+			->once()
+			->with( $this->identicalTo( $campaign_id ) );
+
+		$boom = new \RuntimeException( 'boom' );
+			$this->event_bus
+			->shouldReceive( 'publish' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( $event ) => $event instanceof CampaignDeletedEvent
+					&& $event->campaign_id->equals( $campaign_id ),
+				),
+			)
+			->andThrow( $boom );
+
+		$this->psr_logger
+			->shouldReceive( 'warning' )
+			->once()
+			->with(
+				'Publishing CampaignDeletedEvent failed (event bus error).',
+				$this->array_has(
+					[
+						'operation' => 'delete_campaign',
+						'id' => $campaign_id->to_int(),
+						'exception' => static fn ( $ex ) => $ex === $boom,
+					],
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Deleting campaign succeeded.',
+				$this->array_has(
+					[
+						'operation' => 'delete_campaign',
+						'id' => $campaign_id->to_int(),
+					],
+				),
+			);
+
+		$this->service->delete_campaign( $campaign_id );
+
+		$this->assertTrue( true );
 	}
 }

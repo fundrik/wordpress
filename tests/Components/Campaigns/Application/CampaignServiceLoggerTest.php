@@ -13,6 +13,7 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 #[CoversClass( CampaignServiceLogger::class )]
 final class CampaignServiceLoggerTest extends MockeryTestCase {
@@ -38,11 +39,12 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Finding campaign by ID failed (repository error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'find_campaign_by_id'
-						&& $context['id'] === 7
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'find_campaign_by_id',
+						'id' => 7,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
@@ -59,11 +61,12 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Finding campaign by ID failed (assembler error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'find_campaign_by_id'
-						&& $context['id'] === 7
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'find_campaign_by_id',
+						'id' => 7,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
@@ -80,10 +83,11 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Finding campaigns failed (repository error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'find_all_campaigns'
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'find_all_campaigns',
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
@@ -100,10 +104,11 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Finding campaigns failed (assembler error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'find_all_campaigns'
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'find_all_campaigns',
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
@@ -120,15 +125,38 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Saving campaign failed (repository error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'save_campaign'
-						&& $context['id'] === 7
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'save_campaign',
+						'id' => 7,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
 		$this->logger->log_save_failed_repository( id: 7, e: $e );
+	}
+
+	#[Test]
+	public function log_publish_saved_event_failed_writes_warning_with_exception_and_id(): void {
+
+		$e = new RuntimeException();
+
+		$this->psr_logger
+			->shouldReceive( 'warning' )
+			->once()
+			->with(
+				'Publishing CampaignSavedEvent failed (event bus error).',
+				$this->log_context(
+					[
+						'operation' => 'save_campaign',
+						'id' => 123,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
+				),
+			);
+
+		$this->logger->log_publish_saved_event_failed( id: 123, e: $e );
 	}
 
 	#[Test]
@@ -139,11 +167,12 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Saving campaign succeeded.',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'save_campaign'
-						&& $context['id'] === 123
-						&& $context['action'] === 'update'
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'save_campaign',
+						'id' => 123,
+						'action' => 'update',
+					],
 				),
 			);
 
@@ -160,15 +189,38 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Deleting campaign failed (repository error).',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'delete_campaign'
-						&& $context['id'] === 7
-						&& $context['exception'] === $e
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'delete_campaign',
+						'id' => 7,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
 				),
 			);
 
 		$this->logger->log_delete_failed_repository( id: 7, e: $e );
+	}
+
+	#[Test]
+	public function log_publish_deleted_event_failed_writes_warning_with_exception_and_id(): void {
+
+		$e = new RuntimeException();
+
+		$this->psr_logger
+			->shouldReceive( 'warning' )
+			->once()
+			->with(
+				'Publishing CampaignDeletedEvent failed (event bus error).',
+				$this->log_context(
+					[
+						'operation' => 'delete_campaign',
+						'id' => 42,
+						'exception' => static fn ( $ex ) => $ex === $e,
+					],
+				),
+			);
+
+		$this->logger->log_publish_deleted_event_failed( id: 42, e: $e );
 	}
 
 	#[Test]
@@ -179,22 +231,27 @@ final class CampaignServiceLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Deleting campaign succeeded.',
-				Mockery::on(
-					fn ( array $context ): bool => $context['operation'] === 'delete_campaign'
-						&& $context['id'] === 42
-						&& $this->check_logger_context( $context ),
+				$this->log_context(
+					[
+						'operation' => 'delete_campaign',
+						'id' => 42,
+					],
 				),
 			);
 
 		$this->logger->log_delete_succeeded( id: 42 );
 	}
 
-	private function check_logger_context( array $context ): bool {
+	private function log_context( array $expected ): \Mockery\Matcher\Closure {
 
-		return $context['class_name'] === CampaignServiceLogger::class
-			&& $context['component'] === 'campaigns'
-			&& $context['layer'] === 'application'
-			// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText
-			&& $context['system'] === 'wordpress';
+		return $this->array_has(
+			$expected + [
+				'class_name' => CampaignServiceLogger::class,
+				'component' => 'campaigns',
+				'layer' => 'application',
+	            // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText
+				'system' => 'wordpress',
+			],
+		);
 	}
 }

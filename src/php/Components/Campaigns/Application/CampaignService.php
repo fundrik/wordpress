@@ -13,6 +13,7 @@ use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignReposit
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPortInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Shared\Application\Ports\Out\EventBusPortInterface;
+use Throwable;
 
 /**
  * Provides application-level operations for managing WordPress campaigns.
@@ -29,6 +30,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 * @param CampaignAssembler $assembler Converts between DTOs and domain entities.
 	 * @param CampaignRepositoryPortInterface $repository Provides access to campaign storage.
 	 * @param CampaignServiceLogger $logger Logs application-level operations and outcomes.
+	 * @param EventBusPortInterface $event_bus Publishes application events to subscribed listeners.
 	 */
 	public function __construct(
 		private CampaignAssembler $assembler,
@@ -48,19 +50,19 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function find_campaign_by_id( EntityId $id ): ?Campaign {
 
-		$this->logger->log_find_by_id_started( $id->value );
+		$this->logger->log_find_by_id_started( $id->to_int() );
 
 		try {
 			$campaign_dto = $this->repository->find_by_id( $id );
 		} catch ( CampaignRepositoryExceptionInterface $e ) {
 
-			$this->logger->log_find_by_id_failed_repository( $id->value, $e );
+			$this->logger->log_find_by_id_failed_repository( $id->to_int(), $e );
 			throw $e;
 		}
 
 		if ( $campaign_dto === null ) {
 
-			$this->logger->log_find_by_id_not_found( $id->value );
+			$this->logger->log_find_by_id_not_found( $id->to_int() );
 			return null;
 		}
 
@@ -68,11 +70,11 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			$campaign = $this->assembler->from_dto( $campaign_dto );
 		} catch ( CampaignAssemblerException $e ) {
 
-			$this->logger->log_find_by_id_failed_assembler( $id->value, $e );
+			$this->logger->log_find_by_id_failed_assembler( $id->to_int(), $e );
 			throw $e;
 		}
 
-		$this->logger->log_find_by_id_succeeded( $id->value );
+		$this->logger->log_find_by_id_succeeded( $id->to_int() );
 
 		return $campaign;
 	}
@@ -112,6 +114,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 		return $entities;
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Saves the given WordPress campaign.
 	 *
@@ -139,13 +142,24 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			throw $e;
 		}
 
-		$this->event_bus->publish( new CampaignSavedEvent( $campaign->get_entity_id(), $is_update ) );
+		try {
+			$this->event_bus->publish(
+				new CampaignSavedEvent( $campaign->get_entity_id(), $is_update ),
+			);
+		} catch ( Throwable $e ) {
+
+			$this->logger->log_publish_saved_event_failed(
+				id: $campaign->get_id(),
+				e: $e,
+			);
+		}
 
 		$this->logger->log_save_succeeded(
 			$campaign->get_id(),
 			$is_update ? 'update' : 'create',
 		);
 	}
+	// phpcs:enable
 
 	/**
 	 * Deletes a WordPress campaign by its ID.
@@ -156,18 +170,22 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function delete_campaign( EntityId $id ): void {
 
-		$this->logger->log_delete_started( $id->value );
+		$this->logger->log_delete_started( $id->to_int() );
 
 		try {
 			$this->repository->delete( $id );
 		} catch ( CampaignRepositoryExceptionInterface $e ) {
 
-			$this->logger->log_delete_failed_repository( $id->value, $e );
+			$this->logger->log_delete_failed_repository( $id->to_int(), $e );
 			throw $e;
 		}
 
-		$this->event_bus->publish( new CampaignDeletedEvent( $id ) );
+		try {
+			$this->event_bus->publish( new CampaignDeletedEvent( $id ) );
+		} catch ( Throwable $e ) {
+			$this->logger->log_publish_deleted_event_failed( $id->to_int(), $e );
+		}
 
-		$this->logger->log_delete_succeeded( $id->value );
+		$this->logger->log_delete_succeeded( $id->to_int() );
 	}
 }
