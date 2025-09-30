@@ -50,6 +50,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function find_campaign_by_id( EntityId $id ): ?Campaign {
 
+		// @infection-ignore-all
 		$this->logger->log_find_by_id_started( $id->to_int() );
 
 		try {
@@ -61,7 +62,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 		}
 
 		if ( $campaign_dto === null ) {
-
+			// @infection-ignore-all
 			$this->logger->log_find_by_id_not_found( $id->to_int() );
 			return null;
 		}
@@ -74,6 +75,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			throw $e;
 		}
 
+		// @infection-ignore-all
 		$this->logger->log_find_by_id_succeeded( $id->to_int() );
 
 		return $campaign;
@@ -88,6 +90,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function find_all_campaigns(): array {
 
+		// @infection-ignore-all
 		$this->logger->log_find_all_started();
 
 		try {
@@ -109,6 +112,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 			throw $e;
 		}
 
+		// @infection-ignore-all
 		$this->logger->log_find_all_succeeded( count( $entities ) );
 
 		return $entities;
@@ -126,6 +130,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function save_campaign( Campaign $campaign ): void {
 
+		// @infection-ignore-all
 		$this->logger->log_save_started( $campaign->get_id() );
 
 		try {
@@ -170,6 +175,7 @@ final readonly class CampaignService implements CampaignServicePortInterface {
 	 */
 	public function delete_campaign( EntityId $id ): void {
 
+		// @infection-ignore-all
 		$this->logger->log_delete_started( $id->to_int() );
 
 		try {

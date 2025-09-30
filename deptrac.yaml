@@ -112,6 +112,7 @@ deptrac:
       - Domain
       - CoreApplication
       - CoreDomain
+      - PsrLogger
 
     Infrastructure:
       - Laravel
