@@ -14,7 +14,7 @@ use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignSlugException;
 
 /**
- * Assembles WordPress-specific Campaign entities from a DTO.
+ * Assembles WordPress-specific Campaign domain entities from DTO.
  *
  * @since 1.0.0
  */
@@ -40,7 +40,9 @@ final readonly class CampaignAssembler {
 	 *
 	 * @param CampaignDto $dto The DTO representing campaign data.
 	 *
-	 * @return Campaign The campaign entity with WordPress-specific data constructed from the DTO.
+	 * @return Campaign The domain entity with WordPress-specific data constructed from the DTO.
+	 *
+	 * @throws CampaignAssemblerException When the DTO contains invalid data.
 	 */
 	public function from_dto( CampaignDto $dto ): Campaign {
 
@@ -65,7 +67,7 @@ final readonly class CampaignAssembler {
 		} catch ( CoreCampaignDtoFactoryException | CoreCampaignAssemblerException | InvalidCampaignSlugException $e ) {
 
 			throw new CampaignAssemblerException(
-				'Failed to assemble Campaign from DTO: ' . $e->getMessage(),
+				sprintf( 'Cannot assemble Campaign from DTO: %s', $e->getMessage() ),
 				previous: $e,
 			);
 		}

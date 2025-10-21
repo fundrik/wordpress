@@ -22,7 +22,7 @@ final readonly class CampaignDto {
 	 * @param bool $is_active Whether the campaign is active.
 	 * @param bool $is_open Whether the campaign is open.
 	 * @param bool $has_target Whether the campaign has a target amount.
-	 * @param int $target_amount The campaign target amount.
+	 * @param int $target_amount The target amount in minor currency units, must be >= 0 when has_target is true.
 	 */
 	public function __construct(
 		public int $id,

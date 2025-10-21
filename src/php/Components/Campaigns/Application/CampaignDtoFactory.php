@@ -28,7 +28,7 @@ final readonly class CampaignDtoFactory {
 	 *        - is_active (bool): Whether the campaign is active.
 	 *        - is_open (bool): Whether the campaign is open.
 	 *        - has_target (bool): Whether the campaign has a target amount.
-	 *        - target_amount (int): The campaign target amount.
+	 *        - target_amount (int): The target amount in minor currency units, must be >= 0 when has_target is true.
 	 *
 	 * @phpstan-param array{
 	 *   id: int,
@@ -41,6 +41,8 @@ final readonly class CampaignDtoFactory {
 	 * } $data
 	 *
 	 * @return CampaignDto The DTO constructed from array values.
+	 *
+	 * @throws CampaignDtoFactoryException When required keys are missing or invalid.
 	 */
 	public function from_array( array $data ): CampaignDto {
 
@@ -57,7 +59,7 @@ final readonly class CampaignDtoFactory {
 		} catch ( ArrayExtractionException $e ) {
 
 			throw new CampaignDtoFactoryException(
-				'Failed to create CampaignDto from array: ' . $e->getMessage(),
+				sprintf( 'Cannot create CampaignDto from array: %s', $e->getMessage() ),
 				previous: $e,
 			);
 		}
