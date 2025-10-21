@@ -3,6 +3,7 @@
 	"description": "WordPress integration for the Fundrik fundraising solution",
 	"keywords": [
 		"wordpress",
+		"php",
 		"fundraising",
 		"crowdfunding",
 		"donations",
@@ -21,12 +22,12 @@
 	],
 	"support": {
 		"email": "denis@denisco.pro",
-		"issues": "https://github.com/Fundrik/wordpress/issues",
-		"source": "https://github.com/Fundrik/wordpress"
+		"issues": "https://github.com/fundrik/wordpress/issues",
+		"source": "https://github.com/fundrik/wordpress"
 	},
 	"require": {
 		"php": "^8.2",
-		"fundrik/core": "dev-main",
+		"fundrik/core": "dev-main as 0.2.0",
 		"psr/log": "^3.0",
 		"monolog/monolog": "^3.9",
 		"illuminate/container": "^12.19",
@@ -35,7 +36,7 @@
 	},
 	"require-dev": {
 		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
-		"fundrik/coding-standard": "dev-main",
+		"fundrik/coding-standard": "^0.1.0",
 		"wp-coding-standards/wpcs": "^3.1",
 		"phpcompatibility/php-compatibility": "dev-develop as 9.4.0",
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
@@ -79,7 +80,5 @@
 			"phpstan/extension-installer": true,
 			"infection/extension-installer": true
 		}
-	},
-	"minimum-stability": "dev",
-	"prefer-stable": true
+	}
 }
