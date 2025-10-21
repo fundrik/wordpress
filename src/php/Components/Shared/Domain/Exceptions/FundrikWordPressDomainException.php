@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Components\Shared\Domain\Exceptions;
 
-use DomainException;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 
 /**
- * Signals a failure in the WordPress domain layer.
+ * Serves as the base exception for WordPress domain errors.
  *
  * @since 1.0.0
  */
-abstract class FundrikWordPressDomainException extends DomainException {}
+abstract class FundrikWordPressDomainException extends FundrikDomainException {}
