@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Components\Campaigns\Domain\Exceptions;
 use Fundrik\WordPress\Components\Shared\Domain\Exceptions\FundrikWordPressDomainException;
 
 /**
- * Signals a WordPress-specific domain error related to campaign invariants or rules.
+ * Serves as the base exception for WordPress campaign domain errors.
  *
  * @since 1.0.0
  */
