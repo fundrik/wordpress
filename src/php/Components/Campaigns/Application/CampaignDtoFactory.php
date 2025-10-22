@@ -79,11 +79,11 @@ final readonly class CampaignDtoFactory {
 		return new CampaignDto(
 			id: $campaign->get_id(),
 			title: $campaign->get_title(),
+			slug: $campaign->get_slug(),
 			is_active: $campaign->is_active(),
 			is_open: $campaign->is_open(),
 			has_target: $campaign->has_target(),
 			target_amount: $campaign->get_target_amount(),
-			slug: $campaign->get_slug(),
 		);
 	}
 }

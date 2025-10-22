@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Components\Campaigns\Application\Ports\Out;
 
-use Throwable;
+use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface as CoreCampaignRepositoryExceptionInterface;
 
 /**
- * Signals an error raised by a campaign repository implementation.
+ * Marks all exceptions that occur in campaign repository operations.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
-interface CampaignRepositoryExceptionInterface extends Throwable {}
+interface CampaignRepositoryExceptionInterface extends CoreCampaignRepositoryExceptionInterface {}
