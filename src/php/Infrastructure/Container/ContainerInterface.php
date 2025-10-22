@@ -5,34 +5,17 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Container;
 
 use Closure;
+// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
+use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
- * Provides methods for resolving, instantiating, and binding dependencies.
+ * Provides methods for instantiating, and binding dependencies.
  *
  * @since 1.0.0
  *
  * @internal
  */
 interface ContainerInterface {
-
-	/**
-	 * Resolves and returns the instance bound to the given identifier.
-	 *
-	 * Ensures the resolved object matches the expected type, otherwise throws.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @template T of object
-	 *
-	 * @phpstan-param class-string<T> $id
-	 *
-	 * @phpstan-return T
-	 *
-	 * @param string $id The class or interface name to resolve.
-	 *
-	 * @return object The resolved instance matching the given identifier.
-	 */
-	public function get( string $id ): object;
 
 	/**
 	 * Instantiates a class or interface, optionally with constructor parameters.
@@ -52,22 +35,11 @@ interface ContainerInterface {
 	 *
 	 * @return object The newly created instance matching the expected type.
 	 *
+	 * @throws BindingResolutionException Thrown when the container cannot resolve or instantiate the given identifier.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	public function make( string $id, array $parameters = [] ): object;
-
-	/**
-	 * Checks whether a binding exists for the given identifier.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @phpstan-param class-string $id
-	 *
-	 * @param string $id The class or interface name to check.
-	 *
-	 * @return bool True if the binding exists in the container, false otherwise.
-	 */
-	public function has( string $id ): bool;
 
 	/**
 	 * Registers a binding into the container that is resolved fresh each time it is requested.
@@ -109,21 +81,5 @@ interface ContainerInterface {
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
 		string $abstract,
 		Closure|string|null $concrete = null,
-	): void;
-
-	/**
-	 * Registers an existing instance as a singleton binding.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @phpstan-param class-string $abstract
-	 *
-	 * @param string $abstract The class or interface name to bind.
-	 * @param object $instance The already constructed instance.
-	 */
-	public function instance(
-		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
-		string $abstract,
-		object $instance,
 	): void;
 }

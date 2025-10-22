@@ -7,8 +7,10 @@ namespace Fundrik\WordPress\Infrastructure\Container;
 use Fundrik\WordPress\Application;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignAssembler;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDtoFactory;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignService;
-use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignServicePortInterface;
+use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandServicePort;
+use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignQueryServicePort;
+use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignCommandService;
+use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignQueryService;
 use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
@@ -35,13 +37,37 @@ use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
 use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
 
 /**
- * Provides default service bindings for the WordPress container.
+ * Registers all container bindings.
  *
  * @since 1.0.0
  *
  * @internal
  */
-class ServiceBindings {
+final readonly class ContainerBindingsRegistrar implements ContainerBindingsRegistrarInterface {
+
+	/**
+	 * Registers all bindings into the given container.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param ContainerInterface $container Receives the service bindings for resolution at runtime.
+	 */
+	public function register_bindings_into_container( ContainerInterface $container ): void {
+
+		foreach ( $this->get_singletons() as $abstract => $concrete ) {
+
+			if ( is_int( $abstract ) ) {
+				$abstract = $concrete;
+			}
+
+			$container->singleton( $abstract, $concrete );
+		}
+
+		foreach ( $this->get_bindings() as $abstract => $concrete ) {
+
+			$container->bind( $abstract, $concrete );
+		}
+	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -53,7 +79,7 @@ class ServiceBindings {
 	 *
 	 * @phpstan-return array<class-string|int, class-string>
 	 */
-	public function get_singletons(): array {
+	private function get_singletons(): array {
 
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
@@ -63,7 +89,8 @@ class ServiceBindings {
 			// Campaigns Application.
 			CampaignAssembler::class,
 			CampaignDtoFactory::class,
-			CampaignServicePortInterface::class => CampaignService::class,
+			CampaignCommandServicePort::class => CampaignCommandService::class,
+			CampaignQueryServicePort::class => CampaignQueryService::class,
 
 			// Events Dispatcher.
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
@@ -102,34 +129,10 @@ class ServiceBindings {
 	 *
 	 * @phpstan-return array<class-string, class-string>
 	 */
-	public function get_bindings(): array {
+	private function get_bindings(): array {
 
 		return [
 			WordPressContextInterface::class => WordPressContext::class,
 		];
-	}
-
-	/**
-	 * Registers all default service bindings into the given container.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param ContainerInterface $container Receives the service bindings for resolution at runtime.
-	 */
-	public function register_bindings_into_container( ContainerInterface $container ): void {
-
-		foreach ( $this->get_singletons() as $abstract => $concrete ) {
-
-			if ( is_int( $abstract ) ) {
-				$abstract = $concrete;
-			}
-
-			$container->singleton( $abstract, $concrete );
-		}
-
-		foreach ( $this->get_bindings() as $abstract => $concrete ) {
-
-			$container->bind( $abstract, $concrete );
-		}
 	}
 }
