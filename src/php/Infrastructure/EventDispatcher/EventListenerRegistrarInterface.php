@@ -8,6 +8,8 @@ namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
  * Provides a method for registering all event listeners.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 interface EventListenerRegistrarInterface {
 
