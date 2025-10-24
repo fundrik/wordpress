@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 
 /**
  * Defines a base class for applying database migrations.
@@ -20,7 +20,7 @@ abstract readonly class AbstractMigration {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DatabaseInterface $database Executes SQL queries during migration.
+	 * @param DatabaseInterface $database Executes SQL queries during the migration.
 	 */
 	public function __construct(
 		protected DatabaseInterface $database,
@@ -32,6 +32,8 @@ abstract readonly class AbstractMigration {
 	 * @since 1.0.0
 	 *
 	 * @param string $charset_collate The charset and collation string for table creation.
+	 *
+	 * @throws MigrationException When the migration cannot be applied.
 	 */
 	abstract public function apply( string $charset_collate ): void;
 }

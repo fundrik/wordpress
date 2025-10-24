@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Infrastructure\Migrations;
 use RuntimeException;
 
 /**
- * Indicates a critical failure in database upgrade logic.
+ * Thrown when a database migration cannot be applied or completed.
  *
  * @since 1.0.0
  */

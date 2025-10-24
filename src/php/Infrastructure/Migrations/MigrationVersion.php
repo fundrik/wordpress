@@ -10,7 +10,7 @@ use Attribute;
  * Declares the version identifier for a migration class.
  *
  * Used to determine the execution order and track applied migrations.
- * The version should follow a sortable format, such as `YYYY_MM_DD_XX`.
+ * The version must follow a sortable format, such as `YYYY_MM_DD_XX`.
  *
  * @since 1.0.0
  *

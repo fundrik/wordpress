@@ -7,22 +7,22 @@ namespace Fundrik\WordPress\Infrastructure\Migrations;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
 
 /**
- * Provides the list of migration classes.
+ * Provides the list of available migration classes and the target schema version.
  *
  * @since 1.0.0
  *
  * @internal
  */
-class MigrationRegistry {
+final readonly class MigrationRegistry {
 
 	private const TARGET_VERSION = '2025_06_15_00';
 
 	/**
-	 * Returns the list of migration class names.
+	 * Returns all migration class names.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string> The list of migration classes.
+	 * @return array<string> The list of migration class names.
 	 *
 	 * @phpstan-return list<class-string<AbstractMigration>>
 	 */
@@ -34,7 +34,7 @@ class MigrationRegistry {
 	}
 
 	/**
-	 * Returns the latest expected database version after applying all migrations.
+	 * Returns the latest expected database schema version.
 	 *
 	 * @since 1.0.0
 	 *
