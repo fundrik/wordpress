@@ -9,7 +9,6 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDeletedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignUpdatedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Loggers\CampaignSaveLogAction;
 use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
-use Fundrik\Core\Components\Campaigns\Domain\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignTarget;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignTitle;
 use Fundrik\Core\Components\Shared\Application\Ports\Out\EventBusPort;
@@ -19,7 +18,6 @@ use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandS
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPort;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
-use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
 use LogicException;
 use Throwable;
 
@@ -69,68 +67,6 @@ final readonly class CampaignCommandService implements CampaignCommandServicePor
 		// @infection-ignore-all
 		$this->logger->log_save_succeeded( $campaign_id, $action );
 	}
-
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
-	/**
-	 * Creates a new campaign without a predefined ID.
-	 *
-	 * This method should be used when the underlying persistence mechanism
-	 * assigns the ID automatically (for example, auto-increment column).
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param CampaignTitle $title The validated campaign title.
-	 * @param CampaignSlug $slug The validated campaign slug.
-	 * @param bool $is_active Whether the campaign is active.
-	 * @param bool $is_open Whether the campaign is open for donations.
-	 * @param CampaignTarget $target The validated campaign target.
-	 *
-	 * @return Campaign The created campaign with its assigned ID.
-	 *
-	 * @throws CampaignRepositoryExceptionInterface When the repository insert fails.
-	 */
-	public function create_campaign_without_id(
-		CampaignTitle $title,
-		CampaignSlug $slug,
-		bool $is_active,
-		bool $is_open,
-		CampaignTarget $target,
-	): Campaign {
-
-		$log_id = '[new]';
-		$action = CampaignSaveLogAction::Create;
-
-		// @infection-ignore-all
-		$this->logger->log_save_started( $log_id, $action );
-
-		$assigned_id = $this->insert_without_id_or_fail(
-			title: $title,
-			is_active: $is_active,
-			is_open: $is_open,
-			target: $target,
-			action: $action,
-			log_id: $log_id,
-		);
-
-		$campaign = new Campaign(
-			new CoreCampaign(
-				id: $assigned_id,
-				title: $title,
-				is_active: $is_active,
-				is_open: $is_open,
-				target: $target,
-			),
-			slug: $slug,
-		);
-
-		$this->publish_saved_event_or_log( $assigned_id, $action );
-
-		// @infection-ignore-all
-		$this->logger->log_save_succeeded( $assigned_id->get_value(), $action );
-
-		return $campaign;
-	}
-	// phpcs:enable
 
 	/**
 	 * Updates an existing campaign.

@@ -31,32 +31,6 @@ interface CampaignCommandServicePort {
 	public function create_campaign( Campaign $campaign ): void;
 
 	/**
-	 * Creates a new campaign without a predefined ID.
-	 *
-	 * This method should be used when the underlying persistence mechanism
-	 * assigns the ID automatically (for example, auto-increment column).
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param CampaignTitle $title The validated campaign title.
-	 * @param CampaignSlug $slug The validated campaign slug.
-	 * @param bool $is_active Whether the campaign is active.
-	 * @param bool $is_open Whether the campaign is open for donations.
-	 * @param CampaignTarget $target The validated campaign target.
-	 *
-	 * @return Campaign The created campaign with its assigned ID.
-	 *
-	 * @throws CampaignRepositoryExceptionInterface When the repository insert fails.
-	 */
-	public function create_campaign_without_id(
-		CampaignTitle $title,
-		CampaignSlug $slug,
-		bool $is_active,
-		bool $is_open,
-		CampaignTarget $target,
-	): Campaign;
-
-	/**
 	 * Updates an existing campaign.
 	 *
 	 * @since 0.1.0
