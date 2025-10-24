@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Container;
 
 use Closure;
-// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
-use RuntimeException;
 
 /**
  * Resolves and registers bindings through the Laravel container.
@@ -48,21 +46,29 @@ final readonly class Container implements ContainerInterface {
 	 *
 	 * @return object The newly created instance matching the expected type.
 	 *
-	 * @throws BindingResolutionException Thrown when the container cannot resolve or instantiate the given identifier.
+	 * @throws ContainerException Thrown when the container cannot resolve or instantiate the given identifier.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	public function make( string $id, array $parameters = [] ): object {
 
-		$instance = $this->inner->make( $id, $parameters );
+		try {
+			$instance = $this->inner->make( $id, $parameters );
+		} catch ( BindingResolutionException $e ) {
+
+			throw new ContainerException(
+				sprintf( 'Cannot resolve dependency: %s. %s', $id, $e->getMessage() ),
+				previous: $e,
+			);
+		}
 
 		if ( ! $instance instanceof $id ) {
 
-			throw new RuntimeException(
+			throw new ContainerException(
 				sprintf(
-					'Container made instance of %s, but expected implementation of %s.',
-					get_debug_type( $instance ),
+					'The resolved service must be an instance of %s. Given: %s.',
 					$id,
+					get_debug_type( $instance ),
 				),
 			);
 		}

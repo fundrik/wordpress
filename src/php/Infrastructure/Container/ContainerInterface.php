@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Container;
 
 use Closure;
-// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
-use Illuminate\Contracts\Container\BindingResolutionException;
 
 /**
- * Provides methods for instantiating, and binding dependencies.
+ * Provides methods for instantiating and binding dependencies.
  *
  * @since 1.0.0
  *
@@ -35,7 +33,7 @@ interface ContainerInterface {
 	 *
 	 * @return object The newly created instance matching the expected type.
 	 *
-	 * @throws BindingResolutionException Thrown when the container cannot resolve or instantiate the given identifier.
+	 * @throws ContainerException Thrown when the container cannot resolve or instantiate the given identifier.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
