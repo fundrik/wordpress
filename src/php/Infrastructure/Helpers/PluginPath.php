@@ -12,16 +12,6 @@ namespace Fundrik\WordPress\Infrastructure\Helpers;
 enum PluginPath: string {
 
 	/**
-	 * The base directory of the plugin.
-	 */
-	public const BASE = FUNDRIK_PATH;
-
-	/**
-	 * The base directory for PHP source files.
-	 */
-	public const PHP_BASE = self::BASE . 'src/php/';
-
-	/**
 	 * The directory containing custom Gutenberg blocks.
 	 */
 	case Blocks = 'assets/js/blocks/';
@@ -36,18 +26,10 @@ enum PluginPath: string {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $suffix Optional suffix to append.
-	 *
 	 * @return string The full absolute path to the plugin resource.
 	 */
-	public function get_full_path( string $suffix = '' ): string {
+	public function get_full_path(): string {
 
-		$path = self::BASE . $this->value;
-
-		if ( $suffix !== '' ) {
-			$path .= $suffix;
-		}
-
-		return $path;
+		return FUNDRIK_PATH . $this->value;
 	}
 }
