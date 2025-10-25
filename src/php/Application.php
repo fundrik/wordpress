@@ -84,9 +84,9 @@ final readonly class Application {
 	public static function bootstrap( ContainerInterface $container ): self {
 
 		return new self(
-			$container->get( EventListenerRegistrarInterface::class ),
-			$container->get( MigrationRunnerInterface::class ),
-			$container->get( HookBridgeRegistrarInterface::class ),
+			$container->make( EventListenerRegistrarInterface::class ),
+			$container->make( MigrationRunnerInterface::class ),
+			$container->make( HookBridgeRegistrarInterface::class ),
 		);
 	}
 

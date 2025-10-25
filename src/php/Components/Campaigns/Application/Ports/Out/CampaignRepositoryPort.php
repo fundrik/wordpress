@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Components\Campaigns\Application\Ports\Out;
 
+use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
@@ -76,6 +77,19 @@ interface CampaignRepositoryPort {
 	 * @throws CampaignRepositoryExceptionInterface When the update fails.
 	 */
 	public function update( Campaign $campaign ): void;
+
+	/**
+	 * Saves the given campaign by inserting or updating it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Campaign $campaign The campaign to save.
+	 *
+	 * @return CampaignRepositorySaveResult Indicates whether the campaign was inserted or updated.
+	 *
+	 * @throws CampaignRepositoryExceptionInterface When the save fails.
+	 */
+	public function save( Campaign $campaign ): CampaignRepositorySaveResult;
 
 	/**
 	 * Removes a campaign from storage by its ID.
