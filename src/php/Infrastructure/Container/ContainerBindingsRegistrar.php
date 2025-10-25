@@ -11,7 +11,7 @@ use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandS
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignQueryServicePort;
 use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignQueryService;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;

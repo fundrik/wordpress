@@ -57,7 +57,7 @@ final readonly class Container implements ContainerInterface {
 		} catch ( BindingResolutionException $e ) {
 
 			throw new ContainerException(
-				sprintf( 'Cannot resolve dependency: %s. %s', $id, $e->getMessage() ),
+				sprintf( 'Cannot resolve dependency: %s.', $id ),
 				previous: $e,
 			);
 		}

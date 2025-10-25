@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Components\Campaigns\Application\Ports\In;
 
-use Fundrik\Core\Components\Campaigns\Domain\CampaignTarget;
-use Fundrik\Core\Components\Campaigns\Domain\CampaignTitle;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 // phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
-use Fundrik\WordPress\Components\Campaigns\Domain\CampaignSlug;
 
 /**
  * Defines the inbound port interface for application-level operations for managing campaigns.

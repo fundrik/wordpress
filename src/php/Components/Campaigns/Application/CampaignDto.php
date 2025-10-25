@@ -34,4 +34,24 @@ final readonly class CampaignDto {
 		public int $target_amount,
 	) {
 	}
+
+	/**
+	 * Returns the DTO as an associative array.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<string, int|string|bool> The associative array representation.
+	 */
+	public function to_array(): array {
+
+		return [
+			'id' => $this->id,
+			'title' => $this->title,
+			'slug' => $this->slug,
+			'is_active' => $this->is_active,
+			'is_open' => $this->is_open,
+			'has_target' => $this->has_target,
+			'target_amount' => $this->target_amount,
+		];
+	}
 }

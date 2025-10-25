@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration;
 
 use Fundrik\Core\Support\TypeCaster;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use wpdb;
 
 /**

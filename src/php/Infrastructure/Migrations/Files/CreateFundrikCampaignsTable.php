@@ -49,10 +49,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 			$this->database->query( $sql );
 		} catch ( DatabaseException $e ) {
 
-			throw new MigrationException(
-				sprintf( 'Cannot create fundrik_campaigns table: %s', $e->getMessage() ),
-				previous: $e,
-			);
+			throw new MigrationException( 'Cannot create the "fundrik_campaigns" table.', previous: $e );
 		}
 	}
 	// phpcs:enable

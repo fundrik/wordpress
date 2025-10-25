@@ -8,6 +8,8 @@ namespace Fundrik\WordPress\Infrastructure\Helpers;
  * Enumerates filesystem paths used by the Fundrik plugin.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 enum PluginPath: string {
 
