@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\Core\Support\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
+use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
 
@@ -43,6 +44,7 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 		private MigrationRunnerLogger $logger,
 	) {}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Applies all pending migrations with versions newer than the last applied.
 	 *
@@ -62,7 +64,12 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 			return;
 		}
 
-		$charset_collate = $this->database->get_charset_collate();
+		try {
+			$charset_collate = $this->database->get_charset_collate();
+		} catch ( DatabaseException $e ) {
+			$this->logger->log_charset_collate_failed( $e );
+			throw new MigrationException( 'Cannot determine database charset and collation.', previous: $e );
+		}
 
 		$applied_count = 0;
 
@@ -79,6 +86,7 @@ final readonly class MigrationRunner implements MigrationRunnerInterface {
 			target: $target_db_version,
 		);
 	}
+	// phpcs:enable
 
 	/**
 	 * Determines whether a migration is required based on version comparison.

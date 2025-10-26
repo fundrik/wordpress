@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
+use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Provides structured, platform-aware logging for the MigrationRunner.
@@ -62,6 +62,28 @@ final readonly class MigrationRunnerLogger {
 				extra: [
 					'operation' => 'migrate',
 					'outcome' => 'skipped',
+				],
+			),
+		);
+	}
+
+	/**
+	 * Logs a failure to fetch the database charset/collation string (error).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param DatabaseException $e The database exception thrown during charset/collation lookup.
+	 */
+	public function log_charset_collate_failed( DatabaseException $e ): void {
+
+		$this->logger->error(
+			'Fetching database charset/collation failed.',
+			$this->logger_context(
+				extra: [
+					'operation' => 'get_charset_collate',
+					'outcome' => 'failed',
+					'exception' => $e,
+					'exception_class' => $e::class,
 				],
 			),
 		);
@@ -169,9 +191,9 @@ final readonly class MigrationRunnerLogger {
 	 *
 	 * @param string $class_name The migration class name.
 	 * @param string $version The migration version.
-	 * @param Throwable $e The exception thrown during migration.
+	 * @param MigrationException $e The exception thrown during migration.
 	 */
-	public function log_migration_failed( string $class_name, string $version, Throwable $e ): void {
+	public function log_migration_failed( string $class_name, string $version, MigrationException $e ): void {
 
 		$this->logger->error(
 			'Applying migration failed.',
