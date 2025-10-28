@@ -31,6 +31,13 @@ final class BridgeLogger {
 	 */
 	private string $bridge_class;
 
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param LoggerInterface $logger Writes structured log entries for hook bridge operations.
+	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 	) {}
@@ -39,6 +46,8 @@ final class BridgeLogger {
 	 * Sets the WordPress hook name for subsequent log entries.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param string $hook_name The WordPress hook name handled by this bridge.
 	 */
 	public function set_hook_name( string $hook_name ): void {
 
@@ -49,6 +58,8 @@ final class BridgeLogger {
 	 * Sets the bridge class for subsequent log entries.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param string $bridge_class The fully qualified class name of the hook bridge.
 	 */
 	public function set_bridge_class( string $bridge_class ): void {
 
@@ -130,8 +141,8 @@ final class BridgeLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $outcome Whether listeners modified the value.
-	 * @param array<string, mixed> $extra Extra context from the bridge.
+	 * @param string $outcome The result status, such as 'handled' or 'skipped'.
+	 * @param array<string, mixed> $extra Extra context entries describing additional bridge data.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -165,7 +176,10 @@ final class BridgeLogger {
 	private function logger_context( array $extra = [] ): array {
 
 		return [
-			'system' => 'hook_bridge',
+			'logger_class' => self::class,
+			'component' => 'hook_bridges',
+			'layer' => 'infrastructure',
+			'system' => 'wordpress',
 			'hook_name' => $this->hook_name,
 			'bridge_class' => $this->bridge_class,
 		] + $extra;
