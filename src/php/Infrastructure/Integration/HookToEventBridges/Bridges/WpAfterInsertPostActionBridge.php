@@ -102,6 +102,7 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 		}
 
 		$this->log_handled(
+			'dispatched',
 			post_id: $valid_post_id,
 			post_type: $valid_post->post_type,
 			update: $valid_update,
@@ -195,15 +196,22 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $outcome The action bridge outcome.
 	 * @param int $post_id The post ID.
 	 * @param string|null $post_type The post type, if available.
 	 * @param bool $update Whether this was an update.
 	 * @param bool $post_before_present Whether a pre-update object was provided.
 	 */
-	private function log_handled( int $post_id, ?string $post_type, bool $update, bool $post_before_present ): void {
+	private function log_handled(
+		string $outcome,
+		int $post_id,
+		?string $post_type,
+		bool $update,
+		bool $post_before_present,
+	): void {
 
 		$this->logger->log_handled(
-			'dispatched',
+			$outcome,
 			[
 				'post_id' => $post_id,
 				'post_type' => $post_type,

@@ -110,7 +110,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 
 		$changed = $event->prepared_post !== $valid_post;
 
-		$this->log_handled( outcome: $changed ? 'changed' : 'unchanged', returned: $event->prepared_post );
+		$this->log_handled( outcome: $changed ? 'changed' : 'unchanged' );
 
 		return $event->prepared_post;
 	}
@@ -175,18 +175,11 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	 * @since 1.0.0
 	 *
 	 * @param string $outcome Whether listeners modified the value.
-	 * @param mixed $returned The value returned back to WordPress after listeners.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function log_handled( string $outcome, mixed $returned ): void {
+	private function log_handled( string $outcome ): void {
 
-		$this->logger->log_handled(
-			$outcome,
-			[
-				'returned_type' => is_object( $returned ) ? get_debug_type( $returned ) : gettype( $returned ),
-				'returned_props' => is_object( $returned ) ? count( get_object_vars( $returned ) ) : null,
-			],
-		);
+		$this->logger->log_handled( $outcome );
 	}
 }
