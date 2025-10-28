@@ -51,7 +51,6 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 		private readonly BridgeLogger $logger,
 	) {
 
-		$this->logger->set_hook_name( $this->get_hook_name() );
 		$this->logger->set_bridge_class( self::class );
 	}
 
@@ -65,6 +64,9 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	public function register(): void {
 
 		$this->post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
+
+		// The hook name is dynamic so set the logger's hook name only after the post type is known.
+		$this->logger->set_hook_name( $this->get_hook_name() );
 
 		add_filter( $this->get_hook_name(), $this->handle( ... ), 10, 2 );
 

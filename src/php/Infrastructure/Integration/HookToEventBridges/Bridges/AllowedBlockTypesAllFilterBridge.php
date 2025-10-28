@@ -56,7 +56,7 @@ final readonly class AllowedBlockTypesAllFilterBridge implements HookToEventBrid
 	 */
 	public function register(): void {
 
-		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 2, );
+		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 2 );
 
 		$this->logger->log_registered();
 	}

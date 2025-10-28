@@ -36,7 +36,7 @@ final readonly class HookBridgeRegistrar implements HookBridgeRegistrarInterface
 	public function register_all(): void {
 
 		foreach ( $this->registry->get_bridge_classes() as $class ) {
-			$this->container->get( $class )->register();
+			$this->container->make( $class )->register();
 		}
 	}
 }
