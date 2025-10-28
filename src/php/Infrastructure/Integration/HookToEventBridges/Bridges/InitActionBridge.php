@@ -7,9 +7,9 @@ namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridge
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
-use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -30,13 +30,17 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 *
 	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
-	 * @param LoggerInterface $logger Logs registration and dispatch outcomes.
+	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
 		private WordPressContextFactory $context_factory,
 		private EventDispatcherInterface $dispatcher,
-		private LoggerInterface $logger,
-	) {}
+		private BridgeLogger $logger,
+	) {
+
+		$this->logger->set_hook_name( self::HOOK_NAME );
+		$this->logger->set_bridge_class( self::class );
+	}
 
 	/**
 	 * Registers the 'init' WordPress action and bridge it to the internal events.
@@ -45,12 +49,9 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 */
 	public function register(): void {
 
-		add_action(
-			self::HOOK_NAME,
-			$this->handle( ... ),
-		);
+		add_action( self::HOOK_NAME, $this->handle( ... ) );
 
-		$this->log_registered();
+		$this->logger->log_registered();
 	}
 
 	/**
@@ -67,14 +68,14 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 		try {
 			$this->dispatcher->dispatch( new RegisterPostTypesEvent( $context ) );
 		} catch ( Throwable $e ) {
-			$this->log_dispatch_failed( $e, 'RegisterPostTypesEvent' );
+			$this->logger->log_dispatch_failed( $e );
 			throw $e;
 		}
 
 		try {
 			$this->dispatcher->dispatch( new RegisterBlocksEvent( $context ) );
 		} catch ( Throwable $e ) {
-			$this->log_dispatch_failed( $e, 'RegisterBlocksEvent' );
+			$this->logger->log_dispatch_failed( $e );
 			throw $e;
 		}
 
@@ -85,41 +86,7 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	}
 
 	/**
-	 * Logs that the hook bridge has been registered in WordPress.
-	 *
-	 * @since 1.0.0
-	 */
-	private function log_registered(): void {
-
-		$this->logger->debug( 'Hook bridge registered.', $this->logger_context() );
-	}
-
-	/**
-	 * Logs that the dispatch stage failed due to an exception in listeners.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param Throwable $e The thrown exception from the dispatch stage.
-	 * @param string $event The event being dispatched when the error occurred.
-	 */
-	private function log_dispatch_failed( Throwable $e, string $event ): void {
-
-		$this->logger->error(
-			sprintf( "Bridge dispatch failed for hook '%s'.", self::HOOK_NAME ),
-			$this->logger_context(
-				[
-					'stage' => 'dispatch',
-					'outcome' => 'error',
-					'invoked' => true,
-					'event' => $event,
-					'exception' => $e,
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs the final outcome of handling the hook bridge call.
+	 * Builds and delegates the final handle log entry to the logger.
 	 *
 	 * @since 1.0.0
 	 *
@@ -128,36 +95,12 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 */
 	private function log_handled( string $outcome, array $events ): void {
 
-		$this->logger->debug(
-			'Hook bridge handled.',
-			$this->logger_context(
-				[
-					'outcome' => $outcome,
-					'invoked' => true,
-					'event_count' => count( $events ),
-					'events' => $events,
-				],
-			),
+		$this->logger->log_handled(
+			$outcome,
+			[
+				'event_count' => count( $events ),
+				'events' => $events,
+			],
 		);
-	}
-
-	/**
-	 * Builds the structured logger context for this hook bridge.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array<string, mixed> $extra Additional context entries to merge.
-	 *
-	 * @return array<string, mixed> The structured context payload.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function logger_context( array $extra = [] ): array {
-
-		return [
-			'system' => 'hook_bridge',
-			'wordpress_hook_name' => self::HOOK_NAME,
-			'hook_bridge_class' => self::class,
-		] + $extra;
 	}
 }

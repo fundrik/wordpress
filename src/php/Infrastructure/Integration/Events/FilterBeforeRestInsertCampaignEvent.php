@@ -11,7 +11,8 @@ use WP_REST_Request;
 /**
  * Signals that a campaign post prepared via the REST API should be filtered before insertion.
  *
- * Triggered by the WordPress 'rest_pre_insert_(post_type)' filter for the campaign post type via integration bridge.
+ * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+ * Triggered by the WordPress 'rest_pre_insert_(post_type)' filter for the campaign post type via the integration bridge.
  *
  * @since 1.0.0
  */

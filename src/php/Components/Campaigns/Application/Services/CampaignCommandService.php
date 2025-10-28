@@ -9,8 +9,6 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDeletedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignUpdatedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Loggers\CampaignSaveLogAction;
 use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
-use Fundrik\Core\Components\Campaigns\Domain\CampaignTarget;
-use Fundrik\Core\Components\Campaigns\Domain\CampaignTitle;
 use Fundrik\Core\Components\Shared\Application\Ports\Out\EventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Application\Loggers\CampaignCommandServiceLogger;
@@ -164,44 +162,6 @@ final readonly class CampaignCommandService implements CampaignCommandServicePor
 		} catch ( CampaignRepositoryExceptionInterface $e ) {
 
 			$this->logger->log_save_failed_repository( $campaign->get_id(), $e, $action );
-			throw $e;
-		}
-	}
-
-	/**
-	 * Executes repository insert_without_id and rethrows repository errors.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param CampaignTitle $title The validated campaign title.
-	 * @param bool $is_active Whether the campaign is active.
-	 * @param bool $is_open Whether the campaign is open for donations.
-	 * @param CampaignTarget $target The validated campaign target.
-	 * @param CampaignSaveLogAction $action The action used for failure logging context.
-	 * @param int|string $log_id The temporary log identifier (e.g., "[new]").
-	 *
-	 * @return EntityId The assigned campaign ID returned by the repository.
-	 */
-	private function insert_without_id_or_fail(
-		CampaignTitle $title,
-		bool $is_active,
-		bool $is_open,
-		CampaignTarget $target,
-		CampaignSaveLogAction $action,
-		int|string $log_id,
-	): EntityId {
-
-		try {
-
-			return $this->repository->insert_without_id(
-				title: $title,
-				is_active: $is_active,
-				is_open: $is_open,
-				target: $target,
-			);
-		} catch ( CampaignRepositoryExceptionInterface $e ) {
-
-			$this->logger->log_save_failed_repository( $log_id, $e, $action );
 			throw $e;
 		}
 	}

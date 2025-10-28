@@ -6,10 +6,10 @@ namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridge
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\PostSavedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
-use Psr\Log\LoggerInterface;
 use Throwable;
 use WP_Post;
 
@@ -33,13 +33,17 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 	 *
 	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
-	 * @param LoggerInterface $logger Logs validation errors and bridging-related warnings.
+	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
 		private WordPressContextFactory $context_factory,
 		private EventDispatcherInterface $dispatcher,
-		private LoggerInterface $logger,
-	) {}
+		private BridgeLogger $logger,
+	) {
+
+		$this->logger->set_hook_name( self::HOOK_NAME );
+		$this->logger->set_bridge_class( self::class );
+	}
 
 	/**
 	 * Registers the 'wp_after_insert_post' WordPress action and bridge it to the internal events.
@@ -50,14 +54,9 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 	 */
 	public function register(): void {
 
-		add_action(
-			self::HOOK_NAME,
-			$this->handle( ... ),
-			10,
-			4,
-		);
+		add_action( self::HOOK_NAME, $this->handle( ... ), 10, 4 );
 
-		$this->log_registered();
+		$this->logger->log_registered();
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
@@ -93,12 +92,12 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 
 		} catch ( InvalidBridgeArgumentException $e ) {
 
-			$this->log_invalid_input( $e );
+			$this->logger->log_invalid_input( $e );
 			return;
 
 		} catch ( Throwable $e ) {
 
-			$this->log_dispatch_failed( $e );
+			$this->logger->log_dispatch_failed( $e );
 			throw $e;
 		}
 
@@ -192,61 +191,7 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 	}
 
 	/**
-	 * Logs that the hook bridge has been registered in WordPress.
-	 *
-	 * @since 1.0.0
-	 */
-	private function log_registered(): void {
-
-		$this->logger->debug( 'Hook bridge registered.', $this->logger_context() );
-	}
-
-	/**
-	 * Logs that the input arguments failed validation and the bridge call is invalid.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param InvalidBridgeArgumentException $e The validation exception raised by the bridge.
-	 */
-	private function log_invalid_input( InvalidBridgeArgumentException $e ): void {
-
-		$this->logger->warning(
-			$e->getMessage(),
-			$this->logger_context(
-				[
-					'stage' => 'validate',
-					'outcome' => 'invalid',
-					'invalid_argument' => $e->argument,
-					'invoked' => false,
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs that the dispatch stage failed due to an exception in listeners.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param Throwable $e The thrown exception from the dispatch stage.
-	 */
-	private function log_dispatch_failed( Throwable $e ): void {
-
-		$this->logger->error(
-			sprintf( "Bridge dispatch failed for hook '%s'.", self::HOOK_NAME ),
-			$this->logger_context(
-				[
-					'stage' => 'dispatch',
-					'outcome' => 'error',
-					'invoked' => true,
-					'exception' => $e,
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs the final outcome of handling the hook bridge call.
+	 * Builds and delegates the final handle log entry to the logger.
 	 *
 	 * @since 1.0.0
 	 *
@@ -255,41 +200,16 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 	 * @param bool $update Whether this was an update.
 	 * @param bool $post_before_present Whether a pre-update object was provided.
 	 */
-	private function log_handled( int $post_id, ?string $post_type, bool $update, bool $post_before_present, ): void {
+	private function log_handled( int $post_id, ?string $post_type, bool $update, bool $post_before_present ): void {
 
-		$this->logger->debug(
-			'Hook bridge handled.',
-			$this->logger_context(
-				[
-					'stage' => 'handle',
-					'outcome' => 'dispatched',
-					'invoked' => true,
-					'post_id' => $post_id,
-					'post_type' => $post_type,
-					'update' => $update,
-					'post_before_present' => $post_before_present,
-				],
-			),
+		$this->logger->log_handled(
+			'dispatched',
+			[
+				'post_id' => $post_id,
+				'post_type' => $post_type,
+				'update' => $update,
+				'post_before_present' => $post_before_present,
+			],
 		);
-	}
-
-	/**
-	 * Builds the structured logger context for this hook bridge.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param array<string, mixed> $extra Additional context entries to merge.
-	 *
-	 * @return array<string, mixed> The structured context payload.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function logger_context( array $extra = [] ): array {
-
-		return [
-			'system' => 'hook_bridge',
-			'wordpress_hook_name' => self::HOOK_NAME,
-			'hook_bridge_class' => self::class,
-		] + $extra;
 	}
 }

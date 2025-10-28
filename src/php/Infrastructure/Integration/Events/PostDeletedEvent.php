@@ -10,7 +10,7 @@ use WP_Post;
 /**
  * Signals that a WordPress post has been deleted.
  *
- * Triggered by the 'delete_post' WordPress action via integration bridge.
+ * Triggered by the WordPress 'delete_post' action via the integration bridge.
  *
  * @since 1.0.0
  */

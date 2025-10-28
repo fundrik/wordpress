@@ -79,7 +79,7 @@ final class BridgeLogger {
 			'Hook bridge registered.',
 			$this->logger_context(
 				[
-					'stage' => 'register',
+					'operation' => 'register_hook_bridge',
 					'outcome' => 'registered',
 				],
 			),
@@ -101,7 +101,7 @@ final class BridgeLogger {
 			$e->getMessage(),
 			$this->logger_context(
 				[
-					'stage' => 'validate',
+					'operation' => 'validate_hook_bridge',
 					'outcome' => 'invalid',
 					'invalid_argument' => $e->argument,
 					'invoked' => false,
@@ -125,12 +125,11 @@ final class BridgeLogger {
 			sprintf( "Bridge dispatch failed for hook '%s'.", $this->hook_name ),
 			$this->logger_context(
 				[
-					'stage' => 'dispatch',
+					'operation' => 'dispatch_hook_bridge',
 					'outcome' => 'error',
 					'invoked' => true,
 					'exception' => $e,
 					'exception_class' => $e::class,
-					'exception_message' => $e->getMessage(),
 				],
 			),
 		);
@@ -154,7 +153,7 @@ final class BridgeLogger {
 			'Hook bridge handled.',
 			$this->logger_context(
 				[
-					'stage' => 'handle',
+					'operation' => 'handle_hook_bridge',
 					'outcome' => $outcome,
 					'invoked' => true,
 				] + $extra,

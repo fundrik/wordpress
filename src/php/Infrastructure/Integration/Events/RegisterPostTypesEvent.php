@@ -9,7 +9,7 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressConte
 /**
  * Signals that WordPress custom post types should be registered.
  *
- * Triggered by the WordPress 'init' action via integration bridge.
+ * Triggered by the WordPress 'init' action via the integration bridge.
  *
  * @since 1.0.0
  */
