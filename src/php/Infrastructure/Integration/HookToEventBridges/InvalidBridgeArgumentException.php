@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 use InvalidArgumentException;
 
 /**
- * Indicates a type or structure mismatch in arguments passed by WordPress to the bridged hook.
+ * Thrown when a bridged WordPress hook receives an argument with an invalid type or structure.
  *
  * @since 1.0.0
  */
@@ -18,9 +18,9 @@ final class InvalidBridgeArgumentException extends InvalidArgumentException {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $argument Specifies the invalid argument name (without `$`).
-	 * @param string $hook Specifies the hook name where the error occurred.
-	 * @param string|null $message Provides a custom error message, overriding the default format.
+	 * @param string $argument The invalid argument name (without `$`).
+	 * @param string $hook The hook name where the error occurred.
+	 * @param string|null $message Custom message to override the default format.
 	 */
 	public function __construct(
 		public readonly string $argument,

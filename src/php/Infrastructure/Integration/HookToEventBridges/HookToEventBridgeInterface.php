@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 
 /**
- * Provides methods for bridging a specific WordPress hook to an internal events.
+ * Provides methods for bridging a specific WordPress hook to internal events.
  *
  * @since 1.0.0
  *
@@ -14,9 +14,9 @@ namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 interface HookToEventBridgeInterface {
 
 	/**
-	 * Registers a WordPress hook and bridge it to an internal events.
+	 * Registers a WordPress hook and bridges it to internal events.
 	 *
-	 * Skips events dispatching if input is invalid.
+	 * Skips event dispatching if input is invalid.
 	 *
 	 * @since 1.0.0
 	 */
