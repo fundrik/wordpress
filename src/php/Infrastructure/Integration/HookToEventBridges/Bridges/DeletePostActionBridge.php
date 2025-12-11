@@ -9,7 +9,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\PostDeletedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
+use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Throwable;
 use WP_Post;
 
@@ -31,12 +31,12 @@ final readonly class DeletePostActionBridge implements HookToEventBridgeInterfac
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
+	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
-		private WordPressContextFactory $context_factory,
+		private WordPressContextInterface $context,
 		private EventDispatcherInterface $dispatcher,
 		private BridgeLogger $logger,
 	) {
@@ -81,7 +81,7 @@ final readonly class DeletePostActionBridge implements HookToEventBridgeInterfac
 				new PostDeletedEvent(
 					post_id: $valid_post_id,
 					post: $valid_post,
-					context: $this->context_factory->create(),
+					context: $this->context,
 				),
 			);
 

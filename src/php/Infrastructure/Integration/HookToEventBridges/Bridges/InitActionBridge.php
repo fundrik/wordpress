@@ -9,7 +9,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
+use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Throwable;
 
 /**
@@ -28,12 +28,12 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
+	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
-		private WordPressContextFactory $context_factory,
+		private WordPressContextInterface $context,
 		private EventDispatcherInterface $dispatcher,
 		private BridgeLogger $logger,
 	) {
@@ -63,17 +63,15 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 */
 	public function handle(): void {
 
-		$context = $this->context_factory->create();
-
 		try {
-			$this->dispatcher->dispatch( new RegisterPostTypesEvent( $context ) );
+			$this->dispatcher->dispatch( new RegisterPostTypesEvent( $this->context ) );
 		} catch ( Throwable $e ) {
 			$this->logger->log_dispatch_failed( $e );
 			throw $e;
 		}
 
 		try {
-			$this->dispatcher->dispatch( new RegisterBlocksEvent( $context ) );
+			$this->dispatcher->dispatch( new RegisterBlocksEvent( $this->context ) );
 		} catch ( Throwable $e ) {
 			$this->logger->log_dispatch_failed( $e );
 			throw $e;

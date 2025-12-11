@@ -115,7 +115,7 @@ final readonly class ContainerBindingsRegistrar implements ContainerBindingsRegi
 			PostTypeSpecificBlockReader::class,
 
 			// Context.
-			WordPressContextFactory::class,
+			WordPressContextInterface::class => WordPressContext::class,
 		];
 	}
 	// phpcs:enable
@@ -131,8 +131,6 @@ final readonly class ContainerBindingsRegistrar implements ContainerBindingsRegi
 	 */
 	private function get_bindings(): array {
 
-		return [
-			WordPressContextInterface::class => WordPressContext::class,
-		];
+		return [];
 	}
 }

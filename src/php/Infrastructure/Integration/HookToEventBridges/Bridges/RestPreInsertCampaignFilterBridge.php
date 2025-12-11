@@ -11,7 +11,7 @@ use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventB
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
+use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use stdClass;
 use Throwable;
 use WP_REST_Request;
@@ -39,13 +39,13 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
+	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param PostTypeIdReader $post_type_id_reader Resolves the post type ID for CampaignPostType.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
-		private readonly WordPressContextFactory $context_factory,
+		private readonly WordPressContextInterface $context,
 		private readonly EventDispatcherInterface $dispatcher,
 		private readonly PostTypeIdReader $post_type_id_reader,
 		private readonly BridgeLogger $logger,
@@ -94,7 +94,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 			$event = new FilterBeforeRestInsertCampaignEvent(
 				prepared_post: $valid_post,
 				request: $valid_request,
-				context: $this->context_factory->create(),
+				context: $this->context,
 			);
 
 			$this->dispatcher->dispatch( $event );

@@ -10,7 +10,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesE
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
+use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use InvalidArgumentException;
 use Throwable;
 use WP_Block_Editor_Context;
@@ -33,12 +33,12 @@ final readonly class AllowedBlockTypesAllFilterBridge implements HookToEventBrid
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WordPressContextFactory $context_factory Creates WordPressContext instances on demand.
+	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
 	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
-		private WordPressContextFactory $context_factory,
+		private WordPressContextInterface $context,
 		private EventDispatcherInterface $dispatcher,
 		private BridgeLogger $logger,
 	) {
@@ -80,11 +80,7 @@ final readonly class AllowedBlockTypesAllFilterBridge implements HookToEventBrid
 			$valid_allowed = $this->validate_allowed( $allowed );
 			$valid_context = $this->validate_editor_context( $editor_context );
 
-			$event = new FilterAllowedBlockTypesEvent(
-				$valid_allowed,
-				$valid_context,
-				$this->context_factory->create(),
-			);
+			$event = new FilterAllowedBlockTypesEvent( $valid_allowed, $valid_context, $this->context );
 
 			$this->dispatcher->dispatch( $event );
 
