@@ -30,7 +30,7 @@ interface StorageInterface {
 	/**
 	 * Stores a value under the given key.
 	 *
-	 * Returns false if the value did not change or the operation failed.
+	 * Returns false if the operation failed.
 	 *
 	 * @since 1.0.0
 	 *

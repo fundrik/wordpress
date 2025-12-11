@@ -18,8 +18,6 @@ final readonly class WordPressOptionsStorage implements StorageInterface {
 	/**
 	 * Retrieves the stored value for the given key, or returns the default.
 	 *
-	 * If no default is provided, WordPress's native default (`false`) will be used.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $key The option name.
@@ -32,7 +30,7 @@ final readonly class WordPressOptionsStorage implements StorageInterface {
 	public function get( string $key, mixed $default_value = null ): mixed {
 
 		if ( func_num_args() === 1 ) {
-			return get_option( $key, false );
+			return get_option( $key );
 		}
 
 		return get_option( $key, $default_value );
@@ -50,7 +48,7 @@ final readonly class WordPressOptionsStorage implements StorageInterface {
 	 * @param string $key The option name.
 	 * @param mixed $value The value to store.
 	 *
-	 * @return bool True if the value was updated successfully, false otherwise.
+	 * @return bool True if the value was updated successfully.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
