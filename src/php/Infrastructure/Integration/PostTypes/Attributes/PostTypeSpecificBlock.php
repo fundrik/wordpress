@@ -24,7 +24,7 @@ final readonly class PostTypeSpecificBlock {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $value The fully qualified block name.
+	 * @param string $value The block name.
 	 */
 	public function __construct(
 		public string $value,

@@ -17,7 +17,7 @@ use ReflectionClass;
 final readonly class PostTypeMetaFieldReader {
 
 	/**
-	 * Returns meta fields from a post type class.
+	 * Returns meta field definitions from a post type class.
 	 *
 	 * @since 1.0.0
 	 *
@@ -25,7 +25,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @phpstan-param class-string $class_name
 	 *
-	 * @return array<string, array<int|string|bool>> The declared meta fields.
+	 * @return array<string, array<string, int|string|bool>> The declared meta fields.
 	 *
 	 * @phpstan-return array<string, array{
 	 *   type: string,

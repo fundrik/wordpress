@@ -28,15 +28,24 @@ final readonly class PostTypeSpecificBlockReader {
 	 *
 	 * @phpstan-param class-string $class_name
 	 *
-	 * @return array<string> The declared specific blocks.
+	 * @return array<int, string> The list of specific block names.
+	 *
+	 * @phpstan-return list<string>
+	 *
+	 * @throws RuntimeException When the post type does not declare any specific blocks.
 	 */
 	public function get_blocks( string $class_name ): array {
 
 		$attributes = ( new ReflectionClass( $class_name ) )->getAttributes( PostTypeSpecificBlock::class );
 
 		if ( $attributes === [] ) {
-			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			throw new RuntimeException( "Post type class '$class_name' is missing #[PostTypeSpecificBlock] attribute." );
+
+			throw new RuntimeException(
+				sprintf(
+					'Post type specific blocks must be declared via #[PostTypeSpecificBlock] attribute. Given: %s.',
+					$class_name,
+				),
+			);
 		}
 
 		return array_map(

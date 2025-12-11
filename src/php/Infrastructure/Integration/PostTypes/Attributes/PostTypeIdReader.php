@@ -19,7 +19,7 @@ use RuntimeException;
 final readonly class PostTypeIdReader {
 
 	/**
-	 * Returns the id from a post type class.
+	 * Returns the ID from a post type class.
 	 *
 	 * @since 1.0.0
 	 *
@@ -28,13 +28,21 @@ final readonly class PostTypeIdReader {
 	 * @phpstan-param class-string $class_name
 	 *
 	 * @return string The declared post type ID.
+	 *
+	 * @throws RuntimeException When the post type does not declare an ID attribute.
 	 */
 	public function get_id( string $class_name ): string {
 
 		$attributes = ( new ReflectionClass( $class_name ) )->getAttributes( PostTypeId::class );
 
 		if ( $attributes === [] ) {
-			throw new RuntimeException( "Post type class '$class_name' is missing #[PostTypeId] attribute." );
+
+			throw new RuntimeException(
+				sprintf(
+					'Post type ID must be declared via #[PostTypeId] attribute. Given: %s.',
+					$class_name,
+				),
+			);
 		}
 
 		return $attributes[0]->newInstance()->value;

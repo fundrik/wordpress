@@ -7,12 +7,9 @@ namespace Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes;
 use Attribute;
 
 /**
- * Declares the permastruct slug used for rewrite rules of the post type.
+ * Declares the slug used in rewrite rules for the post type.
  *
- * This value is passed as `rewrite['slug']` to `register_post_type()` and
- * determines the base part of the URL structure for the post type.
- *
- * If not set, WordPress defaults it to the post type id.
+ * It corresponds to the `rewrite['slug']` argument in `register_post_type()`.
  *
  * @since 1.0.0
  *
@@ -26,7 +23,7 @@ final readonly class PostTypeSlug {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $value The permastruct slug for the post type URLs.
+	 * @param string $value The slug for the post type URLs.
 	 */
 	public function __construct(
 		public string $value,

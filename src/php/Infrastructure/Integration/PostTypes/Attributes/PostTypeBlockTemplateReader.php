@@ -27,15 +27,24 @@ final readonly class PostTypeBlockTemplateReader {
 	 *
 	 * @phpstan-param class-string $class_name
 	 *
-	 * @return array<array<string>> The declared block editor template.
+	 * @return array<int, array<int, string>> The declared block editor template.
+	 *
+	 * @phpstan-return list<list<string>>
+	 *
+	 * @throws RuntimeException When the post type does not declare a block template attribute.
 	 */
 	public function get_template( string $class_name ): array {
 
 		$attributes = ( new ReflectionClass( $class_name ) )->getAttributes( PostTypeBlockTemplate::class );
 
 		if ( $attributes === [] ) {
-			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			throw new RuntimeException( "Post type class '$class_name' is missing #[PostTypeBlockTemplate] attribute." );
+
+			throw new RuntimeException(
+				sprintf(
+					'Post type block template must be declared via #[PostTypeBlockTemplate] attribute. Given: %s.',
+					$class_name,
+				),
+			);
 		}
 
 		return $attributes[0]->newInstance()->value;

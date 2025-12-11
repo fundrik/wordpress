@@ -36,11 +36,11 @@ final readonly class PostTypeMetaField {
 	) {}
 
 	/**
-	 * Converts the attribute into a associative array.
+	 * Converts the attribute into an associative array.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, int|string|bool> The key-value representation of the attribute's data.
+	 * @return array<string, int|string|bool> The key-value representation of the meta field configuration.
 	 *
 	 * @phpstan-return array{
 	 *   type: string,

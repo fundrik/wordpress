@@ -28,13 +28,21 @@ final readonly class PostTypeSlugReader {
 	 * @phpstan-param class-string $class_name
 	 *
 	 * @return string The declared post type slug.
+	 *
+	 * @throws RuntimeException When the post type does not declare a slug attribute.
 	 */
 	public function get_slug( string $class_name ): string {
 
 		$attributes = ( new ReflectionClass( $class_name ) )->getAttributes( PostTypeSlug::class );
 
 		if ( $attributes === [] ) {
-			throw new RuntimeException( "Post type class '$class_name' is missing #[PostTypeSlug] attribute." );
+
+			throw new RuntimeException(
+				sprintf(
+					'Post type slug must be declared via #[PostTypeSlug] attribute. Given: %s.',
+					$class_name,
+				),
+			);
 		}
 
 		return $attributes[0]->newInstance()->value;
