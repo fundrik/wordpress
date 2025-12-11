@@ -35,7 +35,7 @@ class CampaignPostType implements PostTypeInterface {
 	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
-	public const META_IS_OPEN = 'is_open';
+	public const META_IS_OPEN = 'fundrik_campaign_is_open';
 
 	/**
 	 * Stores whether the campaign has a fundraising target.
@@ -45,7 +45,7 @@ class CampaignPostType implements PostTypeInterface {
 	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Boolean )]
-	public const META_HAS_TARGET = 'has_target';
+	public const META_HAS_TARGET = 'fundrik_campaign_has_target';
 
 	/**
 	 * Stores the fundraising target amount in minor units.
@@ -55,7 +55,7 @@ class CampaignPostType implements PostTypeInterface {
 	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Number )]
-	public const META_TARGET_AMOUNT = 'target_amount';
+	public const META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
 	// phpcs:enable
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength

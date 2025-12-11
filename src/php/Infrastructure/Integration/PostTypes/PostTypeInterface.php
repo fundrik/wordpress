@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\PostTypes;
 
 /**
- * Provides methods for describing a custom post type.
+ * Provides methods for describing configuration of a custom post type.
  *
  * @since 1.0.0
  *
@@ -18,7 +18,7 @@ interface PostTypeInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, string> The list of label strings.
+	 * @return array<string, string> The associative array of label strings.
 	 */
 	public function get_labels(): array;
 }
