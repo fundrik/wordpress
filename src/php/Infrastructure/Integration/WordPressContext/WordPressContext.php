@@ -13,6 +13,8 @@ use WP_Block_Type_Registry;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @todo Invalidate caches.
  */
 final class WordPressContext implements WordPressContextInterface {
 
@@ -47,7 +49,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @phpstan-return list<class-string<\Fundrik\WordPress\Infrastructure\Integration\PostTypes\PostTypeInterface>>
 	 */
-	public function get_declared_post_types(): array {
+	public function get_declared_post_type_classes(): array {
 
 		return [
 			CampaignPostType::class,

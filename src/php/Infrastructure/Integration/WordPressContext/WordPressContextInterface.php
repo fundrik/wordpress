@@ -20,7 +20,7 @@ interface WordPressContextInterface {
 	 *
 	 * @phpstan-return list<class-string<\Fundrik\WordPress\Infrastructure\Integration\PostTypes\PostTypeInterface>>
 	 */
-	public function get_declared_post_types(): array;
+	public function get_declared_post_type_classes(): array;
 
 	/**
 	 * Retrieves the registered WordPress post types.

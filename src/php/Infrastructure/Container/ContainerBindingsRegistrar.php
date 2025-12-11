@@ -25,7 +25,6 @@ use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMe
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlugReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Infrastructure\Integration\WpdbDatabase;

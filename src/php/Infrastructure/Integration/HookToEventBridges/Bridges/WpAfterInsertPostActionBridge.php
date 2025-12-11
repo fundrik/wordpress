@@ -9,7 +9,6 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\PostSavedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextFactory;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Throwable;
 use WP_Post;

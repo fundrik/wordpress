@@ -23,7 +23,7 @@ final class FilterAllowedBlocksByPostTypeListener {
 	/**
 	 * The map of block names to the list of allowed post types.
 	 *
-	 * Format: [ block_name => [ post_type_slug1, post_type_slug2, ... ] ]
+	 * Format: [ block_name => [ post_type_id1, post_type_id2, ... ] ]
 	 *
 	 * @var array<string, array<string>>
 	 */
@@ -58,7 +58,7 @@ final class FilterAllowedBlocksByPostTypeListener {
 			return;
 		}
 
-		$current_post_type = $event->editor_context->post->post_type ?? null;
+		$current_post_type = $event->editor_context->post?->post_type;
 
 		if ( $current_post_type === null ) {
 			return;
@@ -68,7 +68,7 @@ final class FilterAllowedBlocksByPostTypeListener {
 			$allowed = array_keys( $event->context->get_registered_block_types() );
 		}
 
-		$this->set_block_allowed_post_types( $event->context->get_declared_post_types() );
+		$this->set_block_allowed_post_types( $event->context->get_declared_post_type_classes() );
 
 		$filtered = array_filter(
 			$allowed,
@@ -114,7 +114,7 @@ final class FilterAllowedBlocksByPostTypeListener {
 	 * @param string $block_name The block name.
 	 * @param string $current_post_type The current post type slug.
 	 *
-	 * @return bool True True if allowed, false otherwise.
+	 * @return bool True if allowed.
 	 */
 	private function is_block_allowed( string $block_name, string $current_post_type ): bool {
 

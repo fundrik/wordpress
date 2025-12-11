@@ -53,9 +53,9 @@ final readonly class RegisterPostTypesListener {
 	 */
 	public function handle( RegisterPostTypesEvent $event ): void {
 
-		foreach ( $event->context->get_declared_post_types() as $post_type ) {
+		foreach ( $event->context->get_declared_post_type_classes() as $post_type_class ) {
 
-			$this->register_post_type( $post_type );
+			$this->register_post_type( $post_type_class );
 		}
 	}
 
@@ -73,10 +73,13 @@ final readonly class RegisterPostTypesListener {
 	 */
 	private function register_post_type( string $class_name ): void {
 
-		$post_type = $this->container->get( $class_name );
+		$post_type = $this->container->make( $class_name );
 
 		if ( ! $post_type instanceof PostTypeInterface ) {
-			throw new RuntimeException( "Post type class '$class_name' must implement PostTypeInterface." );
+
+			throw new RuntimeException(
+				sprintf( 'Post type class must implement PostTypeInterface. Given: %s.', $class_name ),
+			);
 		}
 
 		$id = $this->id_reader->get_id( $class_name );
@@ -122,7 +125,7 @@ final readonly class RegisterPostTypesListener {
 	// phpcs:enable
 
 	/**
-	 * Registers all post type meta fields.
+	 * Registers all meta fields for the given post type class.
 	 *
 	 * @since 1.0.0
 	 *
@@ -134,10 +137,12 @@ final readonly class RegisterPostTypesListener {
 	 */
 	private function register_post_meta_fields( string $class_name ): void {
 
+		$post_type_id = $this->id_reader->get_id( $class_name );
+
 		foreach ( $this->meta_reader->get_meta_fields( $class_name ) as $meta_key => $args ) {
 
 			register_post_meta(
-				$this->id_reader->get_id( $class_name ),
+				$post_type_id,
 				$meta_key,
 				$args + [
 					'show_in_rest' => true,
