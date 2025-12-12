@@ -87,11 +87,13 @@ final readonly class Container implements ContainerInterface {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param (Closure(): T)|class-string<T>|null $concrete
+	 *
 	 * @param string $abstract The class or interface name to bind.
 	 * @param Closure|string|null $concrete The implementation or factory to bind, or null to use the abstract.
-	 *
-	 * @phpstan-param class-string $abstract
-	 * @phpstan-param Closure|class-string|null $concrete
 	 */
 	public function bind(
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
@@ -111,11 +113,13 @@ final readonly class Container implements ContainerInterface {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param (Closure(): T)|class-string<T>|null $concrete
+	 *
 	 * @param string $abstract The class or interface name to bind.
 	 * @param Closure|string|null $concrete The implementation or factory to bind, or null to use the abstract.
-	 *
-	 * @phpstan-param class-string $abstract
-	 * @phpstan-param Closure|class-string|null $concrete
 	 */
 	public function singleton(
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
@@ -124,5 +128,44 @@ final readonly class Container implements ContainerInterface {
 	): void {
 
 		$this->inner->singleton( $abstract, $concrete );
+	}
+
+	/**
+	 * Registers an existing instance as a singleton binding.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param T $instance
+	 *
+	 * @phpstan-return T
+	 *
+	 * @param string $abstract The class or interface name to bind.
+	 * @param object $instance The existing instance.
+	 *
+	 * @throws ContainerException Thrown when the instance does not match the abstract type.
+	 */
+	public function instance(
+		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
+		string $abstract,
+		object $instance,
+	): object {
+
+		if ( ! $instance instanceof $abstract ) {
+
+			throw new ContainerException(
+				sprintf(
+					'The registered instance must be an instance of %s. Given: %s.',
+					$abstract,
+					get_debug_type( $instance ),
+				),
+			);
+		}
+
+		$this->inner->instance( $abstract, $instance );
+
+		return $instance;
 	}
 }

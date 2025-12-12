@@ -22,14 +22,14 @@ interface ContainerInterface {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $id The class or interface name to instantiate.
+	 * @param array<string, mixed> $parameters Optional constructor parameters.
+	 *
 	 * @template T of object
 	 *
 	 * @phpstan-param class-string<T> $id
 	 *
 	 * @phpstan-return T
-	 *
-	 * @param string $id The class or interface name to instantiate.
-	 * @param array<string, mixed> $parameters Optional constructor parameters.
 	 *
 	 * @return object The newly created instance matching the expected type.
 	 *
@@ -48,11 +48,13 @@ interface ContainerInterface {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param (Closure(): T)|class-string<T>|null $concrete
+	 *
 	 * @param string $abstract The class or interface name to bind.
 	 * @param Closure|string|null $concrete The implementation or factory to bind, or null to use the abstract.
-	 *
-	 * @phpstan-param class-string $abstract
-	 * @phpstan-param Closure|class-string|null $concrete
 	 */
 	public function bind(
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
@@ -69,8 +71,10 @@ interface ContainerInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @phpstan-param class-string $abstract
-	 * @phpstan-param Closure|class-string|null $concrete
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param (Closure(): T)|class-string<T>|null $concrete
 	 *
 	 * @param string $abstract The class or interface name to bind.
 	 * @param Closure|string|null $concrete The implementation or factory to bind, or null to use the abstract.
@@ -80,4 +84,27 @@ interface ContainerInterface {
 		string $abstract,
 		Closure|string|null $concrete = null,
 	): void;
+
+	/**
+	 * Registers an existing instance as a singleton binding.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @template T of object
+	 *
+	 * @phpstan-param class-string<T> $abstract
+	 * @phpstan-param T $instance
+	 *
+	 * @phpstan-return T
+	 *
+	 * @param string $abstract The class or interface name to bind.
+	 * @param object $instance The existing instance.
+	 *
+	 * @throws ContainerException Thrown when the instance does not match the abstract type.
+	 */
+	public function instance(
+		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
+		string $abstract,
+		object $instance,
+	): object;
 }
