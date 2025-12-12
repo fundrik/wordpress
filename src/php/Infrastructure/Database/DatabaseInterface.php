@@ -34,7 +34,9 @@ interface DatabaseInterface {
 	 *
 	 * @param string $table The table name.
 	 *
-	 * @return array<array<string, int|float|string|bool|null>> The list of rows (empty if none).
+	 * @return array<int, array<string, int|float|string|bool|null>> The list of rows.
+	 *
+	 * @phpstan-return list<array<string, int|float|string|bool|null>>
 	 *
 	 * @throws DatabaseException When the query fails.
 	 */

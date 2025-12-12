@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration;
 
 use Fundrik\Core\Support\TypeCaster;
+use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use wpdb;
 
@@ -32,8 +33,15 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	public function __construct() {
 
 		// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable
-		$wpdb = $GLOBALS['wpdb'];
-		assert( $wpdb instanceof wpdb );
+		$wpdb = $GLOBALS['wpdb'] ?? null;
+
+		if ( ! $wpdb instanceof wpdb ) {
+
+			throw new DatabaseException(
+				'Cannot initialize database adapter: global $wpdb is not available or has invalid type.',
+			);
+		}
+
 		$this->wpdb = $wpdb;
 	}
 
@@ -45,7 +53,9 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param int|string $id The ID of the row to fetch.
 	 *
-	 * @return array<string, scalar|null>|null The result row, or null if not found.
+	 * @return array<string, int|float|string|bool|null>|null The result row, or null if not found.
+	 *
+	 * @throws DatabaseException When the query fails.
 	 */
 	public function get_by_id( string $table, int|string $id ): ?array {
 
@@ -58,6 +68,18 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var array<string, mixed>|null $row */
 		$row = $this->wpdb->get_row( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot fetch row by ID: database query failed for table "%s", error: %s. Given: %s.',
+					$table,
+					$this->wpdb->last_error,
+					(string) $id,
+				),
+			);
+		}
 
 		if ( $row === null ) {
 			return null;
@@ -73,7 +95,11 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param string $table The table name.
 	 *
-	 * @return array<array<string,scalar|null>> The list of rows.
+	 * @return array<int, array<string, int|float|string|bool|null>> The list of rows.
+	 *
+	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 *
+	 * @throws DatabaseException When the query fails.
 	 */
 	public function get_all( string $table ): array {
 
@@ -84,6 +110,17 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var list<array<string, mixed>>|null $results */
 		$results = $this->wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot fetch rows: database query failed for table "%s". Error: %s.',
+					$table,
+					$this->wpdb->last_error,
+				),
+			);
+		}
 
 		if ( ! is_array( $results ) ) {
 			return [];
@@ -107,7 +144,9 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param int|string $id The ID to look up.
 	 *
-	 * @return bool True if a matching row exists, false otherwise.
+	 * @return bool True if a matching row exists.
+	 *
+	 * @throws DatabaseException When the query fails.
 	 */
 	public function exists( string $table, int|string $id ): bool {
 
@@ -118,7 +157,21 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		$query = $this->wpdb->prepare( $sql, $table, $id );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return $this->wpdb->get_var( $query ) !== null;
+		$exists = $this->wpdb->get_var( $query );
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot check row existence: database query failed for table "%s". Error: %s. Given: %s.',
+					$table,
+					$this->wpdb->last_error,
+					(string) $id,
+				),
+			);
+		}
+
+		return $exists !== null;
 	}
 
 	/**
@@ -130,7 +183,9 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $column The column to filter by.
 	 * @param int|float|string|bool|null $value The value to match.
 	 *
-	 * @return bool True if a matching row exists, false otherwise.
+	 * @return bool True if a matching row exists.
+	 *
+	 * @throws DatabaseException When the query fails.
 	 */
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool {
 
@@ -141,7 +196,23 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		$query = $this->wpdb->prepare( $sql, $table, $column, $value );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		return $this->wpdb->get_var( $query ) !== null;
+		$exists = $this->wpdb->get_var( $query );
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+					'Cannot check row existence: database query failed for table "%s", column "%s". Error: %s. Given: %s.',
+					$table,
+					$column,
+					$this->wpdb->last_error,
+					$value === null ? 'NULL' : (string) $value,
+				),
+			);
+		}
+
+		return $exists !== null;
 	}
 
 	/**
@@ -150,18 +221,24 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param array<string, scalar|null> $data The column-value pairs to insert.
+	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to insert.
 	 *
-	 * @return bool True if the insert was successful, false otherwise.
+	 * @throws DatabaseException When the insert fails.
 	 */
-	public function insert( string $table, array $data ): bool {
+	public function insert( string $table, array $data ): void {
 
-		return TypeCaster::to_bool(
-			$this->wpdb->insert(
-				$table,
-				$data,
-			),
-		);
+		$result = $this->wpdb->insert( $table, $data );
+
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot insert row: database operation failed for table "%s". Error: %s.',
+					$table,
+					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+				),
+			);
+		}
 	}
 
 	/**
@@ -170,12 +247,12 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param array<string, scalar|null> $data The column-value pairs to update.
+	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
 	 * @param int|string $id The ID of the row to update.
 	 *
-	 * @return bool True if the update was successful, false otherwise.
+	 * @throws DatabaseException When the update fails.
 	 */
-	public function update( string $table, array $data, int|string $id ): bool {
+	public function update( string $table, array $data, int|string $id ): void {
 
 		$result = $this->wpdb->update(
 			$table,
@@ -183,7 +260,17 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 			[ 'id' => $id ],
 		);
 
-		return $result !== false;
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot update row: database operation failed for table "%s". Error: %s. Given: %s.',
+					$table,
+					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+					(string) $id,
+				),
+			);
+		}
 	}
 
 	/**
@@ -194,16 +281,26 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param int|string $id The ID of the row to delete.
 	 *
-	 * @return bool True if the delete was successful, false otherwise.
+	 * @throws DatabaseException When the delete fails.
 	 */
-	public function delete( string $table, int|string $id ): bool {
+	public function delete( string $table, int|string $id ): void {
 
-		return TypeCaster::to_bool(
-			$this->wpdb->delete(
-				$table,
-				[ 'id' => $id ],
-			),
+		$result = $this->wpdb->delete(
+			$table,
+			[ 'id' => $id ],
 		);
+
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot delete row: database operation failed for table "%s". Error: %s. Given: %s.',
+					$table,
+					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+					(string) $id,
+				),
+			);
+		}
 	}
 
 	/**
@@ -213,14 +310,22 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param string $sql The SQL query to execute.
 	 *
-	 * @return bool True if the query was executed successfully, false otherwise.
+	 * @throws DatabaseException When execution fails.
 	 */
-	public function query( string $sql ): bool {
+	public function query( string $sql ): void {
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$result = $this->wpdb->query( $sql );
 
-		return $result !== false;
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot execute query: database operation failed. Error: %s.',
+					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+				),
+			);
+		}
 	}
 
 	/**
@@ -229,10 +334,21 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string The charset and collation string, e.g. "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci".
+	 *
+	 * @throws DatabaseException When the information cannot be determined.
 	 */
 	public function get_charset_collate(): string {
 
-		return $this->wpdb->get_charset_collate();
+		$charset_collate = $this->wpdb->get_charset_collate();
+
+		if ( $charset_collate === '' ) {
+
+			throw new DatabaseException(
+				'Cannot determine database charset and collate: wpdb returned an empty collation string.',
+			);
+		}
+
+		return $charset_collate;
 	}
 
 	/**
@@ -244,7 +360,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param array<string, mixed> $raw_row The raw row from the database.
 	 *
-	 * @return array<string, scalar|null> The sanitized row.
+	 * @return array<string, int|float|string|bool|null> The sanitized row.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
