@@ -1,52 +1,57 @@
 parameters:
 	disallowedClasses:
 
-		# ServiceBindings
+		# ContainerBindingsRegistrar
 		-
-			class: 'Fundrik\WordPress\Components\Campaigns\Application\CampaignService'
-			message: 'use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignServicePortInterface instead.'
+			class: 'Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignCommandService'
+			message: 'use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandServicePort instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
+		-
+			class: 'Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignQueryService'
+			message: 'use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignQueryServicePort instead.'
+			allowIn:
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Illuminate\Events\Dispatcher'
 			message: 'use Illuminate\Contracts\Events\Dispatcher instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher'
 			message: 'use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar'
 			message: 'use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrarInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
-			class: 'Fundrik\WordPress\Infrastructure\Integration\HookMappers\HookMapperRegistrar'
-			message: 'use Fundrik\WordPress\Infrastructure\Integration\HookMappers\HookMapperRegistrarInterface instead.'
+			class: 'Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrar'
+			message: 'use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrarInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner'
 			message: 'use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\Integration\WpdbDatabase'
 			message: 'use Fundrik\WordPress\Infrastructure\DatabaseInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\Integration\WordPressOptionsStorage'
 			message: 'use Fundrik\WordPress\Infrastructure\StorageInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 		-
 			class: 'Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext'
 			message: 'use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface instead.'
 			allowIn:
-				- src/php/Infrastructure/Container/ServiceBindings.php
+				- src/php/Infrastructure/Container/ContainerBindingsRegistrar.php
 
 		#
 		-
