@@ -13,9 +13,8 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignChangeException;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
-// phpcs:disable SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
+// phpcs:ignore SlevomatCodingStandard.Namespaces.UnusedUses.UnusedUse
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignSlugException;
-// phpcs:enable
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignTargetException;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignTitleException;
 
@@ -33,11 +32,28 @@ final readonly class Campaign {
 	 *
 	 * @param CoreCampaign $core_campaign The core campaign entity.
 	 * @param CampaignSlug $slug The campaign slug.
+	 *
+	 * @throws InvalidCampaignIdException When the underlying ID cannot be represented as int.
 	 */
 	public function __construct(
 		private CoreCampaign $core_campaign,
 		private CampaignSlug $slug,
-	) {}
+	) {
+
+		try {
+			$core_campaign->get_entity_id()->get_as_int();
+		} catch ( InvalidEntityIdException $e ) {
+
+			throw new InvalidCampaignIdException(
+				sprintf(
+					'Campaign ID must be an integer in the WordPress context. Given: %s.',
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+					var_export( $core_campaign->get_id(), true ),
+				),
+				previous: $e,
+			);
+		}
+	}
 
 	/**
 	 * Returns the campaign ID.
@@ -45,24 +61,10 @@ final readonly class Campaign {
 	 * @since 1.0.0
 	 *
 	 * @return int The campaign ID.
-	 *
-	 * @throws InvalidCampaignIdException When the underlying ID cannot be represented as int.
 	 */
 	public function get_id(): int {
 
-		try {
-			return $this->core_campaign->get_entity_id()->get_as_int();
-		} catch ( InvalidEntityIdException $e ) {
-
-			throw new InvalidCampaignIdException(
-				sprintf(
-					'Campaign ID must be an integer compatible with WordPress storage. Given: %s.',
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
-					var_export( $this->core_campaign->get_id(), true ),
-				),
-				previous: $e,
-			);
-		}
+		return $this->core_campaign->get_entity_id()->get_as_int();
 	}
 
 	/**
