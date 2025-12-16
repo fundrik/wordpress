@@ -27,7 +27,7 @@ final readonly class PostTypeBlockTemplateReader {
 	 *
 	 * @phpstan-param class-string $class_name
 	 *
-	 * @return array<int, array<int, string>> The declared block editor template.
+	 * @return array<array<string>> The declared block editor template.
 	 *
 	 * @phpstan-return list<list<string>>
 	 *

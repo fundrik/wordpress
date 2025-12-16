@@ -89,7 +89,7 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $outcome The action bridge outcome.
-	 * @param array<int, string> $events The list of dispatched events.
+	 * @param array<string> $events The list of dispatched events.
 	 */
 	private function log_handled( string $outcome, array $events ): void {
 

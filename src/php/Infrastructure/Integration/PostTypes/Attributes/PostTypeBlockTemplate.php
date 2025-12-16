@@ -23,7 +23,7 @@ final readonly class PostTypeBlockTemplate {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<int, array<int, string>> $value The nested layout array of block names.
+	 * @param array<array<string>> $value The nested layout array of block names.
 	 *
 	 * @phpstan-param list<list<string>>
 	 */

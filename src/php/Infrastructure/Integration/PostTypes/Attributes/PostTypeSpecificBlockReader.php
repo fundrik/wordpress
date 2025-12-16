@@ -28,7 +28,7 @@ final readonly class PostTypeSpecificBlockReader {
 	 *
 	 * @phpstan-param class-string $class_name
 	 *
-	 * @return array<int, string> The list of specific block names.
+	 * @return array<string> The list of specific block names.
 	 *
 	 * @phpstan-return list<string>
 	 *

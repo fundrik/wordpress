@@ -6,16 +6,18 @@ namespace Fundrik\WordPress\Infrastructure\Repositories;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignDtoFactory;
-use Fundrik\WordPress\Components\Campaigns\Application\Exceptions\CampaignDtoFactoryException;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
+use Fundrik\Core\Support\ArrayExtractor;
+use Fundrik\Core\Support\Exceptions\ArrayExtractionException;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPort;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 
 /**
- * Persists and retrieves campaign data.
+ * Persists and retrieves campaign entities in the WordPress storage.
  *
  * @since 0.1.0
  */
@@ -29,27 +31,27 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 * @since 0.1.0
 	 *
 	 * @param DatabaseInterface $db Executes database queries.
-	 * @param CampaignDtoFactory $dto_factory Creates and maps CampaignDto instances.
+	 * @param CampaignFactory $campaign_factory Builds Campaign entities from persistence values.
 	 */
 	public function __construct(
 		private DatabaseInterface $db,
-		private CampaignDtoFactory $dto_factory,
+		private CampaignFactory $campaign_factory,
 	) {}
 
 	/**
-	 * Fetches the DTO of a campaign by its ID.
+	 * Retrieves a campaign by its ID.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param EntityId $id The ID of the campaign to retrieve.
 	 *
-	 * @return CampaignDto|null The campaign data if found, null otherwise.
+	 * @return Campaign|null The campaign if found, null otherwise.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the lookup or mapping fails.
+	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
 	 */
-	public function find_by_id( EntityId $id ): ?CampaignDto {
+	public function find_by_id( EntityId $id ): ?Campaign {
 
-		$id_int = $id->get_as_int();
+		$id_int = $this->get_entity_id_as_int_or_fail( $id );
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_int );
@@ -65,23 +67,17 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			return null;
 		}
 
-		try {
-			return $this->dto_factory->from_array( $row );
-		} catch ( CampaignDtoFactoryException $e ) {
-
-			throw new CampaignRepositoryException(
-				sprintf( 'Cannot map campaign row to DTO. Given: ID %d.', $id_int ),
-				previous: $e,
-			);
-		}
+		return $this->map_row_to_campaign_or_fail( $row );
 	}
 
 	/**
-	 * Fetches all available campaign DTOs.
+	 * Retrieves all campaigns.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<CampaignDto> The list of campaign data objects.
+	 * @return array<Campaign> The list of campaign entities.
+	 *
+	 * @phpstan-return list<Campaign>
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the lookup or mapping fails.
 	 */
@@ -90,42 +86,37 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		try {
 			$rows = $this->db->get_all( self::TABLE_NAME );
 		} catch ( DatabaseException $e ) {
+
 			throw new CampaignRepositoryException( 'Cannot fetch campaigns: persistence error.', previous: $e );
 		}
 
-		try {
-			return array_map(
-				fn ( array $row ): CampaignDto => $this->dto_factory->from_array( $row ),
-				$rows,
-			);
-		} catch ( CampaignDtoFactoryException $e ) {
-			throw new CampaignRepositoryException( 'Cannot map campaign rows to DTOs.', previous: $e );
-		}
+		return array_map(
+			fn ( array $row ): Campaign => $this->map_row_to_campaign_or_fail( $row ),
+			$rows,
+		);
 	}
 
 	/**
-	 * Returns whether the campaign exists in storage.
-	 *
-	 * Checks existence by the campaign ID only.
+	 * Returns whether a campaign exists in storage by its ID.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Campaign $campaign The campaign entity to check.
+	 * @param EntityId $id The ID of the campaign to check.
 	 *
-	 * @return bool True if a matching row exists.
+	 * @return bool True if the campaign exists.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the existence check fails.
 	 */
-	public function exists( Campaign $campaign ): bool {
+	public function exists_by_id( EntityId $id ): bool {
 
-		$id = $campaign->get_id();
+		$id_int = $this->get_entity_id_as_int_or_fail( $id );
 
 		try {
-			return $this->db->exists( self::TABLE_NAME, $id );
+			return $this->db->exists( self::TABLE_NAME, $id_int );
 		} catch ( DatabaseException $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot check campaign existence: persistence error. Given: ID %d.', $id ),
+				sprintf( 'Cannot check campaign existence: persistence error. Given: ID %d.', $id_int ),
 				previous: $e,
 			);
 		}
@@ -142,13 +133,15 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function insert( Campaign $campaign ): void {
 
-		$dto = $this->dto_factory->from_campaign( $campaign );
+		$data = $this->map_campaign_to_row( $campaign );
+		$campaign_id = $campaign->get_id();
 
 		try {
-			$this->db->insert( self::TABLE_NAME, $dto->to_array() );
+			$this->db->insert( self::TABLE_NAME, $data );
 		} catch ( DatabaseException $e ) {
+
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign->get_id() ),
+				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign_id ),
 				previous: $e,
 			);
 		}
@@ -165,12 +158,13 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function update( Campaign $campaign ): void {
 
+		$data = $this->map_campaign_to_row( $campaign );
 		$campaign_id = $campaign->get_id();
-		$dto = $this->dto_factory->from_campaign( $campaign );
 
 		try {
-			$this->db->update( self::TABLE_NAME, $dto->to_array(), $campaign_id );
+			$this->db->update( self::TABLE_NAME, $data, $campaign_id );
 		} catch ( DatabaseException $e ) {
+
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot update campaign: persistence error. Given: ID %d.', $campaign_id ),
 				previous: $e,
@@ -179,23 +173,30 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	}
 
 	/**
+	 * // TODO: fix race condition. Upsert?
+	 *
 	 * Saves the given campaign by inserting or updating it.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Campaign $campaign The campaign to persist.
+	 * @param Campaign $campaign The campaign to save.
 	 *
-	 * @return CampaignRepositorySaveResult Indicates whether the campaign was inserted or updated.
+	 * @return CampaignRepositorySaveResult The persistence outcome (Inserted or Updated).
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the operation fails due to database or mapping errors.
+	 * @throws CampaignRepositoryExceptionInterface When the operation fails.
 	 */
 	public function save( Campaign $campaign ): CampaignRepositorySaveResult {
 
-		// TODO: Implement this method.
+		$entity_id = $campaign->get_entity_id();
 
-		$campaign = $campaign;
+		if ( $this->exists_by_id( $entity_id ) ) {
 
-		return CampaignRepositorySaveResult::Updated;
+			$this->update( $campaign );
+			return CampaignRepositorySaveResult::Updated;
+		}
+
+		$this->insert( $campaign );
+		return CampaignRepositorySaveResult::Inserted;
 	}
 
 	/**
@@ -209,7 +210,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function delete( EntityId $id ): void {
 
-		$id_int = $id->get_as_int();
+		$id_int = $this->get_entity_id_as_int_or_fail( $id );
 
 		try {
 			$this->db->delete( self::TABLE_NAME, $id_int );
@@ -220,5 +221,92 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				previous: $e,
 			);
 		}
+	}
+
+	/**
+	 * Converts an entity ID to int.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param EntityId $id The entity ID to convert.
+	 *
+	 * @return int The integer ID value.
+	 *
+	 * @throws CampaignRepositoryExceptionInterface When the ID cannot be represented as int.
+	 */
+	private function get_entity_id_as_int_or_fail( EntityId $id ): int {
+
+		try {
+			return $id->get_as_int();
+		} catch ( InvalidEntityIdException $e ) {
+
+			throw new CampaignRepositoryException(
+				sprintf(
+					'Cannot use campaign ID in persistence: ID must be int-compatible. Given: %s.',
+					$id->get_value(),
+				),
+				previous: $e,
+			);
+		}
+	}
+
+	/**
+	 * Builds a Campaign entity from a persistence row.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $row The persistence row.
+	 *
+	 * @return Campaign The mapped campaign entity.
+	 *
+	 * @throws CampaignRepositoryExceptionInterface When the row cannot be mapped.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function map_row_to_campaign_or_fail( array $row ): Campaign {
+
+		try {
+
+			return $this->campaign_factory->create(
+				id: ArrayExtractor::extract_id_int_required( $row, 'id' ),
+				title: ArrayExtractor::extract_string_required( $row, 'title' ),
+				slug: ArrayExtractor::extract_string_required( $row, 'slug' ),
+				is_active: ArrayExtractor::extract_bool_required( $row, 'is_active' ),
+				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
+				has_target: ArrayExtractor::extract_bool_required( $row, 'has_target' ),
+				target_amount: ArrayExtractor::extract_int_required( $row, 'target_amount' ),
+			);
+		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
+
+			throw new CampaignRepositoryException(
+				sprintf(
+					'Cannot map campaign row to entity. Given: ID %d.',
+					(int) ( $row['id'] ?? -1 ),
+				),
+				previous: $e,
+			);
+		}
+	}
+
+	/**
+	 * Converts a Campaign entity into a persistence row.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Campaign $campaign The campaign to convert.
+	 *
+	 * @return array<string, int|string|bool> The persistence row data.
+	 */
+	private function map_campaign_to_row( Campaign $campaign ): array {
+
+		return [
+			'id' => $campaign->get_id(),
+			'title' => $campaign->get_title(),
+			'slug' => $campaign->get_slug(),
+			'is_active' => $campaign->is_active(),
+			'is_open' => $campaign->is_open(),
+			'has_target' => $campaign->has_target(),
+			'target_amount' => $campaign->get_target_amount(),
+		];
 	}
 }

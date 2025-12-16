@@ -6,55 +6,53 @@ namespace Fundrik\WordPress\Components\Campaigns\Application\Ports\Out;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignDto;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 
 /**
- * Defines the outbound port for accessing campaign persistence.
- *
- * This interface represents the storage contract required by the application layer.
- * It allows the service layer to remain decoupled from specific infrastructure details.
+ * Defines the outbound port for persisting and retrieving campaigns.
  *
  * @since 0.1.0
  */
 interface CampaignRepositoryPort {
 
 	/**
-	 * Fetches the DTO of a campaign by its ID.
+	 * Retrieves a campaign by its ID.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param EntityId $id The ID of the campaign to retrieve.
 	 *
-	 * @return CampaignDto|null The campaign data if found, null otherwise.
+	 * @return Campaign|null The campaign if found, null otherwise.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
 	 */
-	public function find_by_id( EntityId $id ): ?CampaignDto;
+	public function find_by_id( EntityId $id ): ?Campaign;
 
 	/**
-	 * Fetches all available campaign DTOs.
+	 * Retrieves all campaigns.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<CampaignDto> The list of campaign data objects.
+	 * @return array<Campaign> The list of campaign entities.
+	 *
+	 * @phpstan-return list<Campaign>
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
 	 */
 	public function find_all(): array;
 
 	/**
-	 * Returns whether the campaign exists in storage.
+	 * Returns whether a campaign exists in storage by its ID.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Campaign $campaign The campaign entity to check.
+	 * @param EntityId $id The ID of the campaign to check.
 	 *
 	 * @return bool True if the campaign exists.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the existence check fails.
 	 */
-	public function exists( Campaign $campaign ): bool;
+	public function exists_by_id( EntityId $id ): bool;
 
 	/**
 	 * Inserts a new campaign into storage.

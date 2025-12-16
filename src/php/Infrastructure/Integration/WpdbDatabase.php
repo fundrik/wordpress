@@ -95,7 +95,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param string $table The table name.
 	 *
-	 * @return array<int, array<string, int|float|string|bool|null>> The list of rows.
+	 * @return array<array<string, int|float|string|bool|null>> The list of rows.
 	 *
 	 * @phpstan-return list<array<string, int|float|string|bool|null>>
 	 *
