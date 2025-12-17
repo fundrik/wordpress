@@ -26,12 +26,10 @@
 
 declare(strict_types=1);
 
-use Fundrik\WordPress\Application;
-use Fundrik\WordPress\Infrastructure\Container\Container;
-use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
-use Fundrik\WordPress\Infrastructure\Container\ServiceBindings;
-use Illuminate\Container\Container as LaravelContainer;
-use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
+use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistrar;
+use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistrarInterface;
+use Fundrik\WordPress\Bootstrap\ContainerFactory;
+use Fundrik\WordPress\Bootstrap\PluginFactory;
 use Monolog\Formatter\JsonFormatter as MonologJsonFormatter;
 use Monolog\Handler\StreamHandler as MonologStreamHandler;
 use Monolog\Level as MonologLevel;
@@ -60,14 +58,10 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 	 */
 	function fundrik_init(): void {
 
-		$laravel_container = new LaravelContainer();
-		$container = new Container( $laravel_container );
+		$container = ( new ContainerFactory() )->create();
 
-		$container->instance( ContainerInterface::class, $container );
-		$container->instance( LaravelContainerInterface::class, $laravel_container );
-
-		$container->singleton( ServiceBindings::class );
-		$container->get( ServiceBindings::class )->register_bindings_into_container( $container );
+		$container->singleton( ContainerBindingsRegistrarInterface::class, ContainerBindingsRegistrar::class );
+		$container->make( ContainerBindingsRegistrarInterface::class )->register_bindings_into_container( $container );
 
 		$container->singleton(
 			LoggerInterface::class,
@@ -114,7 +108,7 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 			},
 		);
 
-		Application::bootstrap( $container )->run();
+		( new PluginFactory( $container ) )->create()->run();
 	}
 }
 
