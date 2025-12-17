@@ -2,11 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Container;
+namespace Fundrik\WordPress\Bootstrap\Container;
 
-use Fundrik\WordPress\Application;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignAssembler;
-use Fundrik\WordPress\Components\Campaigns\Application\CampaignDtoFactory;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandServicePort;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignQueryServicePort;
 use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignCommandService;
@@ -15,9 +12,7 @@ use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrarInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrar;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrarInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
@@ -30,8 +25,11 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Infrastructure\Integration\WpdbDatabase;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerInterface;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Kernel\Plugin;
+use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\Out\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
 use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
 use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
 
@@ -83,24 +81,22 @@ final readonly class ContainerBindingsRegistrar implements ContainerBindingsRegi
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
 
-			Application::class,
+			Plugin::class,
 
 			// Campaigns Application.
-			CampaignAssembler::class,
-			CampaignDtoFactory::class,
 			CampaignCommandServicePort::class => CampaignCommandService::class,
 			CampaignQueryServicePort::class => CampaignQueryService::class,
 
 			// Events Dispatcher.
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
 			EventDispatcherInterface::class => EventDispatcher::class,
-			EventListenerRegistrarInterface::class => EventListenerRegistrar::class,
-			HookBridgeRegistrarInterface::class => HookBridgeRegistrar::class,
+			EventListenerRegistrarPort::class => EventListenerRegistrar::class,
+			HookBridgeRegistrarPort::class => HookBridgeRegistrar::class,
 			HookBridgeRegistry::class,
 
 			// Migrations.
 			MigrationRegistry::class,
-			MigrationRunnerInterface::class => MigrationRunner::class,
+			MigrationRunnerPort::class => MigrationRunner::class,
 
 			// Storage.
 			DatabaseInterface::class => WpdbDatabase::class,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Container;
+namespace Fundrik\WordPress\Bootstrap\Container;
 
 /**
  * Provides a method for registering all container bindings.

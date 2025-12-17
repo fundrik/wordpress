@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Container;
+namespace Fundrik\WordPress\Bootstrap\Container;
 
 use Closure;
 use Illuminate\Contracts\Container\BindingResolutionException;

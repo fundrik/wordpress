@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Migrations;
+namespace Fundrik\WordPress\Kernel\Ports\Out;
 
 /**
  * Provides methods for running database migrations.
@@ -11,7 +11,7 @@ namespace Fundrik\WordPress\Infrastructure\Migrations;
  *
  * @internal
  */
-interface MigrationRunnerInterface {
+interface MigrationRunnerPort {
 
 	/**
 	 * Applies all pending migrations in ascending version order.

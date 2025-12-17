@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
+namespace Fundrik\WordPress\Kernel\Ports\Out;
 
 /**
  * Provides a method for registering all event listeners.
@@ -11,7 +11,7 @@ namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
  *
  * @internal
  */
-interface EventListenerRegistrarInterface {
+interface EventListenerRegistrarPort {
 
 	/**
 	 * Registers all declared event listeners.
