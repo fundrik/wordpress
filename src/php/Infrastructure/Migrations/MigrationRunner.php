@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\Core\Support\TypeCaster;
-use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
+use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
 
 /**
  * Applies versioned database migrations in order.
@@ -19,7 +20,7 @@ use Fundrik\WordPress\Infrastructure\StorageInterface;
  *
  * @todo Add a lock to prevent race conditions.
  */
-final readonly class MigrationRunner implements MigrationRunnerInterface {
+final readonly class MigrationRunner implements MigrationRunnerPort {
 
 	private const OPTION_KEY = 'fundrik_db_version';
 

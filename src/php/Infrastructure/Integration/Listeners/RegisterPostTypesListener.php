@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
-use Fundrik\WordPress\Infrastructure\Container\ContainerInterface;
+use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;

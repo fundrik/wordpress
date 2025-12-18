@@ -10,6 +10,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
+use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
 
 /**
  * Registers all event listeners.
@@ -18,7 +19,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesList
  *
  * @internal
  */
-final readonly class EventListenerRegistrar implements EventListenerRegistrarInterface {
+final readonly class EventListenerRegistrar implements EventListenerRegistrarPort {
 
 	/**
 	 * Constructor.
