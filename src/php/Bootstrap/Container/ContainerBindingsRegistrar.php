@@ -12,6 +12,8 @@ use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;
+use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProvider;
+use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProviderInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrar;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
@@ -101,6 +103,9 @@ final readonly class ContainerBindingsRegistrar implements ContainerBindingsRegi
 			// Storage.
 			DatabaseInterface::class => WpdbDatabase::class,
 			StorageInterface::class => WordPressOptionsStorage::class,
+
+			// Blocks.
+			BlocksPathsProviderInterface::class => BlocksPathsProvider::class,
 
 			// Post type attribute readers.
 			PostTypeBlockTemplateReader::class,

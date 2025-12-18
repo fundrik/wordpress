@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
-use Fundrik\WordPress\Application;
+use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProviderInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 
 /**
@@ -21,10 +21,10 @@ final readonly class RegisterBlocksListener {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param Application $application Provides access to plugin-level paths and configuration.
+	 * @param BlocksPathsProviderInterface $blocks_paths_provider Provides filesystem paths for the blocks registration.
 	 */
 	public function __construct(
-		private Application $application,
+		private BlocksPathsProviderInterface $blocks_paths_provider,
 	) {}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter, Generic.CodeAnalysis.UnusedFunctionParameter.Found
@@ -33,13 +33,13 @@ final readonly class RegisterBlocksListener {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RegisterBlocksEvent $event Carries the WordPress context for block registration.
+	 * @param RegisterBlocksEvent $event Carries the WordPress context for the blocks registration.
 	 */
 	public function handle( RegisterBlocksEvent $event ): void {
 
 		wp_register_block_types_from_metadata_collection(
-			$this->application->get_blocks_path(),
-			$this->application->get_blocks_manifest_path(),
+			$this->blocks_paths_provider->get_blocks_path(),
+			$this->blocks_paths_provider->get_blocks_manifest_path(),
 		);
 	}
 	// phpcs:enable
