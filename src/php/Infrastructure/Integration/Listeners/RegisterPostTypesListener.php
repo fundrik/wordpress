@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
 use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
@@ -20,7 +21,7 @@ use RuntimeException;
  *
  * @internal
  */
-final readonly class RegisterPostTypesListener {
+final readonly class RegisterPostTypesListener implements EventListenerInterface {
 
 	/**
 	 * Constructor.

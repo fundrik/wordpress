@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
+use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
@@ -18,7 +19,7 @@ use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSp
  *
  * @internal
  */
-final class FilterAllowedBlocksByPostTypeListener {
+final class FilterAllowedBlocksByPostTypeListener implements EventListenerInterface {
 
 	/**
 	 * The map of block names to the list of allowed post types.

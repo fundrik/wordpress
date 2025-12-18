@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
+use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProviderInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 
@@ -14,7 +15,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
  *
  * @internal
  */
-final readonly class RegisterBlocksListener {
+final readonly class RegisterBlocksListener implements EventListenerInterface {
 
 	/**
 	 * Constructor.
