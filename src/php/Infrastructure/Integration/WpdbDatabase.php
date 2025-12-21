@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration;
 
-use Fundrik\Core\Support\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use wpdb;
@@ -352,15 +351,15 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	}
 
 	/**
-	 * Sanitizes raw database values.
-	 *
-	 * Ensures consistent data shape and removes untyped structures.
+	 * Ensures that all values returned from the database are either scalar or null.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $raw_row The raw row from the database.
+	 * @param array<string, mixed> $raw_row The raw row returned by wpdb.
 	 *
-	 * @return array<string, int|float|string|bool|null> The sanitized row.
+	 * @return array<string, int|float|string|bool|null> The validated database row.
+	 *
+	 * @throws DatabaseException When a non-scalar value is encountered.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -370,7 +369,18 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		foreach ( $raw_row as $key => $value ) {
 
-			$sanitized[ $key ] = $value === null ? null : TypeCaster::to_scalar( $value );
+			if ( $value !== null && ! is_scalar( $value ) ) {
+
+				throw new DatabaseException(
+					sprintf(
+						'DB value must be scalar or null. Key: "%s". Given: %s.',
+						$key,
+						get_debug_type( $value ),
+					),
+				);
+			}
+
+			$sanitized[ $key ] = $value;
 		}
 
 		return $sanitized;
