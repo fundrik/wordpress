@@ -7,8 +7,8 @@ namespace Fundrik\WordPress\Infrastructure\Repositories;
 use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
-use Fundrik\Core\Support\ArrayExtractor;
-use Fundrik\Core\Support\Exceptions\ArrayExtractionException;
+use Fundrik\Toolbox\ArrayExtractionException;
+use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPort;
 use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignFactory;
@@ -268,7 +268,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		try {
 
 			return $this->campaign_factory->create(
-				id: ArrayExtractor::extract_id_int_required( $row, 'id' ),
+				id: ArrayExtractor::extract_int_required( $row, 'id' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
 				slug: ArrayExtractor::extract_string_required( $row, 'slug' ),
 				is_active: ArrayExtractor::extract_bool_required( $row, 'is_active' ),

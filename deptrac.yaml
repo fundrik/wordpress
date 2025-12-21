@@ -1,31 +1,58 @@
 deptrac:
   paths:
     - ./src/php
-  layers:
-    - name: PluginBootstrap
-      collectors:
-        - type: class
-          value: Fundrik\\WordPress\\Application    
 
+  layers:
+
+    # Bootstrap root
+    - name: Bootstrap
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Bootstrap\\(?!Container\\).+
+
+    # Container adapter only
+    - name: BootstrapContainer
+      collectors:
+        - type: bool
+          must:
+            - type: classLike
+              value: ^Fundrik\\WordPress\\Bootstrap\\Container\\.+$
+          must_not:
+            - type: classLike
+              value: ^Fundrik\\WordPress\\Bootstrap\\Container\\ContainerBindings(Registrar|Registry)$
+
+    # Container bindings
     - name: ContainerBindings
       collectors:
-        - type: class
-          value: Fundrik\\WordPress\\Infrastructure\\Container\\ServiceBindings
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Bootstrap\\Container\\ContainerBindings(Registrar|Registry)$
 
-    - name: EventBindings
+    # Kernel
+    - name: Kernel
       collectors:
-        - type: class
-          value: Fundrik\\WordPress\\Infrastructure\\EventDispatcher\\EventListenerRegistrar
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Kernel\\(?!Ports\\).+
+
+    - name: KernelPorts
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Kernel\\Ports\\.+
+
+    # External libs / platform
+    - name: Toolbox
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Toolbox\\.+
 
     - name: Laravel
       collectors:
         - type: classLike
-          value: Illuminate\\.*
+          value: ^Illuminate\\.*
 
     - name: PsrLogger
       collectors:
         - type: classLike
-          value: Psr\\Log\\.*
+          value: ^Psr\\Log\\.*
 
     - name: WordPressExternal
       collectors:
@@ -34,96 +61,118 @@ deptrac:
         - type: classLike
           value: ^WP_.+$
 
-    - name: Support
-      collectors:
-        - type: classLike
-          value: Fundrik\\(Core|WordPress)\\Support\\.*
-
-    - name: CoreDomain
-      collectors:
-        - type: classLike
-          value: Fundrik\\Core\\.*\\Domain\\.*
-
-    - name: CoreApplication
-      collectors:
-        - type: classLike
-          value: Fundrik\\Core\\.*\\Application\\.*
-
-    - name: Domain
-      collectors:
-        - type: classLike
-          value: Fundrik\\WordPress\\.*\\Domain\\.*
-
-    - name: Application
-      collectors:
-        - type: classLike
-          value: Fundrik\\WordPress\\.*\\Application\\.*
-
+    # Infrastructure
     - name: Infrastructure
       collectors:
-      - type: bool
-        must:
-          - type: classLike
-            value: Fundrik\\WordPress\\Infrastructure\\(?!Integration\\).*
-        must_not:
-          - type: class
-            value: .*(ServiceBindings|EventListenerRegistrar).*
+        - type: bool
+          must:
+            - type: classLike
+              value: ^Fundrik\\WordPress\\Infrastructure\\(?!Integration\\).+
+          must_not:
+            - type: classLike
+              value: ^Fundrik\\WordPress\\Infrastructure\\EventDispatcher\\EventListener(Registrar|Registry)$
+
+    - name: EventBindings
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Infrastructure\\EventDispatcher\\EventListener(Registrar|Registry)$
 
     - name: WordPressIntegration
       collectors:
         - type: classLike
-          value: Fundrik\\WordPress\\Infrastructure\\Integration\\.*
+          value: ^Fundrik\\WordPress\\Infrastructure\\Integration\\.+
+
+    # Core / Components
+    - name: CoreDomain
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Domain\\.+
+
+    - name: CoreApplication
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\(?!Ports\\).+
+
+    - name: CoreApplicationPorts
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\Ports\\.+
+
+    - name: Domain
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Domain\\.+
+
+    - name: Application
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Application\\(?!Ports\\).+
+
+    - name: ApplicationPorts
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Application\\Ports\\.+
 
   ruleset:
-    PluginBootstrap:
-      - ContainerBindings
+
+    Bootstrap:
+      - BootstrapContainer
       - Laravel
-      - Infrastructure
-      - WordPressIntegration
+      - Kernel
+      - KernelPorts
+
+    BootstrapContainer:
+      - Laravel
 
     ContainerBindings:
-      - PluginBootstrap
       - EventBindings
+      - BootstrapContainer
       - Laravel
-      - CoreDomain
-      - CoreApplication
-      - Domain
+      - Kernel
+      - KernelPorts
       - Application
+      - ApplicationPorts
       - Infrastructure
       - WordPressIntegration
-
-    EventBindings:
-      - Infrastructure
-      - WordPressIntegration
-
-    CoreDomain:
-      - Support
-
-    CoreApplication:
-      - Support
-      - CoreDomain
-
-    Domain:
-      - Support
-      - CoreDomain
-
-    Application:
-      - Support
-      - Domain
-      - CoreApplication
-      - CoreDomain
-      - PsrLogger
 
     Infrastructure:
       - Laravel
+      - BootstrapContainer
       - PsrLogger
-      - Support
-      - Application
+      - Toolbox
+      - KernelPorts
+      - CoreDomain
+      - Domain
+      - CoreApplicationPorts
+      - ApplicationPorts
+
+    Kernel:
+      - KernelPorts
+
+    EventBindings:
+      - KernelPorts
+      - Infrastructure
+      - WordPressIntegration
+
+    Domain:
+      - CoreDomain
+
+    Application:
+      - CoreDomain
+      - Domain
+      - CoreApplication
+      - CoreApplicationPorts
+      - ApplicationPorts
+
+    ApplicationPorts:
+      - CoreDomain
+      - Domain
+      - CoreApplicationPorts
 
     WordPressIntegration:
+      - BootstrapContainer
       - PsrLogger
-      - PluginBootstrap
+      - Toolbox
+      - KernelPorts
       - WordPressExternal
-      - Support
-      - Application
       - Infrastructure

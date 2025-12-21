@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
-use Fundrik\Core\Support\TypeCaster;
+use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;

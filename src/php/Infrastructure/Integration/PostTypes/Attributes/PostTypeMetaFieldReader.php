@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes;
 
-use Fundrik\Core\Support\TypeCaster;
+use Fundrik\Toolbox\TypeCaster;
 use ReflectionClass;
 
 /**
