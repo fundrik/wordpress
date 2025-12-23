@@ -9,7 +9,7 @@ use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
-use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
  * Applies versioned database migrations in order.
@@ -30,7 +30,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 * @since 1.0.0
 	 *
 	 * @param ContainerInterface $container Resolves migration class instances.
-	 * @param DatabaseInterface $database Provides access to the WordPress database.
+	 * @param DatabaseInterface $database Provides access to the database.
 	 * @param StorageInterface $storage Stores and retrieves the current DB schema version.
 	 * @param MigrationVersionReader $version_reader Extracts version information from migration classes.
 	 * @param MigrationRegistry $registry Provides the list of migration classes and target DB version.

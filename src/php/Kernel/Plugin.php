@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel;
 
-use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\HookBridgeRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
+use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
  * Bootstraps the Fundrik plugin.

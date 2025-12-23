@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Kernel\Ports\Out;
+namespace Fundrik\WordPress\Kernel\Ports;
 
 /**
- * Provides a method for registering all hook-to-event bridges.
+ * Provides methods for registering all hook-to-event bridges.
  *
  * @since 1.0.0
  */

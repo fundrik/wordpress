@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\Out\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Domain\Campaign;
+use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryPort;
-use Fundrik\WordPress\Components\Campaigns\Domain\Campaign;
-use Fundrik\WordPress\Components\Campaigns\Domain\CampaignFactory;
-use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 
 /**
- * Persists and retrieves campaign entities in the WordPress storage.
+ * Persists and retrieves campaign entities in the storage.
  *
  * @since 0.1.0
  */
@@ -270,7 +270,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			return $this->campaign_factory->create(
 				id: ArrayExtractor::extract_int_required( $row, 'id' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
-				slug: ArrayExtractor::extract_string_required( $row, 'slug' ),
 				is_active: ArrayExtractor::extract_bool_required( $row, 'is_active' ),
 				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
 				has_target: ArrayExtractor::extract_bool_required( $row, 'has_target' ),
@@ -302,7 +301,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		return [
 			'id' => $campaign->get_id(),
 			'title' => $campaign->get_title(),
-			'slug' => $campaign->get_slug(),
 			'is_active' => $campaign->is_active(),
 			'is_open' => $campaign->is_open(),
 			'has_target' => $campaign->has_target(),

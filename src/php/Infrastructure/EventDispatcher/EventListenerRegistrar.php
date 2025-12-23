@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
 
-use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
 use RuntimeException;
 
 /**

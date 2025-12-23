@@ -6,9 +6,9 @@ namespace Fundrik\WordPress\Bootstrap;
 
 use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
 use Fundrik\WordPress\Kernel\Plugin;
-use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\HookBridgeRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
+use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
  * Builds the plugin runtime instance by resolving its runtime dependencies.

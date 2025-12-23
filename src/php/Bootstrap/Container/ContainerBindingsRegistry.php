@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Bootstrap\Container;
 
-use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignCommandServicePort;
-use Fundrik\WordPress\Components\Campaigns\Application\Ports\In\CampaignQueryServicePort;
-use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignCommandService;
-use Fundrik\WordPress\Components\Campaigns\Application\Services\CampaignQueryService;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
@@ -29,9 +25,9 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
 use Fundrik\WordPress\Kernel\Plugin;
-use Fundrik\WordPress\Kernel\Ports\Out\EventListenerRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\HookBridgeRegistrarPort;
-use Fundrik\WordPress\Kernel\Ports\Out\MigrationRunnerPort;
+use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
 use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
 
@@ -61,10 +57,6 @@ class ContainerBindingsRegistry {
 
 			// Kernel.
 			Plugin::class,
-
-			// Campaigns Application.
-			CampaignCommandServicePort::class => CampaignCommandService::class,
-			CampaignQueryServicePort::class => CampaignQueryService::class,
 
 			// Events Dispatcher.
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,

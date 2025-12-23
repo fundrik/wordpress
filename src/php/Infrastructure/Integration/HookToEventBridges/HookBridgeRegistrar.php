@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges;
 
 use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
-use Fundrik\WordPress\Kernel\Ports\Out\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
 use RuntimeException;
 
 /**

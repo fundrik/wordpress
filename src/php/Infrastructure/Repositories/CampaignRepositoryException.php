@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories;
 
-use Fundrik\WordPress\Components\Campaigns\Application\Ports\Out\CampaignRepositoryExceptionInterface;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepositoryExceptionInterface;
 use RuntimeException;
 
 /**

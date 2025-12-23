@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Kernel\Ports\Out;
+namespace Fundrik\WordPress\Kernel\Ports;
 
 /**
- * Provides a method for registering all event listeners.
+ * Provides methods for registering all event listeners.
  *
  * @since 1.0.0
  *
