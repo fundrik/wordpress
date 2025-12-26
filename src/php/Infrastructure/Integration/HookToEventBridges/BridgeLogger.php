@@ -129,7 +129,6 @@ final class BridgeLogger {
 					'outcome' => 'error',
 					'invoked' => true,
 					'exception' => $e,
-					'exception_class' => $e::class,
 				],
 			),
 		);

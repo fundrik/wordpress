@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use stdClass;
 use WP_REST_Request;
@@ -17,7 +17,7 @@ use WP_REST_Request;
  *
  * @since 1.0.0
  */
-final class FilterBeforeRestInsertCampaignEvent implements EventInterface {
+final class FilterBeforeRestInsertCampaignEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.

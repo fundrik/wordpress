@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use WP_Block_Editor_Context;
 
@@ -15,7 +15,7 @@ use WP_Block_Editor_Context;
  *
  * @since 1.0.0
  */
-final class FilterAllowedBlockTypesEvent implements EventInterface {
+final class FilterAllowedBlockTypesEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.

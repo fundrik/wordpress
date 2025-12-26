@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
@@ -29,12 +29,12 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	 * @since 1.0.0
 	 *
 	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
-	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
+	 * @param InfrastructureEventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
 		private WordPressContextInterface $context,
-		private EventDispatcherInterface $dispatcher,
+		private InfrastructureEventDispatcherInterface $dispatcher,
 		private BridgeLogger $logger,
 	) {
 

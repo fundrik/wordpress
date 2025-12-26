@@ -32,7 +32,7 @@ class CampaignPostType implements PostTypeInterface {
 	 *
 	 * @var string
 	 *
-	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
+	 * @todo Replace `@var` with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
 	public const META_IS_OPEN = 'fundrik_campaign_is_open';
@@ -42,7 +42,7 @@ class CampaignPostType implements PostTypeInterface {
 	 *
 	 * @var string
 	 *
-	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
+	 * @todo Replace `@var` with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Boolean )]
 	public const META_HAS_TARGET = 'fundrik_campaign_has_target';
@@ -52,7 +52,7 @@ class CampaignPostType implements PostTypeInterface {
 	 *
 	 * @var string
 	 *
-	 * @todo Replace with native typed constants when upgrading to PHP 8.3.
+	 * @todo Replace `@var` with native typed constants when upgrading to PHP 8.3.
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Number )]
 	public const META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';

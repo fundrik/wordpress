@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 
 /**
@@ -14,7 +14,7 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressConte
  *
  * @since 1.0.0
  */
-final readonly class RegisterBlocksEvent implements EventInterface {
+final readonly class RegisterBlocksEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.

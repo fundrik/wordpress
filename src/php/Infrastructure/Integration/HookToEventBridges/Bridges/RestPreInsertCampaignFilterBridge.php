@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
@@ -40,13 +40,13 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	 * @since 1.0.0
 	 *
 	 * @param WordPressContextInterface $context Provides the WordPress-specific plugin context.
-	 * @param EventDispatcherInterface $dispatcher Dispatches the bridged events.
+	 * @param InfrastructureEventDispatcherInterface $dispatcher Dispatches the bridged events.
 	 * @param PostTypeIdReader $post_type_id_reader Resolves the post type ID for CampaignPostType.
 	 * @param BridgeLogger $logger Writes structured log entries for this hook bridge.
 	 */
 	public function __construct(
 		private readonly WordPressContextInterface $context,
-		private readonly EventDispatcherInterface $dispatcher,
+		private readonly InfrastructureEventDispatcherInterface $dispatcher,
 		private readonly PostTypeIdReader $post_type_id_reader,
 		private readonly BridgeLogger $logger,
 	) {
