@@ -83,7 +83,6 @@ final readonly class MigrationRunnerLogger {
 					'operation' => 'get_charset_collate',
 					'outcome' => 'failed',
 					'exception' => $e,
-					'exception_class' => $e::class,
 				],
 			),
 		);
@@ -202,7 +201,6 @@ final readonly class MigrationRunnerLogger {
 					'operation' => 'apply_migration',
 					'outcome' => 'failed',
 					'exception' => $e,
-					'exception_class' => $e::class,
 				],
 				class_name: $class_name,
 				version: $version,

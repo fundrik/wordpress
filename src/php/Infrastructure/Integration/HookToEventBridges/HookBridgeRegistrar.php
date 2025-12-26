@@ -35,7 +35,7 @@ final readonly class HookBridgeRegistrar implements HookBridgeRegistrarPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @throws RuntimeException Thrown when the hook bridge class does not implement the required interface.
+	 * @throws RuntimeException When the hook bridge class does not implement the required interface.
 	 */
 	public function register_all(): void {
 

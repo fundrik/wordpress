@@ -11,7 +11,7 @@ use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
- * Builds the plugin runtime instance by resolving its runtime dependencies.
+ * Builds the plugin runtime instance.
  *
  * @since 1.0.0
  *
@@ -31,7 +31,7 @@ final readonly class PluginFactory {
 	) {}
 
 	/**
-	 * Creates the plugin runtime instance with all required dependencies resolved.
+	 * Creates the plugin runtime instance.
 	 *
 	 * @since 1.0.0
 	 *

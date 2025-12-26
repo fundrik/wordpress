@@ -18,7 +18,7 @@ interface ContainerInterface {
 	/**
 	 * Instantiates a class or interface, optionally with constructor parameters.
 	 *
-	 * Ensures the created instance matches the expected type, otherwise throws.
+	 * Ensures the created instance matches the expected type.
 	 *
 	 * @since 1.0.0
 	 *
@@ -33,7 +33,7 @@ interface ContainerInterface {
 	 *
 	 * @return object The newly created instance matching the expected type.
 	 *
-	 * @throws ContainerException Thrown when the container cannot resolve or instantiate the given identifier.
+	 * @throws ContainerException When the container cannot resolve or instantiate the given identifier.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -100,7 +100,7 @@ interface ContainerInterface {
 	 * @param string $abstract The class or interface name to bind.
 	 * @param object $instance The existing instance.
 	 *
-	 * @throws ContainerException Thrown when the instance does not match the abstract type.
+	 * @throws ContainerException When the instance does not match the abstract type.
 	 */
 	public function instance(
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound

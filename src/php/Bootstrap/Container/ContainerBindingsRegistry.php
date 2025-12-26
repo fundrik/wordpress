@@ -6,8 +6,8 @@ namespace Fundrik\WordPress\Bootstrap\Container;
 
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;
+use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
 use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProvider;
 use Fundrik\WordPress\Infrastructure\Integration\Blocks\BlocksPathsProviderInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrar;
@@ -60,7 +60,7 @@ class ContainerBindingsRegistry {
 
 			// Events Dispatcher.
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
-			EventDispatcherInterface::class => EventDispatcher::class,
+			InfrastructureEventDispatcherInterface::class => EventDispatcher::class,
 			EventListenerRegistrarPort::class => EventListenerRegistrar::class,
 			HookBridgeRegistrarPort::class => HookBridgeRegistrar::class,
 			HookBridgeRegistry::class,

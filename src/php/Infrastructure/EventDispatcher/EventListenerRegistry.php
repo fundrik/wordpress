@@ -12,7 +12,7 @@ use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListene
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
 
 /**
- * Provides the map of events to their listeners.
+ * Provides the map of infrastructure events to their listeners.
  *
  * @since 1.0.0
  *
@@ -21,13 +21,16 @@ use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesList
 class EventListenerRegistry {
 
 	/**
-	 * Returns the map of event class names to listener class names.
+	 * Returns the map of infrastructure event class names to listener class names.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @return array<string, string> The event-to-listener map.
 	 *
-	 * @phpstan-return array<class-string<EventInterface>, class-string<EventListenerInterface>>
+	 * @phpstan-return array<
+	 *     class-string<InfrastructureEventInterface>,
+	 *     class-string<InfrastructureEventListenerInterface>
+	 * >
 	 */
 	public function get_event_listener_map(): array {
 

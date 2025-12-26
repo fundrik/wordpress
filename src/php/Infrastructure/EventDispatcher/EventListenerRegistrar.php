@@ -8,7 +8,7 @@ use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
 use RuntimeException;
 
 /**
- * Registers all event listeners.
+ * Registers all infrastructure event listeners.
  *
  * @since 1.0.0
  *
@@ -22,42 +22,42 @@ final readonly class EventListenerRegistrar implements EventListenerRegistrarPor
 	 * @since 1.0.0
 	 *
 	 * @param EventListenerRegistry $registry Provides the map of events to their listeners.
-	 * @param EventDispatcherInterface $dispatcher Registers event listeners.
+	 * @param InfrastructureEventDispatcherInterface $dispatcher Registers event listeners.
 	 */
 	public function __construct(
 		private EventListenerRegistry $registry,
-		private EventDispatcherInterface $dispatcher,
+		private InfrastructureEventDispatcherInterface $dispatcher,
 	) {}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
-	 * Registers all declared event listeners.
+	 * Registers all declared infrastructure event listeners.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @throws RuntimeException Thrown when the event or listener class does not implement the required interface.
+	 * @throws RuntimeException When the registry contains an invalid event or listener class.
 	 */
 	public function register_all(): void {
 
 		foreach ( $this->registry->get_event_listener_map() as $event => $listener ) {
 
-			if ( ! is_subclass_of( $event, EventInterface::class ) ) {
+			if ( ! is_subclass_of( $event, InfrastructureEventInterface::class ) ) {
 
 				throw new RuntimeException(
 					sprintf(
-						'Event must implement %s. Given: %s.',
-						EventInterface::class,
+						'Event class must implement %s. Given: %s.',
+						InfrastructureEventInterface::class,
 						$event,
 					),
 				);
 			}
 
-			if ( ! is_subclass_of( $listener, EventListenerInterface::class ) ) {
+			if ( ! is_subclass_of( $listener, InfrastructureEventListenerInterface::class ) ) {
 
 				throw new RuntimeException(
 					sprintf(
-						'Event listener must implement %s. Given: %s.',
-						EventListenerInterface::class,
+						'Event listener class must implement %s. Given: %s.',
+						InfrastructureEventListenerInterface::class,
 						$listener,
 					),
 				);

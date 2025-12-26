@@ -30,14 +30,12 @@ interface StorageInterface {
 	/**
 	 * Stores a value under the given key.
 	 *
-	 * Returns false if the operation failed.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $key The key to assign.
 	 * @param mixed $value The value to store.
 	 *
-	 * @return bool True if the value was changed successfully.
+	 * @return bool True if the value was changed successfully, false if the operation failed.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

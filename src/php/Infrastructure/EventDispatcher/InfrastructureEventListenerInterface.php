@@ -11,7 +11,4 @@ namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
  *
  * @internal
  */
-interface EventListenerInterface {
-
-// phpcs:ignore SlevomatCodingStandard.Classes.EmptyLinesAroundClassBraces.IncorrectEmptyLinesBeforeClosingBrace
-}
+interface InfrastructureEventListenerInterface {}

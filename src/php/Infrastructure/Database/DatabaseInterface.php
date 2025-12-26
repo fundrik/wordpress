@@ -19,7 +19,7 @@ interface DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID of the row to fetch.
+	 * @param int|string $id The row ID to fetch.
 	 *
 	 * @return array<string, int|float|string|bool|null>|null The row data if found, null otherwise.
 	 *
@@ -48,7 +48,7 @@ interface DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID to look up.
+	 * @param int|string $id The row ID to look up.
 	 *
 	 * @return bool True if a matching row exists.
 	 *
@@ -90,7 +90,7 @@ interface DatabaseInterface {
 	 *
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param int|string $id The ID of the row to update.
+	 * @param int|string $id The row ID to update.
 	 *
 	 * @throws DatabaseException When the update fails.
 	 */
@@ -102,7 +102,7 @@ interface DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID of the row to delete.
+	 * @param int|string $id The row ID to delete.
 	 *
 	 * @throws DatabaseException When the delete fails.
 	 */

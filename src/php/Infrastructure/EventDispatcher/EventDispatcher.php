@@ -7,13 +7,13 @@ namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
 use Illuminate\Contracts\Events\Dispatcher as LaravelDispatcherInterface;
 
 /**
- * Dispatches events and registers listeners.
+ * Dispatches infrastructure events and registers infrastructure event listeners.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class EventDispatcher implements EventDispatcherInterface {
+final readonly class EventDispatcher implements InfrastructureEventDispatcherInterface {
 
 	/**
 	 * Constructor.
@@ -31,9 +31,9 @@ final readonly class EventDispatcher implements EventDispatcherInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param object $event The event object to dispatch.
+	 * @param InfrastructureEventInterface $event The event to dispatch.
 	 */
-	public function dispatch( object $event ): void {
+	public function dispatch( InfrastructureEventInterface $event ): void {
 
 		$this->inner->dispatch( $event );
 	}
@@ -46,8 +46,8 @@ final readonly class EventDispatcher implements EventDispatcherInterface {
 	 * @param string $event_class The class name of the event to listen for.
 	 * @param string $listener_class The class name of the listener that handles the event.
 	 *
-	 * @phpstan-param class-string $event_class
-	 * @phpstan-param class-string $listener_class
+	 * @phpstan-param class-string<InfrastructureEventInterface> $event_class
+	 * @phpstan-param class-string<InfrastructureEventListenerInterface> $listener_class
 	 */
 	public function listen( string $event_class, string $listener_class ): void {
 

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
@@ -17,7 +18,7 @@ use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 
 /**
- * Persists and retrieves campaign entities in the storage.
+ * Persists and retrieves campaigns in the storage.
  *
  * @since 0.1.0
  */
@@ -43,7 +44,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param EntityId $id The ID of the campaign to retrieve.
+	 * @param EntityId $id The campaign ID to retrieve.
 	 *
 	 * @return Campaign|null The campaign if found, null otherwise.
 	 *
@@ -75,11 +76,11 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<Campaign> The list of campaign entities.
+	 * @return array<Campaign> The list of campaigns.
 	 *
 	 * @phpstan-return list<Campaign>
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the lookup or mapping fails.
+	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
 	 */
 	public function find_all(): array {
 
@@ -101,7 +102,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param EntityId $id The ID of the campaign to check.
+	 * @param EntityId $id The campaign ID to check.
 	 *
 	 * @return bool True if the campaign exists.
 	 *
@@ -129,12 +130,15 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @param Campaign $campaign The campaign to insert.
 	 *
+	 * @return Campaign The persisted campaign snapshot.
+	 *
 	 * @throws CampaignRepositoryExceptionInterface When the insert fails.
 	 */
-	public function insert( Campaign $campaign ): void {
+	public function insert( Campaign $campaign ): Campaign {
 
 		$data = $this->map_campaign_to_row( $campaign );
 		$campaign_id = $campaign->get_id();
+		$campaign_entity_id = $campaign->get_entity_id();
 
 		try {
 			$this->db->insert( self::TABLE_NAME, $data );
@@ -145,6 +149,17 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				previous: $e,
 			);
 		}
+
+		$persisted = $this->find_by_id( $campaign_entity_id );
+
+		if ( $persisted === null ) {
+			throw new CampaignRepositoryException(
+				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				sprintf( 'Cannot fetch campaign after insert: persisted record not found. Given: ID %d.', $campaign_id ),
+			);
+		}
+
+		return $persisted;
 	}
 
 	/**
@@ -154,12 +169,15 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @param Campaign $campaign The campaign to update.
 	 *
+	 * @return Campaign The persisted campaign snapshot.
+	 *
 	 * @throws CampaignRepositoryExceptionInterface When the update fails.
 	 */
-	public function update( Campaign $campaign ): void {
+	public function update( Campaign $campaign ): Campaign {
 
 		$data = $this->map_campaign_to_row( $campaign );
 		$campaign_id = $campaign->get_id();
+		$campaign_entity_id = $campaign->get_entity_id();
 
 		try {
 			$this->db->update( self::TABLE_NAME, $data, $campaign_id );
@@ -170,6 +188,17 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				previous: $e,
 			);
 		}
+
+		$persisted = $this->find_by_id( $campaign_entity_id );
+
+		if ( $persisted === null ) {
+			throw new CampaignRepositoryException(
+				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				sprintf( 'Cannot fetch campaign after update: persisted record not found. Given: ID %d.', $campaign_id ),
+			);
+		}
+
+		return $persisted;
 	}
 
 	/**
@@ -181,22 +210,30 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @param Campaign $campaign The campaign to save.
 	 *
-	 * @return CampaignRepositorySaveResult The persistence outcome (Inserted or Updated).
+	 * @return CampaignRepositorySaveOutcome Contains the result and the persisted campaign snapshot.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the operation fails.
+	 * @throws CampaignRepositoryExceptionInterface When the save fails.
 	 */
-	public function save( Campaign $campaign ): CampaignRepositorySaveResult {
+	public function save( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
 		$entity_id = $campaign->get_entity_id();
 
 		if ( $this->exists_by_id( $entity_id ) ) {
 
-			$this->update( $campaign );
-			return CampaignRepositorySaveResult::Updated;
+			$persisted = $this->update( $campaign );
+
+			return new CampaignRepositorySaveOutcome(
+				result: CampaignRepositorySaveResult::Updated,
+				campaign: $persisted,
+			);
 		}
 
-		$this->insert( $campaign );
-		return CampaignRepositorySaveResult::Inserted;
+		$persisted = $this->insert( $campaign );
+
+		return new CampaignRepositorySaveOutcome(
+			result: CampaignRepositorySaveResult::Inserted,
+			campaign: $persisted,
+		);
 	}
 
 	/**
@@ -204,7 +241,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param EntityId $id The ID of the campaign to delete.
+	 * @param EntityId $id The campaign ID to delete.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the delete fails.
 	 */
@@ -269,6 +306,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 			return $this->campaign_factory->create(
 				id: ArrayExtractor::extract_int_required( $row, 'id' ),
+				version: ArrayExtractor::extract_int_required( $row, 'version' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
 				is_active: ArrayExtractor::extract_bool_required( $row, 'is_active' ),
 				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
@@ -300,6 +338,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		return [
 			'id' => $campaign->get_id(),
+			'version' => $campaign->get_version()->get_value(),
 			'title' => $campaign->get_title(),
 			'is_active' => $campaign->is_active(),
 			'is_open' => $campaign->is_open(),
