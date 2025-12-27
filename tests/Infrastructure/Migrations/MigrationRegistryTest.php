@@ -23,7 +23,7 @@ final class MigrationRegistryTest extends FundrikTestCase {
 	}
 
 	#[Test]
-	public function it_defines_the_expected_db_version_constant(): void {
+	public function it_returns_the_expected_target_db_version(): void {
 
 		$this->assertSame( '2025_06_15_00', $this->registry->get_target_db_version() );
 	}

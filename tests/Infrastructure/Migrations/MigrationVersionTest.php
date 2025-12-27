@@ -27,9 +27,10 @@ final class MigrationVersionTest extends FundrikTestCase {
 	public function it_is_configured_as_class_only_attribute(): void {
 
 		$reflection = new ReflectionClass( MigrationVersion::class );
+
 		$attributes = $reflection->getAttributes( Attribute::class );
 
-		$this->assertNotEmpty( $attributes, 'Expected class to have Attribute metadata' );
+		$this->assertCount( 1, $attributes );
 
 		$attr_instance = $attributes[0]->newInstance();
 
@@ -40,6 +41,7 @@ final class MigrationVersionTest extends FundrikTestCase {
 	public function it_can_be_extracted_from_target_class(): void {
 
 		$reflection = new ReflectionClass( OldMigration::class );
+
 		$attributes = $reflection->getAttributes( MigrationVersion::class );
 
 		$this->assertCount( 1, $attributes );

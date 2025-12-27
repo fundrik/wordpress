@@ -13,7 +13,7 @@ use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTabl
  *
  * @internal
  */
-final readonly class MigrationRegistry {
+class MigrationRegistry {
 
 	private const TARGET_VERSION = '2025_06_15_00';
 
