@@ -23,7 +23,7 @@ final class FilterAllowedBlockTypesEventTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		$this->editor_context = Mockery::mock( 'WP_Block_Editor_Context' );
+		$this->editor_context = Mockery::mock( WP_Block_Editor_Context::class );
 		$this->context = Mockery::mock( WordPressContextInterface::class );
 	}
 
@@ -43,6 +43,8 @@ final class FilterAllowedBlockTypesEventTest extends MockeryTestCase {
 		$event = new FilterAllowedBlockTypesEvent( false, $this->editor_context, $this->context );
 
 		$this->assertFalse( $event->allowed );
+		$this->assertSame( $this->editor_context, $event->editor_context );
+		$this->assertSame( $this->context, $event->context );
 	}
 
 	#[Test]
@@ -53,6 +55,8 @@ final class FilterAllowedBlockTypesEventTest extends MockeryTestCase {
 		$event = new FilterAllowedBlockTypesEvent( $blocks, $this->editor_context, $this->context );
 
 		$this->assertSame( $blocks, $event->allowed );
+		$this->assertSame( $this->editor_context, $event->editor_context );
+		$this->assertSame( $this->context, $event->context );
 	}
 
 	#[Test]

@@ -62,5 +62,6 @@ final class PostSavedEventTest extends MockeryTestCase {
 		$this->assertSame( $this->post, $event->post );
 		$this->assertFalse( $event->update );
 		$this->assertNull( $event->post_before );
+		$this->assertSame( $this->context, $event->context );
 	}
 }

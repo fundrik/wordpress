@@ -29,7 +29,7 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function it_accepts_prepared_post_and_request(): void {
+	public function it_accepts_prepared_post_request_and_context(): void {
 
 		$prepared_post = new stdClass();
 		$prepared_post->post_title = 'Test Campaign';
