@@ -27,8 +27,9 @@
 declare(strict_types=1);
 
 use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistrar;
+use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Bootstrap\ContainerFactory;
-use Fundrik\WordPress\Bootstrap\PluginFactory;
+use Fundrik\WordPress\Kernel\Plugin;
 use Monolog\Formatter\JsonFormatter as MonologJsonFormatter;
 use Monolog\Handler\StreamHandler as MonologStreamHandler;
 use Monolog\Level as MonologLevel;
@@ -59,7 +60,8 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 
 		$container = ( new ContainerFactory() )->create();
 
-		$container->make( ContainerBindingsRegistrar::class )->register_bindings_into_container( $container );
+		$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry() );
+		$registrar->register_bindings_into_container( $container );
 
 		$container->singleton(
 			LoggerInterface::class,
@@ -106,7 +108,7 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 			},
 		);
 
-		( new PluginFactory( $container ) )->create()->run();
+		$container->make( Plugin::class )->run();
 	}
 }
 

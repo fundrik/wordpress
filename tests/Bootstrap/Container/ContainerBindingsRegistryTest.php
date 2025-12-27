@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Bootstrap\Container;
+namespace Fundrik\WordPress\Tests\Bootstrap\Container;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;
@@ -20,31 +21,41 @@ use Fundrik\WordPress\Infrastructure\StorageInterface;
 use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Fundrik\WordPress\Tests\FundrikTestCase;
 use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
 use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 
-/**
- * Provides the list of container bindings.
- *
- * @since 1.0.0
- *
- * @internal
- */
-class ContainerBindingsRegistry {
+#[CoversClass( ContainerBindingsRegistry::class )]
+final class ContainerBindingsRegistryTest extends FundrikTestCase {
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
-	/**
-	 * Returns the list of abstract-to-concrete singleton bindings.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<string|int, string> The list of singleton bindings keyed by the abstract type.
-	 *
-	 * @phpstan-return array<class-string|int, class-string>
-	 */
-	public function get_singletons(): array {
+	private ContainerBindingsRegistry $registry;
 
-		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
+	protected function setUp(): void {
+
+		parent::setUp();
+
+		$this->registry = new ContainerBindingsRegistry();
+	}
+
+	#[Test]
+	public function it_exposes_expected_singletons(): void {
+
+		$this->assertSame(
+			self::expected_singletons_map(),
+			$this->registry->get_singletons(),
+		);
+	}
+
+	#[Test]
+	public function it_has_no_transient_bindings_yet(): void {
+
+		$this->assertSame( [], $this->registry->get_bindings() );
+	}
+
+	private static function expected_singletons_map(): array {
+
 		return [
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
 			InfrastructureEventDispatcherInterface::class => EventDispatcher::class,
@@ -59,21 +70,5 @@ class ContainerBindingsRegistry {
 			HookBridgeRegistrarPort::class => HookBridgeRegistrar::class,
 			WordPressContextInterface::class => WordPressContext::class,
 		];
-		// phpcs:enable
-	}
-	// phpcs:enable
-
-	/**
-	 * Returns the list of abstract-to-concrete transient bindings.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<string, string> The array of [abstract => concrete] bindings.
-	 *
-	 * @phpstan-return array<class-string, class-string>
-	 */
-	public function get_bindings(): array {
-
-		return [];
 	}
 }
