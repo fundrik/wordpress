@@ -113,7 +113,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		$id_int = $this->get_entity_id_as_int_or_fail( $id );
 
 		try {
-			return $this->db->exists( self::TABLE_NAME, $id_int );
+			return $this->db->exists_by_id( self::TABLE_NAME, $id_int );
 		} catch ( DatabaseException $e ) {
 
 			throw new CampaignRepositoryException(
@@ -123,6 +123,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		}
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Inserts a new campaign into storage.
 	 *
@@ -136,16 +137,18 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function insert( Campaign $campaign ): Campaign {
 
-		$data = $this->map_campaign_to_row( $campaign );
-		$campaign_id = $campaign->get_id();
 		$campaign_entity_id = $campaign->get_entity_id();
+		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
+
+		$data = $this->map_campaign_to_row( $campaign );
+		$data['version'] = $campaign->get_version()->get_value();
 
 		try {
 			$this->db->insert( self::TABLE_NAME, $data );
 		} catch ( DatabaseException $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign_id ),
+				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign_id_int ),
 				previous: $e,
 			);
 		}
@@ -153,15 +156,20 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		$persisted = $this->find_by_id( $campaign_entity_id );
 
 		if ( $persisted === null ) {
+
 			throw new CampaignRepositoryException(
-				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				sprintf( 'Cannot fetch campaign after insert: persisted record not found. Given: ID %d.', $campaign_id ),
+				sprintf(
+					'Cannot fetch campaign after insert: persisted record not found. Given: ID %d.',
+					$campaign_id_int,
+				),
 			);
 		}
 
 		return $persisted;
 	}
+	// phpcs:enable
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Updates an existing campaign in storage.
 	 *
@@ -175,31 +183,67 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function update( Campaign $campaign ): Campaign {
 
-		$data = $this->map_campaign_to_row( $campaign );
-		$campaign_id = $campaign->get_id();
 		$campaign_entity_id = $campaign->get_entity_id();
+		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
+
+		$expected_version = $campaign->get_version();
+		$new_version = $expected_version->next();
+
+		$data = $this->map_campaign_to_row( $campaign );
+		$data['version'] = $new_version->get_value();
 
 		try {
-			$this->db->update( self::TABLE_NAME, $data, $campaign_id );
+
+			$affected = $this->db->update_where_equals(
+				self::TABLE_NAME,
+				$data,
+				[
+					'id' => $campaign_id_int,
+					'version' => $expected_version->get_value(),
+				],
+			);
+
 		} catch ( DatabaseException $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot update campaign: persistence error. Given: ID %d.', $campaign_id ),
+				sprintf( 'Cannot update campaign: persistence error. Given: ID %d.', $campaign_id_int ),
 				previous: $e,
+			);
+		}
+
+		if ( $affected === 0 ) {
+
+			if ( ! $this->exists_by_id( $campaign_entity_id ) ) {
+
+				throw new CampaignRepositoryException(
+					sprintf( 'Cannot update campaign: persisted record not found. Given: ID %d.', $campaign_id_int ),
+				);
+			}
+
+			throw new CampaignRepositoryException(
+				sprintf(
+					'Cannot update campaign: version mismatch. Given: ID %d, expected version %d.',
+					$campaign_id_int,
+					$expected_version->get_value(),
+				),
 			);
 		}
 
 		$persisted = $this->find_by_id( $campaign_entity_id );
 
 		if ( $persisted === null ) {
+
 			throw new CampaignRepositoryException(
-				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				sprintf( 'Cannot fetch campaign after update: persisted record not found. Given: ID %d.', $campaign_id ),
+				sprintf(
+					'Cannot fetch campaign after update: persisted record not found. Given: ID %d.',
+					$campaign_id_int,
+				),
 			);
 		}
 
 		return $persisted;
 	}
+	// phpcs:enable
 
 	/**
 	 * // TODO: fix race condition. Upsert?
@@ -338,7 +382,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		return [
 			'id' => $campaign->get_id(),
-			'version' => $campaign->get_version()->get_value(),
 			'title' => $campaign->get_title(),
 			'is_active' => $campaign->is_active(),
 			'is_open' => $campaign->is_open(),

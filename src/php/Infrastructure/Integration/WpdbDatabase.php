@@ -50,7 +50,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID of the row to fetch.
+	 * @param int|string $id The row ID to fetch.
 	 *
 	 * @return array<string, int|float|string|bool|null>|null The result row, or null if not found.
 	 *
@@ -141,13 +141,13 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID to look up.
+	 * @param int|string $id The row ID to look up.
 	 *
 	 * @return bool True if a matching row exists.
 	 *
 	 * @throws DatabaseException When the query fails.
 	 */
-	public function exists( string $table, int|string $id ): bool {
+	public function exists_by_id( string $table, int|string $id ): bool {
 
 		$placeholder = is_int( $id ) ? '%d' : '%s';
 
@@ -247,7 +247,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param int|string $id The ID of the row to update.
+	 * @param int|string $id The row ID to update.
 	 *
 	 * @throws DatabaseException When the update fails.
 	 */
@@ -273,12 +273,61 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	}
 
 	/**
+	 * Updates the row with the given ID using new values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
+	 * @param int|string $id The ID of the row to update.
+	 *
+	 * @return int The number of affected rows.
+	 *
+	 * @throws DatabaseException When the update fails.
+	 */
+	public function update_where_id( string $table, array $data, int|string $id ): int {
+
+		return $this->update_where_equals( $table, $data, [ 'id' => $id ] );
+	}
+
+	/**
+	 * Updates rows matching the given equality conditions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
+	 * @param array<string, int|float|string|bool|null> $where_equals The column-value pairs to match.
+	 *
+	 * @return int The number of affected rows.
+	 *
+	 * @throws DatabaseException When the update fails.
+	 */
+	public function update_where_equals( string $table, array $data, array $where_equals ): int {
+
+		$result = $this->wpdb->update( $table, $data, $where_equals );
+
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot update row(s): database operation failed for table "%s". Error: %s.',
+					$table,
+					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+				),
+			);
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Deletes the row with the given ID.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
-	 * @param int|string $id The ID of the row to delete.
+	 * @param int|string $id The row ID to delete.
 	 *
 	 * @throws DatabaseException When the delete fails.
 	 */
