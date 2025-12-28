@@ -67,7 +67,7 @@ final class BridgeLogger {
 	}
 
 	/**
-	 * Logs that the hook bridge has been registered in WordPress.
+	 * Logs that the hook bridge has been registered in WordPress (debug).
 	 *
 	 * @since 1.0.0
 	 */
@@ -87,7 +87,7 @@ final class BridgeLogger {
 	}
 
 	/**
-	 * Logs that the input arguments failed validation and the bridge call is invalid.
+	 * Logs that the input arguments failed validation and the bridge call is invalid (warning).
 	 *
 	 * @since 1.0.0
 	 *
@@ -111,7 +111,7 @@ final class BridgeLogger {
 	}
 
 	/**
-	 * Logs that the dispatch stage failed due to an exception in listeners.
+	 * Logs that the dispatch stage failed due to an exception in listeners (error).
 	 *
 	 * @since 1.0.0
 	 *
@@ -135,7 +135,7 @@ final class BridgeLogger {
 	}
 
 	/**
-	 * Logs the final outcome of handling the hook bridge call.
+	 * Logs the final outcome of handling the hook bridge call (debug).
 	 *
 	 * @since 1.0.0
 	 *

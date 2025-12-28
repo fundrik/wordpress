@@ -37,7 +37,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations started.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -62,7 +62,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations skipped (already up to date).',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -88,7 +88,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Fetching database charset/collation failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -113,7 +113,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration started.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -138,7 +138,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration skipped (already applied).',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -164,7 +164,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration succeeded and version updated.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -191,7 +191,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration succeeded but version update failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -218,7 +218,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Updating stored DB version failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -246,7 +246,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -273,7 +273,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations completed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -301,7 +301,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations completed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,

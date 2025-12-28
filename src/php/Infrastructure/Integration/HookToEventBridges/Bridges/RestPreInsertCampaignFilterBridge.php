@@ -172,7 +172,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	}
 
 	/**
-	 * Builds and delegates the final handle log entry to the logger.
+	 * Builds and delegates the final handle log entry to the logger (debug).
 	 *
 	 * @since 1.0.0
 	 *

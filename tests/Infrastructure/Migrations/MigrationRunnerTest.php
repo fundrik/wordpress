@@ -217,7 +217,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations completed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -271,7 +271,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Fetching database charset/collation failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -280,7 +280,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 						'system' => 'wordpress',
 						'operation' => 'get_charset_collate',
 						'outcome' => 'failed',
-						'exception' => Mockery::type( DatabaseException::class ),
+						'exception' => $e,
 					],
 				),
 			);
@@ -320,7 +320,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Applying migration failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -331,7 +331,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 						'outcome' => 'failed',
 						'migration_class' => $migration_class,
 						'migration_version' => $migration_version,
-						'exception' => Mockery::type( MigrationException::class ),
 					],
 				),
 			);
@@ -380,7 +379,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Updating stored DB version failed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'service_class' => MigrationRunner::class,
 						'logger_class' => MigrationRunnerLogger::class,
@@ -400,7 +399,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->with(
 				'Running migrations completed.',
-				$this->array_has(
+				Mockery::subset(
 					[
 						'operation' => 'migrate',
 						'outcome' => 'applied',
