@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Fixtures;
+namespace Fundrik\WordPress\Tests\Fixtures\Migrations;
 
 final class TestMigrationTrace {
 

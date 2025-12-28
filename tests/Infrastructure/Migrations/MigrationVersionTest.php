@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
 use Attribute;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
-use Fundrik\WordPress\Tests\Fixtures\OldMigration;
+use Fundrik\WordPress\Tests\Fixtures\Migrations\OldMigration;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
