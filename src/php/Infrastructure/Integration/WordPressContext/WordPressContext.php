@@ -66,7 +66,7 @@ final class WordPressContext implements WordPressContextInterface {
 	public function get_registered_post_types(): array {
 
 		if ( $this->registered_post_types === null ) {
-			$this->registered_post_types = get_post_types( output: 'objects' );
+			$this->registered_post_types = get_post_types( [], 'objects' );
 		}
 
 		return $this->registered_post_types;
