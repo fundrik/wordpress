@@ -3,7 +3,7 @@
     "source": {
 		"directories": ["src/php"],
 		"excludes": [
-            "Infrastructure/Integration/HookBridges/Bridges"
+            "Infrastructure/Integration/HookToEventBridges/Bridges"
         ]
   	},
     "mutators": {

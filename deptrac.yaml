@@ -132,6 +132,7 @@ deptrac:
       - KernelPorts
       - Application
       - ApplicationPorts
+      - CoreApplicationPorts
       - Infrastructure
       - WordPressIntegration
 
