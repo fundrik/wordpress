@@ -194,7 +194,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 
-			$affected = $this->db->update_where_equals(
+			$affected = $this->db->update(
 				self::TABLE_NAME,
 				$data,
 				[

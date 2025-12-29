@@ -19,7 +19,7 @@ use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSl
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlugReader;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostType;
-use Fundrik\WordPress\Tests\WordPressTestCase;
+use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -38,7 +38,7 @@ use stdClass;
 #[UsesClass( PostTypeMetaFieldReader::class )]
 #[UsesClass( PostTypeSlug::class )]
 #[UsesClass( PostTypeSlugReader::class )]
-final class RegisterPostTypesListenerTest extends WordPressTestCase {
+final class RegisterPostTypesListenerTest extends MockeryTestCase {
 
 	private ContainerInterface&MockInterface $container;
 	private WordPressContextInterface&MockInterface $context;

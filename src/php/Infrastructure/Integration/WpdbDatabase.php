@@ -132,7 +132,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 			$casted_results[ $index ] = $this->sanitize_db_row( $row );
 		}
 
-		return array_values( $casted_results );
+		return $casted_results;
 	}
 
 	/**
@@ -241,71 +241,21 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	}
 
 	/**
-	 * Updates the row with the given ID using new values.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $table The table name.
-	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param int|string $id The row ID to update.
-	 *
-	 * @throws DatabaseException When the update fails.
-	 */
-	public function update( string $table, array $data, int|string $id ): void {
-
-		$result = $this->wpdb->update(
-			$table,
-			$data,
-			[ 'id' => $id ],
-		);
-
-		if ( $result === false || $this->wpdb->last_error !== '' ) {
-
-			throw new DatabaseException(
-				sprintf(
-					'Cannot update row: database operation failed for table "%s". Error: %s. Given: %s.',
-					$table,
-					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
-					(string) $id,
-				),
-			);
-		}
-	}
-
-	/**
-	 * Updates the row with the given ID using new values.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $table The table name.
-	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param int|string $id The ID of the row to update.
-	 *
-	 * @return int The number of affected rows.
-	 *
-	 * @throws DatabaseException When the update fails.
-	 */
-	public function update_where_id( string $table, array $data, int|string $id ): int {
-
-		return $this->update_where_equals( $table, $data, [ 'id' => $id ] );
-	}
-
-	/**
 	 * Updates rows matching the given equality conditions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param array<string, int|float|string|bool|null> $where_equals The column-value pairs to match.
+	 * @param array<string, int|float|string|bool|null> $where The column-value pairs to match.
 	 *
 	 * @return int The number of affected rows.
 	 *
 	 * @throws DatabaseException When the update fails.
 	 */
-	public function update_where_equals( string $table, array $data, array $where_equals ): int {
+	public function update( string $table, array $data, array $where ): int {
 
-		$result = $this->wpdb->update( $table, $data, $where_equals );
+		$result = $this->wpdb->update( $table, $data, $where );
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 

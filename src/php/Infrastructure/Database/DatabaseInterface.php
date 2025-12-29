@@ -84,34 +84,19 @@ interface DatabaseInterface {
 	public function insert( string $table, array $data ): void;
 
 	/**
-	 * Updates the row with the given ID using new values.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $table The table name.
-	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param int|string $id The row ID to update.
-	 *
-	 * @return int The number of affected rows.
-	 *
-	 * @throws DatabaseException When the update fails.
-	 */
-	public function update_where_id( string $table, array $data, int|string $id ): int;
-
-	/**
 	 * Updates rows matching the given equality conditions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to update.
-	 * @param array<string, int|float|string|bool|null> $where_equals The column-value pairs to match.
+	 * @param array<string, int|float|string|bool|null> $where The column-value pairs to match.
 	 *
 	 * @return int The number of affected rows.
 	 *
 	 * @throws DatabaseException When the update fails.
 	 */
-	public function update_where_equals( string $table, array $data, array $where_equals ): int;
+	public function update( string $table, array $data, array $where ): int;
 
 	/**
 	 * Deletes the row with the given ID.

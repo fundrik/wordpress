@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Integration\WordPressContext;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext;
-use Fundrik\WordPress\Tests\WordPressTestCase;
+use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,7 +18,7 @@ use WP_Post_Type;
 
 #[CoversClass( WordPressContext::class )]
 #[UsesClass( CampaignPostType::class )]
-final class WordPressContextTest extends WordPressTestCase {
+final class WordPressContextTest extends MockeryTestCase {
 
 	private WordPressContext $context;
 

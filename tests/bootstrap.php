@@ -8,4 +8,7 @@ define( 'FUNDRIK_PATH', realpath( dirname( FUNDRIK_MAIN_FILE ) ) . '/' );
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
+define( 'ARRAY_A', 'ARRAY_A' );
+
 require_once __DIR__ . '/stubs/wp-block-type-registry.php';
