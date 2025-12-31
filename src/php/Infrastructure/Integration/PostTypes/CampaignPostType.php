@@ -26,6 +26,7 @@ use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSp
 #[PostTypeSpecificBlock( 'fundrik/campaign-settings' )]
 class CampaignPostType implements PostTypeInterface {
 
+	public const ENTITY_VERSION_NAME = 'fundrik_campaign_version';
 	// phpcs:disable SlevomatCodingStandard.TypeHints.UselessConstantTypeHint.UselessVarAnnotation, SlevomatCodingStandard.TypeHints.ClassConstantTypeHint.UselessVarAnnotation
 	/**
 	 * Stores whether the campaign is open for donations.

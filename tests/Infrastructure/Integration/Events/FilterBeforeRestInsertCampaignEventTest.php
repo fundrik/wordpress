@@ -12,6 +12,7 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use stdClass;
+use WP_Error;
 use WP_REST_Request;
 
 #[CoversClass( FilterBeforeRestInsertCampaignEvent::class )]
@@ -52,5 +53,35 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 		$event->prepared_post->post_content = 'Modified Content';
 
 		$this->assertSame( 'Modified Content', $event->prepared_post->post_content );
+	}
+
+	#[Test]
+	public function it_is_not_rejected_by_default(): void {
+
+		$event = new FilterBeforeRestInsertCampaignEvent(
+			new stdClass(),
+			$this->request,
+			$this->context,
+		);
+
+		$this->assertFalse( $event->is_rejected() );
+		$this->assertNull( $event->get_rejection_error() );
+	}
+
+	#[Test]
+	public function it_can_be_rejected_with_error(): void {
+
+		$event = new FilterBeforeRestInsertCampaignEvent(
+			new stdClass(),
+			$this->request,
+			$this->context,
+		);
+
+		$error = new WP_Error( 'fundrik_rejected', 'Rejected.' );
+
+		$event->reject( $error );
+
+		$this->assertTrue( $event->is_rejected() );
+		$this->assertSame( $error, $event->get_rejection_error() );
 	}
 }

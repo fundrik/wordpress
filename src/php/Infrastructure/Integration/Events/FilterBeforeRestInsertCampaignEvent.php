@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use stdClass;
+use WP_Error;
 use WP_REST_Request;
 
 /**
@@ -17,7 +17,14 @@ use WP_REST_Request;
  *
  * @since 1.0.0
  */
-final class FilterBeforeRestInsertCampaignEvent implements InfrastructureEventInterface {
+final class FilterBeforeRestInsertCampaignEvent implements RejectableFilterEventInterface {
+
+	/**
+	 * Stores the optional rejection error for aborting the REST operation.
+	 *
+	 * @since 1.0.0
+	 */
+	private ?WP_Error $rejection_error = null;
 
 	/**
 	 * Constructor.
@@ -38,4 +45,40 @@ final class FilterBeforeRestInsertCampaignEvent implements InfrastructureEventIn
 		public readonly WP_REST_Request $request,
 		public readonly WordPressContextInterface $context,
 	) {}
+
+	/**
+	 * Rejects the REST insert/update by attaching the given error.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Error $error Describes why the operation must be rejected.
+	 */
+	public function reject( WP_Error $error ): void {
+
+		$this->rejection_error = $error;
+	}
+
+	/**
+	 * Returns whether the operation was rejected.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True if the event contains a rejection error.
+	 */
+	public function is_rejected(): bool {
+
+		return $this->rejection_error !== null;
+	}
+
+	/**
+	 * Returns the rejection error, if any.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return WP_Error|null The rejection error or null when not rejected.
+	 */
+	public function get_rejection_error(): ?WP_Error {
+
+		return $this->rejection_error;
+	}
 }

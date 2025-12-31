@@ -13,14 +13,10 @@ namespace Fundrik\WordPress\Infrastructure\Helpers;
  */
 enum PluginPath: string {
 
-	/**
-	 * The directory containing custom Gutenberg blocks.
-	 */
+	// The directory containing custom Gutenberg blocks.
 	case Blocks = 'assets/js/blocks/';
 
-	/**
-	 * The PHP manifest file describing available blocks.
-	 */
+	// The PHP manifest file describing available blocks.
 	case BlocksManifest = 'assets/js/blocks/blocks-manifest.php';
 
 	/**

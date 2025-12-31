@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
-use stdClass;
 use Throwable;
+use WP_Post;
 use WP_REST_Request;
+use WP_REST_Response;
 
 /**
- * Bridges the WordPress 'rest_pre_insert_fundrik_campaign' filter to internal integration events.
+ * Bridges the WordPress 'rest_prepare_(post_type)' filter to internal integration events for campaigns.
  *
  * Validates the filter input before dispatching an internal event.
  *
@@ -25,7 +26,7 @@ use WP_REST_Request;
  *
  * @internal
  */
-final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterface {
+final class RestPrepareCampaignFilterBridge implements HookToEventBridgeInterface {
 
 	/**
 	 * The post type id for the campaign post type.
@@ -55,7 +56,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	}
 
 	/**
-	 * Registers the 'rest_pre_insert_(post_type)' WordPress filter and bridge it to the internal events.
+	 * Registers the 'rest_prepare_(post_type)' WordPress filter and bridge it to the internal events.
 	 *
 	 * Validates the hook arguments and dispatches an event if they are valid; otherwise, skips processing.
 	 *
@@ -68,57 +69,45 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 		// The hook name is dynamic so set the logger's hook name only after the post type is known.
 		$this->logger->set_hook_name( $this->get_hook_name() );
 
-		add_filter( $this->get_hook_name(), $this->handle( ... ), 10, 2 );
+		add_filter( $this->get_hook_name(), $this->handle( ... ), 10, 3 );
 
 		$this->logger->log_registered();
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
-	 * Handles the 'rest_pre_insert_(post_type)' filter logic for campaigns.
+	 * Handles the 'rest_prepare_(post_type)' filter logic for campaigns.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param mixed $prepared_post An object representing a single post prepared for inserting or updating the database.
+	 * @param mixed $response Response object.
+	 * @param mixed $post Post object.
 	 * @param mixed $request Request object.
 	 *
-	 * @return mixed The modified filtered post object or the original value if validation fails.
+	 * @return mixed The filtered response.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function handle( mixed $prepared_post, mixed $request ): mixed {
+	public function handle( mixed $response, mixed $post, mixed $request ): mixed {
 
 		try {
-			$valid_post = $this->validate_prepared_post( $prepared_post );
+			$valid_response = $this->validate_response( $response );
+			$valid_post = $this->validate_post( $post );
 			$valid_request = $this->validate_request( $request );
 
-			$event = new FilterBeforeRestInsertCampaignEvent(
-				prepared_post: $valid_post,
+			$event = new FilterRestPrepareCampaignEvent(
+				response: $valid_response,
+				post: $valid_post,
 				request: $valid_request,
 				context: $this->context,
 			);
 
 			$this->dispatcher->dispatch( $event );
 
-			if ( $event->is_rejected() ) {
-
-				$error = $event->get_rejection_error();
-
-				$this->logger->log_handled(
-					outcome: 'rejected',
-					extra: [
-						'error_code' => $error->get_error_code(),
-						'error_message' => $error->get_error_message(),
-						'error_data' => $error->get_error_data(),
-					],
-				);
-
-				return $event->get_rejection_error();
-			}
 		} catch ( InvalidBridgeArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
-			return $prepared_post;
+			return $response;
 
 		} catch ( Throwable $e ) {
 
@@ -126,32 +115,52 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 			throw $e;
 		}
 
-		$changed = $event->prepared_post !== $valid_post;
+		$changed = $event->response !== $valid_response;
 
 		$this->log_handled( outcome: $changed ? 'changed' : 'unchanged' );
 
-		return $event->prepared_post;
+		return $event->response;
 	}
-	// phpcs:enable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:enable
 
 	/**
-	 * Validates the 'prepared_post' argument.
+	 * Validates the 'response' argument.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param mixed $prepared_post The post object from WordPress.
+	 * @param mixed $response The incoming response.
 	 *
-	 * @return stdClass The validated post.
+	 * @return WP_REST_Response The validated response.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function validate_prepared_post( mixed $prepared_post ): stdClass {
+	private function validate_response( mixed $response ): WP_REST_Response {
 
-		if ( ! $prepared_post instanceof stdClass ) {
-			throw InvalidBridgeArgumentException::create( argument: 'prepared_post', hook: $this->get_hook_name() );
+		if ( ! $response instanceof WP_REST_Response ) {
+			throw InvalidBridgeArgumentException::create( argument: 'response', hook: $this->get_hook_name() );
 		}
 
-		return $prepared_post;
+		return $response;
+	}
+
+	/**
+	 * Validates the 'post' argument.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $post The incoming post object.
+	 *
+	 * @return WP_Post The validated post.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function validate_post( mixed $post ): WP_Post {
+
+		if ( ! $post instanceof WP_Post ) {
+			throw InvalidBridgeArgumentException::create( argument: 'post', hook: $this->get_hook_name() );
+		}
+
+		return $post;
 	}
 
 	/**
@@ -159,7 +168,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param mixed $request The incoming REST request.
+	 * @param mixed $request The incoming request object.
 	 *
 	 * @return WP_REST_Request The validated request.
 	 *
@@ -177,7 +186,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	}
 
 	/**
-	 * Returns the dynamic name of the REST pre-insert hook for the campaign post type.
+	 * Returns the dynamic name of the REST prepare hook for the campaign post type.
 	 *
 	 * @since 1.0.0
 	 *
@@ -185,7 +194,7 @@ final class RestPreInsertCampaignFilterBridge implements HookToEventBridgeInterf
 	 */
 	private function get_hook_name(): string {
 
-		return 'rest_pre_insert_' . $this->post_type;
+		return 'rest_prepare_' . $this->post_type;
 	}
 
 	/**

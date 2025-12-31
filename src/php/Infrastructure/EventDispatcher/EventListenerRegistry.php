@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
 
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Listeners\EnsureCampaignPostCanBeSyncedListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
+use Fundrik\WordPress\Infrastructure\Integration\Listeners\ProvideCampaignVersionForSyncListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
 
@@ -38,6 +42,8 @@ class EventListenerRegistry {
 			RegisterPostTypesEvent::class => RegisterPostTypesListener::class,
 			RegisterBlocksEvent::class => RegisterBlocksListener::class,
 			FilterAllowedBlockTypesEvent::class => FilterAllowedBlocksByPostTypeListener::class,
+			FilterRestPrepareCampaignEvent::class => ProvideCampaignVersionForSyncListener::class,
+			FilterBeforeRestInsertCampaignEvent::class => EnsureCampaignPostCanBeSyncedListener::class,
 		];
 	}
 }

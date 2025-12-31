@@ -6,9 +6,9 @@ export default function Edit({
 	context: { postType },
 }) {
 
-	const [isOpen, setIsOpen] = usePostMetaField(postType, 'is_open');
-	const [hasTarget, setHasTarget] = usePostMetaField(postType, 'has_target');
-	const [targetAmount, setTargetAmount] = usePostMetaField(postType, 'target_amount');
+	const [isOpen, setIsOpen] = usePostMetaField(postType, 'fundrik_campaign_is_open');
+	const [hasTarget, setHasTarget] = usePostMetaField(postType, 'fundrik_campaign_has_target');
+	const [targetAmount, setTargetAmount] = usePostMetaField(postType, 'fundrik_campaign_target_amount');
 
 	return (
 		<div {...useBlockProps()}>

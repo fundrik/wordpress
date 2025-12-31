@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeId;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
@@ -21,17 +21,17 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use stdClass;
-use WP_Error;
+use WP_Post;
 use WP_REST_Request;
+use WP_REST_Response;
 
-#[CoversClass( RestPreInsertCampaignFilterBridge::class )]
-#[UsesClass( FilterBeforeRestInsertCampaignEvent::class )]
+#[CoversClass( RestPrepareCampaignFilterBridge::class )]
+#[UsesClass( FilterRestPrepareCampaignEvent::class )]
 #[UsesClass( BridgeLogger::class )]
 #[UsesClass( InvalidBridgeArgumentException::class )]
 #[UsesClass( PostTypeId::class )]
 #[UsesClass( PostTypeIdReader::class )]
-final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
+final class RestPrepareCampaignFilterBridgeTest extends WordPressTestCase {
 
 	private WordPressContextInterface&MockInterface $context;
 	private InfrastructureEventDispatcherInterface&MockInterface $dispatcher;
@@ -41,7 +41,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 
 	private PostTypeIdReader $post_type_id_reader;
 
-	private RestPreInsertCampaignFilterBridge $bridge;
+	private RestPrepareCampaignFilterBridge $bridge;
 
 	protected function setUp(): void {
 
@@ -55,7 +55,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 
 		$this->post_type_id_reader = new PostTypeIdReader();
 
-		$this->bridge = new RestPreInsertCampaignFilterBridge(
+		$this->bridge = new RestPrepareCampaignFilterBridge(
 			$this->context,
 			$this->dispatcher,
 			$this->post_type_id_reader,
@@ -69,7 +69,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->bridge->register();
 
 		$post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
-		$hook_name = 'rest_pre_insert_' . $post_type;
+		$hook_name = 'rest_prepare_' . $post_type;
 
 		self::assertSame( 10, has_filter( $hook_name, $this->bridge->handle( ... ) ) );
 	}
@@ -79,7 +79,8 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 
 		$this->bridge->register();
 
-		$prepared_post = new stdClass();
+		$response = Mockery::mock( WP_REST_Response::class );
+		$post = Mockery::mock( WP_Post::class );
 		$request = Mockery::mock( WP_REST_Request::class );
 
 		$this->dispatcher
@@ -87,22 +88,23 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 			->once()
 			->with(
 				Mockery::on(
-					function ( object $event ) use ( $prepared_post, $request ): bool {
+					function ( object $event ) use ( $response, $post, $request ): bool {
 
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
+						if ( ! $event instanceof FilterRestPrepareCampaignEvent ) {
 							return false;
 						}
 
-						return $event->prepared_post === $prepared_post
+						return $event->response === $response
+							&& $event->post === $post
 							&& $event->request === $request
 							&& $event->context === $this->context;
 					},
 				),
 			);
 
-		$returned = $this->bridge->handle( $prepared_post, $request );
+		$returned = $this->bridge->handle( $response, $post, $request );
 
-		self::assertSame( $prepared_post, $returned );
+		self::assertSame( $response, $returned );
 	}
 
 	#[Test]
@@ -110,95 +112,58 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 
 		$this->bridge->register();
 
-		$prepared_post = new stdClass();
+		$response = Mockery::mock( WP_REST_Response::class );
+		$post = Mockery::mock( WP_Post::class );
 		$request = Mockery::mock( WP_REST_Request::class );
 
-		$changed_post = new stdClass();
-		$changed_post->changed = true;
+		$changed_response = Mockery::mock( WP_REST_Response::class );
 
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
 			->with(
 				Mockery::on(
-					function ( object $event ) use ( $prepared_post, $request, $changed_post ): bool {
+					function ( object $event ) use ( $response, $post, $request, $changed_response ): bool {
 
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
+						if ( ! $event instanceof FilterRestPrepareCampaignEvent ) {
 							return false;
 						}
 
-						if ( $event->prepared_post !== $prepared_post ) {
+						if ( $event->response !== $response ) {
 							return false;
 						}
 
-						if ( $event->request !== $request || $event->context !== $this->context ) {
+						if (
+							$event->post !== $post
+							|| $event->request !== $request
+							|| $event->context !== $this->context
+						) {
 							return false;
 						}
 
-						// Simulate listeners changing the prepared post.
-						$event->prepared_post = $changed_post;
+						// Simulate listeners changing the response.
+						$event->response = $changed_response;
 
 						return true;
 					},
 				),
 			);
 
-		$returned = $this->bridge->handle( $prepared_post, $request );
+		$returned = $this->bridge->handle( $response, $post, $request );
 
-		self::assertSame( $changed_post, $returned );
+		self::assertSame( $changed_response, $returned );
 	}
 
 	#[Test]
-	public function handle_returns_wp_error_when_event_rejects(): void {
-
-		$this->bridge->register();
-
-		$prepared_post = new stdClass();
-		$request = Mockery::mock( WP_REST_Request::class );
-
-		$error = new WP_Error( 'fundrik_rejected', 'Rejected.', [ 'foo' => 'bar' ] );
-
-		$this->dispatcher
-			->shouldReceive( 'dispatch' )
-			->once()
-			->with(
-				Mockery::on(
-					function ( object $event ) use ( $prepared_post, $request, $error ): bool {
-
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
-							return false;
-						}
-
-						if ( $event->prepared_post !== $prepared_post ) {
-							return false;
-						}
-
-						if ( $event->request !== $request || $event->context !== $this->context ) {
-							return false;
-						}
-
-						// Simulate listeners rejecting the operation.
-						$event->reject( $error );
-
-						return true;
-					},
-				),
-			);
-
-		$returned = $this->bridge->handle( $prepared_post, $request );
-
-		self::assertSame( $error, $returned );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_original_when_prepared_post_is_invalid(): void {
+	public function handle_logs_and_returns_original_when_response_is_invalid(): void {
 
 		$this->bridge->register();
 
 		$post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
-		$hook_name = 'rest_pre_insert_' . $post_type;
+		$hook_name = 'rest_prepare_' . $post_type;
 
-		$prepared_post = 'invalid-post';
+		$response = 'invalid-response';
+		$post = Mockery::mock( WP_Post::class );
 		$request = Mockery::mock( WP_REST_Request::class );
 
 		$this->dispatcher
@@ -208,20 +173,55 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 			->shouldReceive( 'warning' )
 			->once()
 			->with(
-				"Invalid \$prepared_post argument in '{$hook_name}' hook.",
+				"Invalid \$response argument in '{$hook_name}' hook.",
 				Mockery::subset(
 					[
 						'operation' => 'validate_hook_bridge',
 						'outcome' => 'invalid',
-						'invalid_argument' => 'prepared_post',
+						'invalid_argument' => 'response',
 						'invoked' => false,
 					],
 				),
 			);
 
-		$returned = $this->bridge->handle( $prepared_post, $request );
+		$returned = $this->bridge->handle( $response, $post, $request );
 
-		self::assertSame( $prepared_post, $returned );
+		self::assertSame( $response, $returned );
+	}
+
+	#[Test]
+	public function handle_logs_and_returns_original_when_post_is_invalid(): void {
+
+		$this->bridge->register();
+
+		$post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
+		$hook_name = 'rest_prepare_' . $post_type;
+
+		$response = Mockery::mock( WP_REST_Response::class );
+		$post = 'invalid-post';
+		$request = Mockery::mock( WP_REST_Request::class );
+
+		$this->dispatcher
+			->shouldNotReceive( 'dispatch' );
+
+		$this->psr_logger
+			->shouldReceive( 'warning' )
+			->once()
+			->with(
+				"Invalid \$post argument in '{$hook_name}' hook.",
+				Mockery::subset(
+					[
+						'operation' => 'validate_hook_bridge',
+						'outcome' => 'invalid',
+						'invalid_argument' => 'post',
+						'invoked' => false,
+					],
+				),
+			);
+
+		$returned = $this->bridge->handle( $response, $post, $request );
+
+		self::assertSame( $response, $returned );
 	}
 
 	#[Test]
@@ -230,9 +230,10 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->bridge->register();
 
 		$post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
-		$hook_name = 'rest_pre_insert_' . $post_type;
+		$hook_name = 'rest_prepare_' . $post_type;
 
-		$prepared_post = new stdClass();
+		$response = Mockery::mock( WP_REST_Response::class );
+		$post = Mockery::mock( WP_Post::class );
 		$request = 'invalid-request';
 
 		$this->dispatcher
@@ -253,9 +254,9 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 				),
 			);
 
-		$returned = $this->bridge->handle( $prepared_post, $request );
+		$returned = $this->bridge->handle( $response, $post, $request );
 
-		self::assertSame( $prepared_post, $returned );
+		self::assertSame( $response, $returned );
 	}
 
 	#[Test]
@@ -264,9 +265,10 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->bridge->register();
 
 		$post_type = $this->post_type_id_reader->get_id( CampaignPostType::class );
-		$hook_name = 'rest_pre_insert_' . $post_type;
+		$hook_name = 'rest_prepare_' . $post_type;
 
-		$prepared_post = new stdClass();
+		$response = Mockery::mock( WP_REST_Response::class );
+		$post = Mockery::mock( WP_Post::class );
 		$request = Mockery::mock( WP_REST_Request::class );
 
 		$e = new RuntimeException( 'Dispatch failed' );
@@ -274,7 +276,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( FilterBeforeRestInsertCampaignEvent::class ) )
+			->with( Mockery::type( FilterRestPrepareCampaignEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger
@@ -295,6 +297,6 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->expectException( RuntimeException::class );
 		$this->expectExceptionMessage( 'Dispatch failed' );
 
-		$this->bridge->handle( $prepared_post, $request );
+		$this->bridge->handle( $response, $post, $request );
 	}
 }
