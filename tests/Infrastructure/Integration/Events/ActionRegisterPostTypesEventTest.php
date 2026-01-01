@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -12,8 +12,8 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass( RegisterPostTypesEvent::class )]
-final class RegisterPostTypesEventTest extends MockeryTestCase {
+#[CoversClass( ActionRegisterPostTypesEvent::class )]
+final class ActionRegisterPostTypesEventTest extends MockeryTestCase {
 
 	private WordPressContextInterface&MockInterface $context;
 
@@ -27,7 +27,7 @@ final class RegisterPostTypesEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_exposes_the_context(): void {
 
-		$event = new RegisterPostTypesEvent( $this->context );
+		$event = new ActionRegisterPostTypesEvent( $this->context );
 
 		$this->assertSame( $this->context, $event->context );
 	}

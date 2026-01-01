@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\PostDeletedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostDeletedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -21,7 +21,7 @@ use RuntimeException;
 use WP_Post;
 
 #[CoversClass( DeletePostActionBridge::class )]
-#[UsesClass( PostDeletedEvent::class )]
+#[UsesClass( ActionPostDeletedEvent::class )]
 #[UsesClass( BridgeLogger::class )]
 #[UsesClass( InvalidBridgeArgumentException::class )]
 final class DeletePostActionBridgeTest extends WordPressTestCase {
@@ -69,7 +69,7 @@ final class DeletePostActionBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $post_id, $post ): bool {
 
-						if ( ! $event instanceof PostDeletedEvent ) {
+						if ( ! $event instanceof ActionPostDeletedEvent ) {
 							return false;
 						}
 
@@ -150,7 +150,7 @@ final class DeletePostActionBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( PostDeletedEvent::class ) )
+			->with( Mockery::type( ActionPostDeletedEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger

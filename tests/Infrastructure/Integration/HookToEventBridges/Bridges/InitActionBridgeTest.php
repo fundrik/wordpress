@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\InitActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
@@ -21,8 +21,8 @@ use RuntimeException;
 
 #[CoversClass( InitActionBridge::class )]
 #[UsesClass( BridgeLogger::class )]
-#[UsesClass( RegisterPostTypesEvent::class )]
-#[UsesClass( RegisterBlocksEvent::class )]
+#[UsesClass( ActionRegisterPostTypesEvent::class )]
+#[UsesClass( ActionRegisterBlocksEvent::class )]
 final class InitActionBridgeTest extends WordPressTestCase {
 
 	private WordPressContextInterface&MockInterface $context;
@@ -64,7 +64,7 @@ final class InitActionBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ): bool {
 
-						if ( ! $event instanceof RegisterPostTypesEvent ) {
+						if ( ! $event instanceof ActionRegisterPostTypesEvent ) {
 								return false;
 						}
 
@@ -80,7 +80,7 @@ final class InitActionBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ): bool {
 
-						if ( ! $event instanceof RegisterBlocksEvent ) {
+						if ( ! $event instanceof ActionRegisterBlocksEvent ) {
 								return false;
 						}
 
@@ -100,12 +100,12 @@ final class InitActionBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( RegisterPostTypesEvent::class ) )
+			->with( Mockery::type( ActionRegisterPostTypesEvent::class ) )
 			->andThrow( $e );
 
 		$this->dispatcher
 			->shouldNotReceive( 'dispatch' )
-			->with( Mockery::type( RegisterBlocksEvent::class ) );
+			->with( Mockery::type( ActionRegisterBlocksEvent::class ) );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -136,12 +136,12 @@ final class InitActionBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( RegisterPostTypesEvent::class ) );
+			->with( Mockery::type( ActionRegisterPostTypesEvent::class ) );
 
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( RegisterBlocksEvent::class ) )
+			->with( Mockery::type( ActionRegisterBlocksEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger

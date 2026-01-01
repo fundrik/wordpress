@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\PostSavedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostSavedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -13,8 +13,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use WP_Post;
 
-#[CoversClass( PostSavedEvent::class )]
-final class PostSavedEventTest extends MockeryTestCase {
+#[CoversClass( ActionPostSavedEvent::class )]
+final class ActionPostSavedEventTest extends MockeryTestCase {
 
 	private WP_Post&MockInterface $post;
 	private WP_Post&MockInterface $post_before;
@@ -32,7 +32,7 @@ final class PostSavedEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_exposes_all_fields_for_updated_post(): void {
 
-		$event = new PostSavedEvent(
+		$event = new ActionPostSavedEvent(
 			post_id: 456,
 			post: $this->post,
 			update: true,
@@ -50,7 +50,7 @@ final class PostSavedEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_allows_null_post_before_for_new_post(): void {
 
-		$event = new PostSavedEvent(
+		$event = new ActionPostSavedEvent(
 			post_id: 789,
 			post: $this->post,
 			update: false,

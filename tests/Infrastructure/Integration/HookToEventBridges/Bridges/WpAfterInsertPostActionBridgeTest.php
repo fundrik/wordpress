@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\PostSavedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostSavedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\WpAfterInsertPostActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -21,7 +21,7 @@ use RuntimeException;
 use WP_Post;
 
 #[CoversClass( WpAfterInsertPostActionBridge::class )]
-#[UsesClass( PostSavedEvent::class )]
+#[UsesClass( ActionPostSavedEvent::class )]
 #[UsesClass( BridgeLogger::class )]
 #[UsesClass( InvalidBridgeArgumentException::class )]
 final class WpAfterInsertPostActionBridgeTest extends WordPressTestCase {
@@ -73,7 +73,7 @@ final class WpAfterInsertPostActionBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $post_id, $post, $update, $post_before ): bool {
 
-						if ( ! $event instanceof PostSavedEvent ) {
+						if ( ! $event instanceof ActionPostSavedEvent ) {
 							return false;
 						}
 
@@ -109,7 +109,7 @@ final class WpAfterInsertPostActionBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $post_id, $post, $update, $post_before ): bool {
 
-						if ( ! $event instanceof PostSavedEvent ) {
+						if ( ! $event instanceof ActionPostSavedEvent ) {
 							return false;
 						}
 
@@ -264,7 +264,7 @@ final class WpAfterInsertPostActionBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( PostSavedEvent::class ) )
+			->with( Mockery::type( ActionPostSavedEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger

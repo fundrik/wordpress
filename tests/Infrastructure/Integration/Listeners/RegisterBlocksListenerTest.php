@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
 
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListener;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -18,7 +18,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( RegisterBlocksListener::class )]
 #[UsesClass( PluginPath::class )]
-#[UsesClass( RegisterBlocksEvent::class )]
+#[UsesClass( ActionRegisterBlocksEvent::class )]
 final class RegisterBlocksListenerTest extends MockeryTestCase {
 
 	private WordPressContextInterface&MockInterface $context;
@@ -44,7 +44,7 @@ final class RegisterBlocksListenerTest extends MockeryTestCase {
 				PluginPath::BlocksManifest->get_full_path(),
 			);
 
-		$event = new RegisterBlocksEvent( $this->context );
+		$event = new ActionRegisterBlocksEvent( $this->context );
 
 		$this->listener->handle( $event );
 	}

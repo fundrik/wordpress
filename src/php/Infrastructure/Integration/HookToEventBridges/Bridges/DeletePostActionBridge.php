@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\PostDeletedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostDeletedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -78,7 +78,7 @@ final readonly class DeletePostActionBridge implements HookToEventBridgeInterfac
 			$valid_post = $this->validate_post( $post );
 
 			$this->dispatcher->dispatch(
-				new PostDeletedEvent(
+				new ActionPostDeletedEvent(
 					post_id: $valid_post_id,
 					post: $valid_post,
 					context: $this->context,

@@ -14,7 +14,7 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressConte
  *
  * @since 1.0.0
  */
-final readonly class RegisterBlocksEvent implements InfrastructureEventInterface {
+final readonly class ActionRegisterBlocksEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.

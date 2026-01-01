@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Infrastructure\Integration\Listeners;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventListenerInterface;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
 
 /**
  * Registers all custom blocks.
@@ -23,9 +23,9 @@ final readonly class RegisterBlocksListener implements InfrastructureEventListen
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RegisterBlocksEvent $event Carries the WordPress context for the blocks registration.
+	 * @param ActionRegisterBlocksEvent $event Carries the WordPress context for the blocks registration.
 	 */
-	public function handle( RegisterBlocksEvent $event ): void {
+	public function handle( ActionRegisterBlocksEvent $event ): void {
 
 		wp_register_block_types_from_metadata_collection(
 			PluginPath::Blocks->get_full_path(),

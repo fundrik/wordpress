@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
@@ -29,7 +29,7 @@ use RuntimeException;
 use stdClass;
 
 #[CoversClass( RegisterPostTypesListener::class )]
-#[UsesClass( RegisterPostTypesEvent::class )]
+#[UsesClass( ActionRegisterPostTypesEvent::class )]
 #[UsesClass( PostTypeBlockTemplate::class )]
 #[UsesClass( PostTypeBlockTemplateReader::class )]
 #[UsesClass( PostTypeId::class )]
@@ -131,7 +131,7 @@ final class RegisterPostTypesListenerTest extends MockeryTestCase {
 				],
 			);
 
-		$event = new RegisterPostTypesEvent( $this->context );
+		$event = new ActionRegisterPostTypesEvent( $this->context );
 
 		$this->listener->handle( $event );
 	}
@@ -157,7 +157,7 @@ final class RegisterPostTypesListenerTest extends MockeryTestCase {
 			'Post type class must implement PostTypeInterface. Given: ' . $class_name . '.',
 		);
 
-		$event = new RegisterPostTypesEvent( $this->context );
+		$event = new ActionRegisterPostTypesEvent( $this->context );
 
 		$this->listener->handle( $event );
 	}

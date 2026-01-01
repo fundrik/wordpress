@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\PostSavedEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostSavedEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -81,7 +81,7 @@ final readonly class WpAfterInsertPostActionBridge implements HookToEventBridgeI
 			$valid_post_before = $this->validate_post_before( $post_before );
 
 			$this->dispatcher->dispatch(
-				new PostSavedEvent(
+				new ActionPostSavedEvent(
 					post_id: $valid_post_id,
 					post: $valid_post,
 					update: $valid_update,

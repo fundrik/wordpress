@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
@@ -64,14 +64,14 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 	public function handle(): void {
 
 		try {
-			$this->dispatcher->dispatch( new RegisterPostTypesEvent( $this->context ) );
+			$this->dispatcher->dispatch( new ActionRegisterPostTypesEvent( $this->context ) );
 		} catch ( Throwable $e ) {
 			$this->logger->log_dispatch_failed( $e );
 			throw $e;
 		}
 
 		try {
-			$this->dispatcher->dispatch( new RegisterBlocksEvent( $this->context ) );
+			$this->dispatcher->dispatch( new ActionRegisterBlocksEvent( $this->context ) );
 		} catch ( Throwable $e ) {
 			$this->logger->log_dispatch_failed( $e );
 			throw $e;
@@ -79,7 +79,7 @@ final readonly class InitActionBridge implements HookToEventBridgeInterface {
 
 		$this->log_handled(
 			outcome: 'dispatched',
-			events: [ 'RegisterPostTypesEvent', 'RegisterBlocksEvent' ],
+			events: [ 'ActionRegisterPostTypesEvent', 'ActionRegisterBlocksEvent' ],
 		);
 	}
 

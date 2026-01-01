@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
 
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\EnsureCampaignPostCanBeSyncedListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\ProvideCampaignVersionForSyncListener;
@@ -39,8 +39,8 @@ class EventListenerRegistry {
 	public function get_event_listener_map(): array {
 
 		return [
-			RegisterPostTypesEvent::class => RegisterPostTypesListener::class,
-			RegisterBlocksEvent::class => RegisterBlocksListener::class,
+			ActionRegisterPostTypesEvent::class => RegisterPostTypesListener::class,
+			ActionRegisterBlocksEvent::class => RegisterBlocksListener::class,
 			FilterAllowedBlockTypesEvent::class => FilterAllowedBlocksByPostTypeListener::class,
 			FilterRestPrepareCampaignEvent::class => ProvideCampaignVersionForSyncListener::class,
 			FilterBeforeRestInsertCampaignEvent::class => EnsureCampaignPostCanBeSyncedListener::class,

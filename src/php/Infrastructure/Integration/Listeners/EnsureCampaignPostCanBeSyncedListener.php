@@ -10,6 +10,7 @@ use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\Toolbox\TypeCaster;
@@ -168,7 +169,7 @@ final readonly class EnsureCampaignPostCanBeSyncedListener implements Infrastruc
 
 		try {
 			$persisted = $this->campaign_repository->find_by_id( EntityId::create( $data['id'] ) );
-		} catch ( CampaignRepositoryExceptionInterface $e ) {
+		} catch ( CampaignRepositoryExceptionInterface | InvalidEntityIdException $e ) {
 
 			$event->reject(
 				new WP_Error(

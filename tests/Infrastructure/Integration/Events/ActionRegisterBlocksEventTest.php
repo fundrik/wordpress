@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\RegisterBlocksEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -12,8 +12,8 @@ use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass( RegisterBlocksEvent::class )]
-final class RegisterBlocksEventTest extends MockeryTestCase {
+#[CoversClass( ActionRegisterBlocksEvent::class )]
+final class ActionRegisterBlocksEventTest extends MockeryTestCase {
 
 	private WordPressContextInterface&MockInterface $context;
 
@@ -27,7 +27,7 @@ final class RegisterBlocksEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_exposes_the_context(): void {
 
-		$event = new RegisterBlocksEvent( $this->context );
+		$event = new ActionRegisterBlocksEvent( $this->context );
 
 		$this->assertSame( $this->context, $event->context );
 	}
