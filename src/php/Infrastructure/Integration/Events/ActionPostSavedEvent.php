@@ -9,7 +9,7 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressConte
 use WP_Post;
 
 /**
- * Signals that a post, along with its terms and metadata, has been saved.
+ * Signals that WordPress saved a post.
  *
  * Triggered by the WordPress 'wp_after_insert_post' action via the integration bridge.
  *

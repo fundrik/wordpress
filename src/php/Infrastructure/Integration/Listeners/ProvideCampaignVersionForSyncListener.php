@@ -9,7 +9,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventListenerInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 
 /**
@@ -37,9 +37,9 @@ final readonly class ProvideCampaignVersionForSyncListener implements Infrastruc
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param FilterRestPrepareCampaignEvent $event Carries the response, post, and request context.
+	 * @param FilterCampaignRestResponseEvent $event Carries the response, post, and request context.
 	 */
-	public function handle( FilterRestPrepareCampaignEvent $event ): void {
+	public function handle( FilterCampaignRestResponseEvent $event ): void {
 
 		$entity_id = EntityId::create( TypeCaster::to_int( $event->post->ID ) );
 

@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\ProvideCampaignVersionForSyncListener;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
@@ -24,7 +24,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 #[CoversClass( ProvideCampaignVersionForSyncListener::class )]
-#[UsesClass( FilterRestPrepareCampaignEvent::class )]
+#[UsesClass( FilterCampaignRestResponseEvent::class )]
 final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
@@ -62,7 +62,7 @@ final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
 
-		$event = new FilterRestPrepareCampaignEvent(
+		$event = new FilterCampaignRestResponseEvent(
 			response: $response,
 			post: $post,
 			request: $this->request,
@@ -85,7 +85,7 @@ final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( null );
 
-		$event = new FilterRestPrepareCampaignEvent(
+		$event = new FilterCampaignRestResponseEvent(
 			response: $response,
 			post: $post,
 			request: $this->request,
@@ -120,7 +120,7 @@ final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $campaign );
 
-		$event = new FilterRestPrepareCampaignEvent(
+		$event = new FilterCampaignRestResponseEvent(
 			response: $response,
 			post: $post,
 			request: $this->request,
@@ -158,7 +158,7 @@ final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $campaign );
 
-		$event = new FilterRestPrepareCampaignEvent(
+		$event = new FilterCampaignRestResponseEvent(
 			response: $response,
 			post: $post,
 			request: $this->request,
@@ -192,7 +192,7 @@ final class ProvideCampaignVersionForSyncListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $campaign );
 
-		$event = new FilterRestPrepareCampaignEvent(
+		$event = new FilterCampaignRestResponseEvent(
 			response: $response,
 			post: $post,
 			request: $this->request,

@@ -8,7 +8,7 @@ use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterfac
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 
 /**
- * Signals that WordPress custom post types should be registered.
+ * Signals that it is time to register custom post types.
  *
  * Triggered by the WordPress 'init' action via the integration bridge.
  *

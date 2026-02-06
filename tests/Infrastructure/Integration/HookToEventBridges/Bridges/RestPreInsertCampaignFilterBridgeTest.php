@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -26,7 +26,7 @@ use WP_Error;
 use WP_REST_Request;
 
 #[CoversClass( RestPreInsertCampaignFilterBridge::class )]
-#[UsesClass( FilterBeforeRestInsertCampaignEvent::class )]
+#[UsesClass( FilterCampaignBeforeSavedViaRestEvent::class )]
 #[UsesClass( BridgeLogger::class )]
 #[UsesClass( InvalidBridgeArgumentException::class )]
 #[UsesClass( PostTypeId::class )]
@@ -89,7 +89,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $prepared_post, $request ): bool {
 
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
+						if ( ! $event instanceof FilterCampaignBeforeSavedViaRestEvent ) {
 							return false;
 						}
 
@@ -123,7 +123,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $prepared_post, $request, $changed_post ): bool {
 
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
+						if ( ! $event instanceof FilterCampaignBeforeSavedViaRestEvent ) {
 							return false;
 						}
 
@@ -165,7 +165,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $prepared_post, $request, $error ): bool {
 
-						if ( ! $event instanceof FilterBeforeRestInsertCampaignEvent ) {
+						if ( ! $event instanceof FilterCampaignBeforeSavedViaRestEvent ) {
 							return false;
 						}
 
@@ -274,7 +274,7 @@ final class RestPreInsertCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( FilterBeforeRestInsertCampaignEvent::class ) )
+			->with( Mockery::type( FilterCampaignBeforeSavedViaRestEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger

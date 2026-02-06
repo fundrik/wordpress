@@ -15,7 +15,7 @@ use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventListenerInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 use InvalidArgumentException;
 use WP_Error;
@@ -47,9 +47,9 @@ final readonly class EnsureCampaignPostCanBeSyncedListener implements Infrastruc
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param FilterBeforeRestInsertCampaignEvent $event Carries the prepared post and request payload.
+	 * @param FilterCampaignBeforeSavedViaRestEvent $event Carries the prepared post and request payload.
 	 */
-	public function handle( FilterBeforeRestInsertCampaignEvent $event ): void {
+	public function handle( FilterCampaignBeforeSavedViaRestEvent $event ): void {
 
 		$data = $this->extract_sync_data_or_reject( $event );
 
@@ -70,11 +70,11 @@ final readonly class EnsureCampaignPostCanBeSyncedListener implements Infrastruc
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param FilterBeforeRestInsertCampaignEvent $event Carries the prepared post and request payload.
+	 * @param FilterCampaignBeforeSavedViaRestEvent $event Carries the prepared post and request payload.
 	 *
 	 * @return array<string, int|string|bool>|null The normalized sync data, or null when the request is rejected.
 	 */
-	private function extract_sync_data_or_reject( FilterBeforeRestInsertCampaignEvent $event, ): ?array {
+	private function extract_sync_data_or_reject( FilterCampaignBeforeSavedViaRestEvent $event, ): ?array {
 
 		$params = $event->request->get_json_params();
 
@@ -115,13 +115,13 @@ final readonly class EnsureCampaignPostCanBeSyncedListener implements Infrastruc
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param FilterBeforeRestInsertCampaignEvent $event Carries the prepared post and request payload.
+	 * @param FilterCampaignBeforeSavedViaRestEvent $event Carries the prepared post and request payload.
 	 * @param array<string, int|string|bool> $data The normalized synchronization data.
 	 *
 	 * @return bool True when the payload is accepted by the domain, false when rejected.
 	 */
 	private function ensure_domain_accepts_payload_or_reject(
-		FilterBeforeRestInsertCampaignEvent $event,
+		FilterCampaignBeforeSavedViaRestEvent $event,
 		array $data,
 	): bool {
 
@@ -158,10 +158,10 @@ final readonly class EnsureCampaignPostCanBeSyncedListener implements Infrastruc
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param FilterBeforeRestInsertCampaignEvent $event Carries the prepared post and request payload.
+	 * @param FilterCampaignBeforeSavedViaRestEvent $event Carries the prepared post and request payload.
 	 * @param array<string, int|string|bool> $data The normalized synchronization data.
 	 */
-	private function ensure_version_matches_or_reject( FilterBeforeRestInsertCampaignEvent $event, array $data ): void {
+	private function ensure_version_matches_or_reject( FilterCampaignBeforeSavedViaRestEvent $event, array $data ): void {
 
 		if ( $data['expected_version'] === null ) {
 			return;

@@ -8,6 +8,7 @@ use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\Allo
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\EnqueueBlockEditorAssetsActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\InitActionBridge;
+use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestAfterInsertCampaignActionBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\WpAfterInsertPostActionBridge;
@@ -30,6 +31,7 @@ final class HookBridgeRegistryTest extends FundrikTestCase {
 				DeletePostActionBridge::class,
 				EnqueueBlockEditorAssetsActionBridge::class,
 				InitActionBridge::class,
+				RestAfterInsertCampaignActionBridge::class,
 				RestPreInsertCampaignFilterBridge::class,
 				RestPrepareCampaignFilterBridge::class,
 				WpAfterInsertPostActionBridge::class,

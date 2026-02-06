@@ -9,7 +9,7 @@ use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressConte
 use WP_Block_Editor_Context;
 
 /**
- * Signals that the list of allowed block types in the Block Editor should be filtered or overridden.
+ * Allows overriding the allowed block types for the current Block Editor context.
  *
  * Triggered by the WordPress 'allowed_block_types_all' filter via the integration bridge.
  *

@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\EventDispatcher;
 
+use Fundrik\WordPress\Infrastructure\Integration\Events\ActionCampaignSavedViaRestEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\EnsureCampaignPostCanBeSyncedListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\ProvideCampaignVersionForSyncListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListener;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
+use Fundrik\WordPress\Infrastructure\Integration\Listeners\SyncCampaignAfterRestSaveListener;
 
 /**
  * Provides the map of infrastructure events to their listeners.
@@ -42,8 +44,9 @@ class EventListenerRegistry {
 			ActionRegisterPostTypesEvent::class => RegisterPostTypesListener::class,
 			ActionRegisterBlocksEvent::class => RegisterBlocksListener::class,
 			FilterAllowedBlockTypesEvent::class => FilterAllowedBlocksByPostTypeListener::class,
-			FilterRestPrepareCampaignEvent::class => ProvideCampaignVersionForSyncListener::class,
-			FilterBeforeRestInsertCampaignEvent::class => EnsureCampaignPostCanBeSyncedListener::class,
+			FilterCampaignRestResponseEvent::class => ProvideCampaignVersionForSyncListener::class,
+			FilterCampaignBeforeSavedViaRestEvent::class => EnsureCampaignPostCanBeSyncedListener::class,
+			ActionCampaignSavedViaRestEvent::class => SyncCampaignAfterRestSaveListener::class,
 		];
 	}
 }

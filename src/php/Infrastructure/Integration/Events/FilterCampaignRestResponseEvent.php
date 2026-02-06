@@ -11,13 +11,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 /**
- * Signals that a campaign REST response should be filtered before sending it to the client.
+ * Allows modifying the REST response returned for a campaign before it is sent to the client.
  *
  * Triggered by the WordPress 'rest_prepare_(post_type)' filter via the integration bridge.
  *
  * @since 1.0.0
  */
-final class FilterRestPrepareCampaignEvent implements InfrastructureEventInterface {
+final class FilterCampaignRestResponseEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.

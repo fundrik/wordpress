@@ -7,28 +7,31 @@ namespace Fundrik\WordPress\Infrastructure\Integration\Events;
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventInterface;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use WP_Post;
+use WP_REST_Request;
 
 /**
- * Signals that WordPress deleted a post.
+ * Signals that WordPress saved a campaign via REST.
  *
- * Triggered by the WordPress 'delete_post' action via the integration bridge.
+ * Triggered by the WordPress 'rest_after_insert_{post_type}' action.
  *
  * @since 1.0.0
  */
-final readonly class ActionPostDeletedEvent implements InfrastructureEventInterface {
+final readonly class ActionCampaignSavedViaRestEvent implements InfrastructureEventInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $post_id Post ID.
-	 * @param WP_Post $post Post object.
+	 * @param WP_Post $post Inserted or updated post object.
+	 * @param WP_REST_Request $request Request object.
+	 * @param bool $creating True when creating a post, false when updating.
 	 * @param WordPressContextInterface $context The WordPress-specific plugin context.
 	 */
 	public function __construct(
-		public int $post_id,
 		public WP_Post $post,
+		public WP_REST_Request $request,
+		public bool $creating,
 		public WordPressContextInterface $context,
 	) {}
 }

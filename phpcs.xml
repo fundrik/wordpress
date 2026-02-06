@@ -32,8 +32,8 @@
 			</property>
 			<property name="excludedClasses" type="array">
 				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent"/>
+				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent"/>
+				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge"/>
 				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger"/>

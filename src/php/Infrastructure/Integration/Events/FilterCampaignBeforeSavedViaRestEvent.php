@@ -10,14 +10,14 @@ use WP_Error;
 use WP_REST_Request;
 
 /**
- * Signals that a campaign post prepared via the REST API should be filtered before insertion.
+ * Allows modifying the prepared campaign post or rejecting the REST save operation before WordPress persists it.
  *
  * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
  * Triggered by the WordPress 'rest_pre_insert_(post_type)' filter for the campaign post type via the integration bridge.
  *
  * @since 1.0.0
  */
-final class FilterBeforeRestInsertCampaignEvent implements RejectableFilterEventInterface {
+final class FilterCampaignBeforeSavedViaRestEvent implements RejectableFilterEventInterface {
 
 	/**
 	 * Stores the optional rejection error for aborting the REST operation.

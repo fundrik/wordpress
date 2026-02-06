@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -15,8 +15,8 @@ use stdClass;
 use WP_Error;
 use WP_REST_Request;
 
-#[CoversClass( FilterBeforeRestInsertCampaignEvent::class )]
-final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
+#[CoversClass( FilterCampaignBeforeSavedViaRestEvent::class )]
+final class FilterCampaignBeforeSavedViaRestEventTest extends MockeryTestCase {
 
 	private WP_REST_Request&MockInterface $request;
 	private WordPressContextInterface&MockInterface $context;
@@ -35,7 +35,7 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 		$prepared_post = new stdClass();
 		$prepared_post->post_title = 'Test Campaign';
 
-		$event = new FilterBeforeRestInsertCampaignEvent( $prepared_post, $this->request, $this->context );
+		$event = new FilterCampaignBeforeSavedViaRestEvent( $prepared_post, $this->request, $this->context );
 
 		$this->assertSame( $prepared_post, $event->prepared_post );
 		$this->assertSame( 'Test Campaign', $event->prepared_post->post_title );
@@ -48,7 +48,7 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 
 		$prepared_post = new stdClass();
 
-		$event = new FilterBeforeRestInsertCampaignEvent( $prepared_post, $this->request, $this->context );
+		$event = new FilterCampaignBeforeSavedViaRestEvent( $prepared_post, $this->request, $this->context );
 
 		$event->prepared_post->post_content = 'Modified Content';
 
@@ -58,7 +58,7 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_is_not_rejected_by_default(): void {
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			new stdClass(),
 			$this->request,
 			$this->context,
@@ -71,7 +71,7 @@ final class FilterBeforeRestInsertCampaignEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_can_be_rejected_with_error(): void {
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			new stdClass(),
 			$this->request,
 			$this->context,

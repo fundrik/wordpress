@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -26,7 +26,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 #[CoversClass( RestPrepareCampaignFilterBridge::class )]
-#[UsesClass( FilterRestPrepareCampaignEvent::class )]
+#[UsesClass( FilterCampaignRestResponseEvent::class )]
 #[UsesClass( BridgeLogger::class )]
 #[UsesClass( InvalidBridgeArgumentException::class )]
 #[UsesClass( PostTypeId::class )]
@@ -90,7 +90,7 @@ final class RestPrepareCampaignFilterBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $response, $post, $request ): bool {
 
-						if ( ! $event instanceof FilterRestPrepareCampaignEvent ) {
+						if ( ! $event instanceof FilterCampaignRestResponseEvent ) {
 							return false;
 						}
 
@@ -125,7 +125,7 @@ final class RestPrepareCampaignFilterBridgeTest extends WordPressTestCase {
 				Mockery::on(
 					function ( object $event ) use ( $response, $post, $request, $changed_response ): bool {
 
-						if ( ! $event instanceof FilterRestPrepareCampaignEvent ) {
+						if ( ! $event instanceof FilterCampaignRestResponseEvent ) {
 							return false;
 						}
 
@@ -276,7 +276,7 @@ final class RestPrepareCampaignFilterBridgeTest extends WordPressTestCase {
 		$this->dispatcher
 			->shouldReceive( 'dispatch' )
 			->once()
-			->with( Mockery::type( FilterRestPrepareCampaignEvent::class ) )
+			->with( Mockery::type( FilterCampaignRestResponseEvent::class ) )
 			->andThrow( $e );
 
 		$this->psr_logger

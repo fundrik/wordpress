@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookToEventBridgeInterface;
 use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
@@ -95,7 +95,7 @@ final class RestPrepareCampaignFilterBridge implements HookToEventBridgeInterfac
 			$valid_post = $this->validate_post( $post );
 			$valid_request = $this->validate_request( $request );
 
-			$event = new FilterRestPrepareCampaignEvent(
+			$event = new FilterCampaignRestResponseEvent(
 				response: $valid_response,
 				post: $valid_post,
 				request: $valid_request,

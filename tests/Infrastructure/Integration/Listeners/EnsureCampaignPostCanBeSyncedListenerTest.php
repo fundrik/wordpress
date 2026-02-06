@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterBeforeRestInsertCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
 use Fundrik\WordPress\Infrastructure\Integration\Listeners\EnsureCampaignPostCanBeSyncedListener;
 use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
@@ -23,7 +23,7 @@ use WP_Error;
 use WP_REST_Request;
 
 #[CoversClass( EnsureCampaignPostCanBeSyncedListener::class )]
-#[UsesClass( FilterBeforeRestInsertCampaignEvent::class )]
+#[UsesClass( FilterCampaignBeforeSavedViaRestEvent::class )]
 final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
@@ -67,7 +67,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 				],
 			);
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -108,7 +108,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 
 		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -149,7 +149,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 			->with( Mockery::on( static fn ( EntityId $id ): bool => $id->get_value() === 10 ) )
 			->andThrow( $repo_exception );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -191,7 +191,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( null );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -243,7 +243,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $persisted );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -300,7 +300,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $persisted );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,
@@ -334,7 +334,7 @@ final class EnsureCampaignPostCanBeSyncedListenerTest extends MockeryTestCase {
 
 		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
 
-		$event = new FilterBeforeRestInsertCampaignEvent(
+		$event = new FilterCampaignBeforeSavedViaRestEvent(
 			prepared_post: $prepared_post,
 			request: $this->request,
 			context: $this->context,

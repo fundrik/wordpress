@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterRestPrepareCampaignEvent;
+use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
 use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -15,8 +15,8 @@ use WP_Post;
 use WP_REST_Request;
 use WP_REST_Response;
 
-#[CoversClass( FilterRestPrepareCampaignEvent::class )]
-final class FilterRestPrepareCampaignEventTest extends MockeryTestCase {
+#[CoversClass( FilterCampaignRestResponseEvent::class )]
+final class FilterCampaignRestResponseEventTest extends MockeryTestCase {
 
 	private WP_REST_Response&MockInterface $response;
 	private WP_Post&MockInterface $post;
@@ -36,7 +36,7 @@ final class FilterRestPrepareCampaignEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_accepts_response_post_request_and_context(): void {
 
-		$event = new FilterRestPrepareCampaignEvent( $this->response, $this->post, $this->request, $this->context );
+		$event = new FilterCampaignRestResponseEvent( $this->response, $this->post, $this->request, $this->context );
 
 		$this->assertSame( $this->response, $event->response );
 		$this->assertSame( $this->post, $event->post );
@@ -47,7 +47,7 @@ final class FilterRestPrepareCampaignEventTest extends MockeryTestCase {
 	#[Test]
 	public function it_allows_modification_of_response(): void {
 
-		$event = new FilterRestPrepareCampaignEvent( $this->response, $this->post, $this->request, $this->context );
+		$event = new FilterCampaignRestResponseEvent( $this->response, $this->post, $this->request, $this->context );
 
 		$new_response = Mockery::mock( WP_REST_Response::class );
 
