@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
+namespace Fundrik\WordPress\Tests\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\InitActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\ActionRegisterBlocksEvent;
+use Fundrik\WordPress\Integration\Events\ActionRegisterPostTypesEvent;
+use Fundrik\WordPress\Integration\HookToEventBridges\BridgeLogger;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\InitActionBridge;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;

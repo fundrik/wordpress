@@ -20,7 +20,7 @@ final readonly class MigrationVersionReader {
 	/**
 	 * Ensures that the version follows the sortable pattern `YYYY_MM_DD_XX`.
 	 */
-	private const VERSION_REGEX = '/^\d{4}_\d{2}_\d{2}_\d{2}$/';
+	private const string VERSION_REGEX = '/^\d{4}_\d{2}_\d{2}_\d{2}$/';
 
 	/**
 	 * Returns the version from a migration class.

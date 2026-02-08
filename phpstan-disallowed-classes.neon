@@ -27,13 +27,13 @@ parameters:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
 
 		-
-			class: Fundrik\WordPress\Infrastructure\Integration\WpdbDatabase
+			class: Fundrik\WordPress\Integration\WpdbDatabase
 			message: 'Use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface instead.'
 			allowIn:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
 
 		-
-			class: Fundrik\WordPress\Infrastructure\Integration\WordPressOptionsStorage
+			class: Fundrik\WordPress\Integration\WordPressOptionsStorage
 			message: 'Use Fundrik\WordPress\Infrastructure\StorageInterface instead.'
 			allowIn:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
@@ -45,14 +45,14 @@ parameters:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
 
 		-
-			class: Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistrar
+			class: Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistrar
 			message: 'Use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort instead.'
 			allowIn:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
 
 		-
-			class: Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext
-			message: 'Use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface instead.'
+			class: Fundrik\WordPress\Integration\WordPressContext\WordPressContext
+			message: 'Use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface instead.'
 			allowIn:
 				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
 

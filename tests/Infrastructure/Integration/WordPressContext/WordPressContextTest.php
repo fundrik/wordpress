@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\WordPressContext;
+namespace Fundrik\WordPress\Tests\Integration\WordPressContext;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext;
+use Fundrik\WordPress\Integration\PostTypes\CampaignPostType;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;

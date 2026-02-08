@@ -12,7 +12,7 @@
 	<arg name="parallel" value="8"/>
 	<arg value="q"/>
 
-	<config name="testVersion" value="8.2-"/>
+	<config name="testVersion" value="8.3-"/>
 
 	<rule ref="FundrikStandard"/>
 
@@ -31,14 +31,14 @@
 				<element value="Throwable"/>
 			</property>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener"/>
-				<element value="Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContext"/>
+				<element value="Fundrik\WordPress\Integration\Events\FilterAllowedBlockTypesEvent"/>
+				<element value="Fundrik\WordPress\Integration\Events\FilterCampaignBeforeSavedViaRestEvent"/>
+				<element value="Fundrik\WordPress\Integration\Events\FilterCampaignRestResponseEvent"/>
+				<element value="Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
+				<element value="Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge"/>
+				<element value="Fundrik\WordPress\Integration\HookToEventBridges\BridgeLogger"/>
+				<element value="Fundrik\WordPress\Integration\Listeners\FilterAllowedBlocksByPostTypeListener"/>
+				<element value="Fundrik\WordPress\Integration\WordPressContext\WordPressContext"/>
 			</property>
 		</properties>
 	</rule>
@@ -57,10 +57,10 @@
 				<element value="Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
-				<element value="Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry"/>
+				<element value="Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistry"/>
 			</property>
 			<property name="excludedParentClasses" type="array">
-				<element value="Fundrik\WordPress\Infrastructure\Integration\PostTypes\PostTypeInterface"/>
+				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeInterface"/>
 			</property>
 		</properties>
 	</rule>

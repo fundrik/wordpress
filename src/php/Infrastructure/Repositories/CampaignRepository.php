@@ -24,7 +24,7 @@ use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
  */
 final readonly class CampaignRepository implements CampaignRepositoryPort {
 
-	private const TABLE_NAME = 'fundrik_campaigns';
+	private const string TABLE_NAME = 'fundrik_campaigns';
 
 	/**
 	 * Constructor.
@@ -92,7 +92,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		}
 
 		return array_map(
-			fn ( array $row ): Campaign => $this->map_row_to_campaign_or_fail( $row ),
+			$this->map_row_to_campaign_or_fail( ... ),
 			$rows,
 		);
 	}

@@ -22,7 +22,7 @@ use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
  */
 final readonly class MigrationRunner implements MigrationRunnerPort {
 
-	private const OPTION_KEY = 'fundrik_db_version';
+	private const string OPTION_KEY = 'fundrik_db_version';
 
 	/**
 	 * Constructor.

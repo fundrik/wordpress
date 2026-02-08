@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges;
+namespace Fundrik\WordPress\Tests\Integration\HookToEventBridges;
 
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\AllowedBlockTypesAllFilterBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\EnqueueBlockEditorAssetsActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\InitActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestAfterInsertCampaignActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\WpAfterInsertPostActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\HookBridgeRegistry;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\AllowedBlockTypesAllFilterBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\EnqueueBlockEditorAssetsActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\InitActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestAfterInsertCampaignActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\WpAfterInsertPostActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistry;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

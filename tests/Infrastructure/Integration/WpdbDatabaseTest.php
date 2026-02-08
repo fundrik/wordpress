@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Integration;
 
 use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
-use Fundrik\WordPress\Infrastructure\Integration\WpdbDatabase;
+use Fundrik\WordPress\Integration\WpdbDatabase;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;

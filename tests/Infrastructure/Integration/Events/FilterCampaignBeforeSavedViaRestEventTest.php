@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Events;
+namespace Fundrik\WordPress\Tests\Integration\Events;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\FilterCampaignBeforeSavedViaRestEvent;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;

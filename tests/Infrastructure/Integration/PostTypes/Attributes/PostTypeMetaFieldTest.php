@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\PostTypes\Attributes;
+namespace Fundrik\WordPress\Tests\Integration\PostTypes\Attributes;
 
-use Fundrik\WordPress\Infrastructure\Integration\MetaFieldType;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\MetaFieldType;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaField;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
+namespace Fundrik\WordPress\Tests\Integration\Listeners;
 
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterPostTypesEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterPostTypesListener;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeId;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMetaField;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMetaFieldReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlug;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlugReader;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\ActionRegisterPostTypesEvent;
+use Fundrik\WordPress\Integration\Listeners\RegisterPostTypesListener;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeId;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeIdReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaFieldReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSlug;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSlugReader;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostType;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;

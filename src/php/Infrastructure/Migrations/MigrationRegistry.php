@@ -15,7 +15,7 @@ use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTabl
  */
 class MigrationRegistry {
 
-	private const TARGET_VERSION = '2025_06_15_00';
+	private const string TARGET_VERSION = '2025_06_15_00';
 
 	/**
 	 * Returns all migration class names.

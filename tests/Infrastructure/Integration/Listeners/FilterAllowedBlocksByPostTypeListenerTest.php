@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
+namespace Fundrik\WordPress\Tests\Integration\Listeners;
 
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterAllowedBlockTypesEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeId;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\FilterAllowedBlockTypesEvent;
+use Fundrik\WordPress\Integration\Listeners\FilterAllowedBlocksByPostTypeListener;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeId;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeIdReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostType;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostType;
 use Fundrik\WordPress\Tests\MockeryTestCase;

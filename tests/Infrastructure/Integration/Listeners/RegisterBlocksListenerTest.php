@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
+namespace Fundrik\WordPress\Tests\Integration\Listeners;
 
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
-use Fundrik\WordPress\Infrastructure\Integration\Events\ActionRegisterBlocksEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Listeners\RegisterBlocksListener;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\ActionRegisterBlocksEvent;
+use Fundrik\WordPress\Integration\Listeners\RegisterBlocksListener;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;

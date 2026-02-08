@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\Listeners;
+namespace Fundrik\WordPress\Tests\Integration\Listeners;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\WordPress\Infrastructure\Integration\Events\FilterCampaignRestResponseEvent;
-use Fundrik\WordPress\Infrastructure\Integration\Listeners\ProvideCampaignVersionForSyncListener;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\FilterCampaignRestResponseEvent;
+use Fundrik\WordPress\Integration\Listeners\ProvideCampaignVersionForSyncListener;
+use Fundrik\WordPress\Integration\PostTypes\CampaignPostType;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;

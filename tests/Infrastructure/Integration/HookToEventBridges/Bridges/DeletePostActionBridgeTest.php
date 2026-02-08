@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges\Bridges;
+namespace Fundrik\WordPress\Tests\Integration\HookToEventBridges\Bridges;
 
 use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
-use Fundrik\WordPress\Infrastructure\Integration\Events\ActionPostDeletedEvent;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\BridgeLogger;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
-use Fundrik\WordPress\Infrastructure\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\Events\ActionPostDeletedEvent;
+use Fundrik\WordPress\Integration\HookToEventBridges\BridgeLogger;
+use Fundrik\WordPress\Integration\HookToEventBridges\Bridges\DeletePostActionBridge;
+use Fundrik\WordPress\Integration\HookToEventBridges\InvalidBridgeArgumentException;
+use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;

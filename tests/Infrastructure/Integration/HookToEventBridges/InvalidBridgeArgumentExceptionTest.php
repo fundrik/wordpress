@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\HookToEventBridges;
+namespace Fundrik\WordPress\Tests\Integration\HookToEventBridges;
 
-use Fundrik\WordPress\Infrastructure\Integration\HookToEventBridges\InvalidBridgeArgumentException;
+use Fundrik\WordPress\Integration\HookToEventBridges\InvalidBridgeArgumentException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

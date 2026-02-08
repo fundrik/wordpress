@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration\PostTypes;
+namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeId;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeIdReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMetaField;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeMetaFieldReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlug;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSlugReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\CampaignPostType;
-use Fundrik\WordPress\Infrastructure\Integration\PostTypes\PostTypeInterface;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeBlockTemplateReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeId;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeIdReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaFieldReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSlug;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSlugReader;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
+use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlockReader;
+use Fundrik\WordPress\Integration\PostTypes\CampaignPostType;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeInterface;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
