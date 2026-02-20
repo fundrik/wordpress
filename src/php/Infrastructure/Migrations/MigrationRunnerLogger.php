@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -134,25 +134,21 @@ final readonly class MigrationRunnerLogger {
 	}
 
 	/**
-	 * Logs that a migration completed; includes whether version was updated (debug).
+	 * Logs that a migration was applied successfully (debug).
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $class_name The migration class name.
 	 * @param string $version The migration version.
-	 * @param bool $version_updated Whether the stored DB version was updated.
 	 */
-	public function log_migration_applied( string $class_name, string $version, bool $version_updated ): void {
+	public function log_migration_applied( string $class_name, string $version ): void {
 
 		$this->logger->debug(
-			$version_updated
-				? 'Applying migration succeeded and version updated.'
-				: 'Applying migration succeeded but version update failed.',
+			'Applying migration succeeded.',
 			$this->logger_context(
 				extra: [
 					'operation' => 'apply_migration',
 					'outcome' => 'applied',
-					'version_updated' => $version_updated,
 				],
 				class_name: $class_name,
 				version: $version,
@@ -248,7 +244,7 @@ final readonly class MigrationRunnerLogger {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function logger_context( array $extra = [], ?string $class_name = null, ?string $version = null, ): array {
+	private function logger_context( array $extra = [], ?string $class_name = null, ?string $version = null ): array {
 
 		$base = [
 			'service_class' => MigrationRunner::class,

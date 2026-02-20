@@ -39,24 +39,27 @@ final readonly class MigrationVersionReader {
 
 		$attributes = ( new ReflectionClass( $class_name ) )->getAttributes( MigrationVersion::class );
 
-		if ( $attributes === [] ) {
+		if ( $attributes === [] || count( $attributes ) !== 1 ) {
+
 			throw new MigrationException(
-				"Cannot read migration version: class '{$class_name}' is missing #[MigrationVersion] attribute.",
+				sprintf(
+					'Cannot read migration version: the class "%s" must declare exactly one #[MigrationVersion].',
+					$class_name,
+				),
 			);
 		}
 
 		$value = $attributes[0]->newInstance()->value;
 
-		if ( trim( $value ) === '' ) {
-			throw new MigrationException(
-				"Cannot read migration version: class '{$class_name}' has an empty #[MigrationVersion] value.",
-			);
-		}
-
 		if ( preg_match( self::VERSION_REGEX, $value ) !== 1 ) {
+
 			throw new MigrationException(
-				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				"Cannot read migration version: class '{$class_name}' has an invalid format '{$value}'. Expected 'YYYY_MM_DD_XX'.",
+				sprintf(
+					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+					'Cannot read migration version: the value must follow "YYYY_MM_DD_XX" for the class "%s". Given: %s.',
+					$class_name,
+					$value,
+				),
 			);
 		}
 

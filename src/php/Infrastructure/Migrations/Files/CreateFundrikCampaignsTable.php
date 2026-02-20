@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations\Files;
 
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
@@ -19,7 +19,6 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 #[MigrationVersion( '2025_06_15_00' )]
 final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Applies the table creation schema for campaign data.
 	 *
@@ -48,9 +47,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 		try {
 			$this->database->query( $sql );
 		} catch ( DatabaseException $e ) {
-
 			throw new MigrationException( 'Cannot create the "fundrik_campaigns" table.', previous: $e );
 		}
 	}
-	// phpcs:enable
 }
