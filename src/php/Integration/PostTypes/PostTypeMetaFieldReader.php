@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\PostTypes\Attributes;
+namespace Fundrik\WordPress\Integration\PostTypes;
 
 use Fundrik\Toolbox\TypeCaster;
 use ReflectionClass;
@@ -17,13 +17,11 @@ use ReflectionClass;
 final readonly class PostTypeMetaFieldReader {
 
 	/**
-	 * Returns meta field definitions from a post type class.
+	 * Returns meta field definitions from a post type config class.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $class_name The fully qualified class name of the post type.
-	 *
-	 * @phpstan-param class-string $class_name
+	 * @param PostTypeConfigInterface $post_type_config The post type config.
 	 *
 	 * @return array<string, array<string, int|string|bool>> The declared meta fields.
 	 *
@@ -31,10 +29,12 @@ final readonly class PostTypeMetaFieldReader {
 	 *   type: string,
 	 *   default?: int|string|bool,
 	 * }>
+	 *
+	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
-	public function get_meta_fields( string $class_name ): array {
+	public function get_meta_fields( PostTypeConfigInterface $post_type_config ): array {
 
-		$reflection = new ReflectionClass( $class_name );
+		$reflection = new ReflectionClass( $post_type_config::class );
 
 		$fields = [];
 

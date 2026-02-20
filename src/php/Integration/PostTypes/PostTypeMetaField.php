@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\PostTypes\Attributes;
+namespace Fundrik\WordPress\Integration\PostTypes;
 
 use Attribute;
 use Fundrik\WordPress\Integration\MetaFieldType;
 
 /**
- * Declares a post meta field associated with a post type constant.
+ * Declares a post meta field associated with a post type config constant.
  *
  * This attribute is applied to class constants that represent post meta keys.
  * It provides type information and an optional default value, used during

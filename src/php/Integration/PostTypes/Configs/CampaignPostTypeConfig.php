@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\PostTypes;
+namespace Fundrik\WordPress\Integration\PostTypes\Configs;
 
 use Fundrik\WordPress\Integration\MetaFieldType;
-use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeBlockTemplate;
-use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeId;
-use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSlug;
-use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 
 /**
  * Provides configuration for the campaign post type.
@@ -18,13 +15,7 @@ use Fundrik\WordPress\Integration\PostTypes\Attributes\PostTypeSpecificBlock;
  *
  * @internal
  */
-#[PostTypeId( 'fundrik_campaign' )]
-#[PostTypeSlug( 'campaigns' )]
-#[PostTypeBlockTemplate( [ [ 'fundrik/campaign-settings' ] ] )]
-#[PostTypeSpecificBlock( 'fundrik/campaign-settings' )]
-class CampaignPostType implements PostTypeInterface {
-
-	public const string ENTITY_VERSION_NAME = 'fundrik_campaign_version';
+class CampaignPostTypeConfig implements PostTypeConfigInterface {
 
 	/**
 	 * Stores whether the campaign is open for donations.
@@ -43,6 +34,58 @@ class CampaignPostType implements PostTypeInterface {
 	 */
 	#[PostTypeMetaField( type: MetaFieldType::Number )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
+
+	/**
+	 * Returns the post type ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string The post type ID.
+	 */
+	public function get_id(): string {
+
+		return 'fundrik_campaign';
+	}
+
+	/**
+	 * Returns the post type slug.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string The post type slug.
+	 */
+	public function get_slug(): string {
+
+		return 'campaigns';
+	}
+
+	/**
+	 * Returns the block editor template applied to this post type.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<int, array<int, string>> The block template configuration.
+	 *
+	 * @phpstan-return list<list<string>>
+	 */
+	public function get_block_template(): array {
+
+		return [ [ 'fundrik/campaign-settings' ] ];
+	}
+
+	/**
+	 * Returns the list of blocks that are explicitly available for this post type.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<int, string> The list of allowed block names.
+	 *
+	 * @phpstan-return list<string>
+	 */
+	public function get_specific_blocks(): array {
+
+		return [ 'fundrik/campaign-settings' ];
+	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -82,4 +125,16 @@ class CampaignPostType implements PostTypeInterface {
 		];
 	}
 	// phpcs:enable
+
+	/**
+	 * Returns the meta field key used for optimistic version checks.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string The meta field name storing the entity version.
+	 */
+	public function get_entity_version_field_name(): string {
+
+		return 'fundrik_campaign_version';
+	}
 }
