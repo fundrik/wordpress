@@ -246,8 +246,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	// phpcs:enable
 
 	/**
-	 * // TODO: fix race condition. Upsert?
-	 *
 	 * Saves the given campaign by inserting or updating it.
 	 *
 	 * @since 0.1.0
@@ -257,6 +255,8 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 * @return CampaignRepositorySaveOutcome Contains the result and the persisted campaign snapshot.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the save fails.
+	 *
+	 * @todo Fix race condition. Upsert?
 	 */
 	public function save( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
