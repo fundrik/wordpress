@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Database;
+namespace Fundrik\WordPress\Infrastructure;
 
 use RuntimeException;
 

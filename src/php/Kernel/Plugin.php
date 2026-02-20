@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel;
 
-use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
@@ -22,12 +21,10 @@ final readonly class Plugin {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EventListenerRegistrarPort $event_listener_registrar Registers application event listeners.
 	 * @param MigrationRunnerPort $migration_runner Applies database schema migrations.
 	 * @param HookBridgeRegistrarPort $hook_bridge_registrar Registers WordPress hook-to-event bridges.
 	 */
 	public function __construct(
-		private EventListenerRegistrarPort $event_listener_registrar,
 		private MigrationRunnerPort $migration_runner,
 		private HookBridgeRegistrarPort $hook_bridge_registrar,
 	) {}
@@ -40,8 +37,6 @@ final readonly class Plugin {
 	public function run(): void {
 
 		$this->migration_runner->migrate();
-
-		$this->event_listener_registrar->register_all();
 
 		$this->run_wordpress();
 	}
