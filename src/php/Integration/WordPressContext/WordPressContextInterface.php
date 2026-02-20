@@ -12,17 +12,6 @@ namespace Fundrik\WordPress\Integration\WordPressContext;
 interface WordPressContextInterface {
 
 	/**
-	 * Returns the list of declared post type class names.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<string> The list of post type class names.
-	 *
-	 * @phpstan-return list<class-string<\Fundrik\WordPress\Integration\PostTypes\PostTypeInterface>>
-	 */
-	public function get_declared_post_type_classes(): array;
-
-	/**
 	 * Retrieves the registered WordPress post types.
 	 *
 	 * @since 1.0.0

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\WordPressContext;
 
-use Fundrik\WordPress\Integration\PostTypes\CampaignPostType;
 use WP_Block_Type_Registry;
 
 /**
@@ -39,22 +38,6 @@ final class WordPressContext implements WordPressContextInterface {
 	 * @var array<string, \WP_Block_Type>|null
 	 */
 	private ?array $registered_block_types = null;
-
-	/**
-	 * Returns the list of declared post type class names.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<string> The list of post type class names.
-	 *
-	 * @phpstan-return list<class-string<\Fundrik\WordPress\Integration\PostTypes\PostTypeInterface>>
-	 */
-	public function get_declared_post_type_classes(): array {
-
-		return [
-			CampaignPostType::class,
-		];
-	}
 
 	/**
 	 * Retrieves the registered WordPress post types.
