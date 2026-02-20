@@ -2,22 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Bootstrap\Container;
+namespace Fundrik\WordPress\Kernel\Container;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher;
-use Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar;
-use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
+use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
+use Fundrik\WordPress\Infrastructure\StorageInterface;
 use Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistrar;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Integration\WpdbDatabase;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
-use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
-use Fundrik\WordPress\Infrastructure\StorageInterface;
-use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
@@ -47,8 +43,6 @@ class ContainerBindingsRegistry {
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
 			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
-			InfrastructureEventDispatcherInterface::class => EventDispatcher::class,
-			EventListenerRegistrarPort::class => EventListenerRegistrar::class,
 
 			MigrationRunnerPort::class => MigrationRunner::class,
 

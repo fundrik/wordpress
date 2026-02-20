@@ -26,9 +26,9 @@
 
 declare(strict_types=1);
 
-use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistrar;
-use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry;
-use Fundrik\WordPress\Bootstrap\ContainerFactory;
+use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
+use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
+use Fundrik\WordPress\Kernel\Container\ContainerFactory;
 use Fundrik\WordPress\Kernel\Plugin;
 use Monolog\Formatter\JsonFormatter as MonologJsonFormatter;
 use Monolog\Handler\StreamHandler as MonologStreamHandler;

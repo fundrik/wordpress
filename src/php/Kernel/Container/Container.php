@@ -2,18 +2,31 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Bootstrap\Container;
+namespace Fundrik\WordPress\Kernel\Container;
 
 use Closure;
+use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
 
 /**
- * Provides methods for instantiating and binding dependencies.
+ * Resolves and registers bindings through the Laravel container.
  *
  * @since 1.0.0
  *
  * @internal
  */
-interface ContainerInterface {
+final readonly class Container implements ContainerInterface {
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param LaravelContainerInterface $inner Resolves and binds dependencies using Laravel's container.
+	 */
+	public function __construct(
+		private LaravelContainerInterface $inner,
+	) {}
 
 	/**
 	 * Instantiates a class or interface, optionally with constructor parameters.
@@ -37,7 +50,33 @@ interface ContainerInterface {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function make( string $id, array $parameters = [] ): object;
+	public function make( string $id, array $parameters = [] ): object {
+
+		try {
+			$instance = $this->inner->make( $id, $parameters );
+		} catch ( BindingResolutionException $e ) {
+
+			throw new ContainerException(
+				sprintf( 'Cannot resolve dependency: %s.', $id ),
+				previous: $e,
+			);
+		}
+
+		if ( ! $instance instanceof $id ) {
+
+			throw new ContainerException(
+				sprintf(
+					'The resolved service must be an instance of %s. Given: %s.',
+					$id,
+					get_debug_type( $instance ),
+				),
+			);
+		}
+
+		// phpcs:ignore SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.MissingVariable, Generic.Commenting.DocComment.MissingShort
+		/** @var T $instance */
+		return $instance;
+	}
 
 	/**
 	 * Registers a binding into the container that is resolved fresh each time it is requested.
@@ -60,7 +99,10 @@ interface ContainerInterface {
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
 		string $abstract,
 		Closure|string|null $concrete = null,
-	): void;
+	): void {
+
+		$this->inner->bind( $abstract, $concrete );
+	}
 
 	/**
 	 * Registers a singleton binding into the container.
@@ -83,7 +125,10 @@ interface ContainerInterface {
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
 		string $abstract,
 		Closure|string|null $concrete = null,
-	): void;
+	): void {
+
+		$this->inner->singleton( $abstract, $concrete );
+	}
 
 	/**
 	 * Registers an existing instance as a singleton binding.
@@ -106,5 +151,21 @@ interface ContainerInterface {
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.abstractFound
 		string $abstract,
 		object $instance,
-	): object;
+	): object {
+
+		if ( ! $instance instanceof $abstract ) {
+
+			throw new ContainerException(
+				sprintf(
+					'The registered instance must be an instance of %s. Given: %s.',
+					$abstract,
+					get_debug_type( $instance ),
+				),
+			);
+		}
+
+		$this->inner->instance( $abstract, $instance );
+
+		return $instance;
+	}
 }

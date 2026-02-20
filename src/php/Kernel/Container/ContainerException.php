@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Bootstrap\Container;
+namespace Fundrik\WordPress\Kernel\Container;
 
 use RuntimeException;
 

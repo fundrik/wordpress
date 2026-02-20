@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Bootstrap;
+namespace Fundrik\WordPress\Kernel\Container;
 
-use Fundrik\WordPress\Bootstrap\Container\Container;
-use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
 use Illuminate\Container\Container as LaravelContainer;
 use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
 
