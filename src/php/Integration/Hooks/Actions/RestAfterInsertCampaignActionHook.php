@@ -1,0 +1,205 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Fundrik\WordPress\Integration\Hooks\Actions;
+
+use Fundrik\WordPress\Integration\Hooks\HookInterface;
+use Fundrik\WordPress\Integration\Hooks\HookLogger;
+use Fundrik\WordPress\Integration\Hooks\InvalidHookArgumentException;
+use Throwable;
+use WP_Post;
+use WP_REST_Request;
+
+/**
+ * Dispatches the WordPress 'rest_after_insert_{post_type}' action to attached listeners.
+ *
+ * Validates the action input before dispatching it to listeners.
+ *
+ * @since 1.0.0
+ *
+ * @internal
+ */
+final class RestAfterInsertCampaignActionHook implements HookInterface {
+
+	/**
+	 * The resolved WordPress hook name.
+	 *
+	 * @since 1.0.0
+	 */
+	private string $hook_name;
+
+	/**
+	 * The list of attached hook listeners.
+	 *
+	 * @var array<int, callable>
+	 */
+	private array $listeners = [];
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $post_type The target post type ID.
+	 * @param HookLogger $logger Writes structured log entries for this hook.
+	 */
+	public function __construct(
+		private readonly string $post_type,
+		private readonly HookLogger $logger,
+	) {
+
+		$this->hook_name = 'rest_after_insert_' . $this->post_type;
+
+		$this->logger->set_hook_name( $this->hook_name );
+		$this->logger->set_hook_class( self::class );
+	}
+
+	/**
+	 * Attaches the given listener to the hook.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param callable $listener Handles the hook dispatch.
+	 */
+	public function attach( callable $listener ): void {
+
+		$this->listeners[] = $listener;
+	}
+
+	/**
+	 * Registers the WordPress action callback.
+	 *
+	 * @since 1.0.0
+	 */
+	public function register(): void {
+
+		add_action( $this->hook_name, $this->handle( ... ), 10, 3 );
+
+		$this->logger->log_registered();
+	}
+
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Handles the WordPress action and dispatches it to listeners.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $post The inserted or updated post object.
+	 * @param mixed $request The REST request object.
+	 * @param mixed $creating Whether WordPress created a new post.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	public function handle( mixed $post, mixed $request, mixed $creating ): void {
+
+		try {
+
+			$valid_post = $this->validate_post( $post );
+			$valid_request = $this->validate_request( $request );
+			$valid_creating = $this->validate_creating( $creating );
+
+			$this->dispatch_to_listeners( $valid_post, $valid_request, $valid_creating );
+
+		} catch ( InvalidHookArgumentException $e ) {
+
+			$this->logger->log_invalid_input( $e );
+			return;
+
+		} catch ( Throwable $e ) {
+
+			$this->logger->log_dispatch_failed( $e );
+			throw $e;
+		}
+
+		$this->logger->log_handled(
+			'handled',
+			[
+				'listener_count' => count( $this->listeners ),
+				'post_id' => $valid_post->ID,
+				'post_type' => $valid_post->post_type,
+				'creating' => $valid_creating,
+				'method' => $valid_request->get_method(),
+			],
+		);
+	}
+	// phpcs:enable
+
+	/**
+	 * Dispatches the validated hook arguments to attached listeners.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $post The validated post.
+	 * @param WP_REST_Request $request The validated request.
+	 * @param bool $creating The validated creating flag.
+	 */
+	private function dispatch_to_listeners( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
+
+		foreach ( $this->listeners as $listener ) {
+			$listener( $post, $request, $creating );
+		}
+	}
+
+	/**
+	 * Validates the 'post' argument.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $post The incoming post object.
+	 *
+	 * @return WP_Post The validated post.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function validate_post( mixed $post ): WP_Post {
+
+		if ( ! $post instanceof WP_Post ) {
+			throw InvalidHookArgumentException::create( argument: 'post', hook: $this->hook_name );
+		}
+
+		return $post;
+	}
+
+	/**
+	 * Validates the 'request' argument.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $request The incoming REST request.
+	 *
+	 * @return WP_REST_Request The validated request.
+	 *
+	 * @phpstan-return WP_REST_Request<array<string, mixed>>
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function validate_request( mixed $request ): WP_REST_Request {
+
+		if ( ! $request instanceof WP_REST_Request ) {
+			throw InvalidHookArgumentException::create( argument: 'request', hook: $this->hook_name );
+		}
+
+		return $request;
+	}
+
+	/**
+	 * Validates the 'creating' argument.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $creating The incoming creating flag.
+	 *
+	 * @return bool True when creating a post, false when updating.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function validate_creating( mixed $creating ): bool {
+
+		if ( ! is_bool( $creating ) ) {
+			throw InvalidHookArgumentException::create( argument: 'creating', hook: $this->hook_name );
+		}
+
+		return $creating;
+	}
+}

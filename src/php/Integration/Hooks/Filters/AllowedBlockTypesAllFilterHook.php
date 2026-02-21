@@ -71,6 +71,7 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 		$this->logger->log_registered();
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Handles the WordPress filter and dispatches it to listeners.
 	 *
@@ -107,10 +108,18 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 
 		$changed = $result !== $valid_allowed;
 
-		$this->log_handled( outcome: $changed ? 'changed' : 'unchanged', returned: $result );
+		$this->logger->log_handled(
+			$changed ? 'changed' : 'unchanged',
+			[
+				'listener_count' => count( $this->listeners ),
+				'returned_type' => is_bool( $result ) ? 'bool' : 'array',
+				'returned_count' => is_array( $result ) ? count( $result ) : null,
+			],
+		);
 
 		return $result;
 	}
+	// phpcs:enable
 
 	/**
 	 * Dispatches the validated hook arguments to attached listeners.
@@ -183,27 +192,5 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 		}
 
 		return $editor_context;
-	}
-
-	/**
-	 * Builds and delegates the final handle log entry to the logger (debug).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $outcome The hook outcome.
-	 * @param mixed $returned The value returned back to WordPress after listeners.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function log_handled( string $outcome, mixed $returned ): void {
-
-		$this->logger->log_handled(
-			$outcome,
-			[
-				'listener_count' => count( $this->listeners ),
-				'returned_type' => is_bool( $returned ) ? 'bool' : 'array',
-				'returned_count' => is_array( $returned ) ? count( $returned ) : null,
-			],
-		);
 	}
 }
