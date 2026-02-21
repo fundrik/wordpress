@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel;
 
-use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
@@ -22,11 +22,11 @@ final readonly class Plugin {
 	 * @since 1.0.0
 	 *
 	 * @param MigrationRunnerPort $migration_runner Applies database schema migrations.
-	 * @param HookBridgeRegistrarPort $hook_bridge_registrar Registers WordPress hook-to-event bridges.
+	 * @param HookDispatcherRegistrarPort $hook_dispatcher_registrar Registers WordPress hook dispatchers.
 	 */
 	public function __construct(
 		private MigrationRunnerPort $migration_runner,
-		private HookBridgeRegistrarPort $hook_bridge_registrar,
+		private HookDispatcherRegistrarPort $hook_dispatcher_registrar,
 	) {}
 
 	/**
@@ -42,12 +42,12 @@ final readonly class Plugin {
 	}
 
 	/**
-	 * Boots WordPress-specific infrastructure.
+	 * Boots WordPress integration.
 	 *
 	 * @since 1.0.0
 	 */
 	private function run_wordpress(): void {
 
-		$this->hook_bridge_registrar->register_all();
+		$this->hook_dispatcher_registrar->register_all();
 	}
 }

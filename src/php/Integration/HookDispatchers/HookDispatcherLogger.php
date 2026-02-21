@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks;
+namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
@@ -15,7 +15,7 @@ use Throwable;
  *
  * @internal
  */
-final class HookLogger {
+final readonly class HookDispatcherLogger {
 
 	/**
 	 * The WordPress hook name.
@@ -39,7 +39,7 @@ final class HookLogger {
 	 * @param LoggerInterface $logger Writes structured log entries for hook operations.
 	 */
 	public function __construct(
-		private readonly LoggerInterface $logger,
+		private LoggerInterface $logger,
 	) {}
 
 	/**
@@ -91,9 +91,9 @@ final class HookLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param InvalidHookArgumentException $e The validation exception raised by the hook.
+	 * @param InvalidHookDispatcherArgumentException $e The validation exception raised by the hook.
 	 */
-	public function log_invalid_input( InvalidHookArgumentException $e ): void {
+	public function log_invalid_input( InvalidHookDispatcherArgumentException $e ): void {
 
 		$this->assert_context_is_set();
 
@@ -176,7 +176,7 @@ final class HookLogger {
 		return [
 			'logger_class' => self::class,
 			'component' => 'hook_dispatchers',
-			'layer' => 'infrastructure',
+			'layer' => 'integration',
 			'system' => 'wordpress',
 			'hook_name' => $this->hook_name,
 			'hook_class' => $this->hook_class,
@@ -195,7 +195,7 @@ final class HookLogger {
 		if ( ! isset( $this->hook_name, $this->hook_class ) ) {
 
 			throw new LogicException(
-				'HookLogger context is not set. Call set_hook_name() and set_hook_class() before logging.',
+				'HookDispatcherLogger context is not set. Call set_hook_name() and set_hook_class() before logging.',
 			);
 		}
 	}

@@ -8,9 +8,9 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\Hooks\Actions\RestAfterInsertCampaignActionHook;
-use Fundrik\WordPress\Integration\Hooks\Filters\RestPreInsertCampaignFilterHook;
-use Fundrik\WordPress\Integration\Hooks\Filters\RestPrepareCampaignFilterHook;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
@@ -41,9 +41,9 @@ final readonly class SyncPostToCampaignModule implements ModuleInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestPreInsertCampaignFilterHook $rest_pre_insert_hook The REST pre-insert filter hook for campaigns.
-	 * @param RestPrepareCampaignFilterHook $rest_prepare_hook The REST prepare filter hook for campaigns.
-	 * @param RestAfterInsertCampaignActionHook $rest_after_insert_hook The REST after-insert action hook for campaigns.
+	 * @param RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook The REST pre-insert filter hook for campaigns.
+	 * @param RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook The REST prepare filter hook for campaigns.
+	 * @param RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook The REST after-insert action hook for campaigns.
 	 * @param CampaignRepositoryPort $campaign_repository The campaign repository for reading the persisted version.
 	 * @param RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor The extractor for pre-insert synchronization data.
 	 * @param RestPreInsertCampaignSyncDataValidator $pre_insert_validator The validator for pre-insert synchronization data.
@@ -51,9 +51,9 @@ final readonly class SyncPostToCampaignModule implements ModuleInterface {
 	 * @param RestAfterInsertCampaignSynchronizer $after_insert_synchronizer The synchronizer for persisting the saved snapshot.
 	 */
 	public function __construct(
-		private RestPreInsertCampaignFilterHook $rest_pre_insert_hook,
-		private RestPrepareCampaignFilterHook $rest_prepare_hook,
-		private RestAfterInsertCampaignActionHook $rest_after_insert_hook,
+		private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook,
+		private RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook,
+		private RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook,
 		private CampaignRepositoryPort $campaign_repository,
 		private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor,
 		private RestPreInsertCampaignSyncDataValidator $pre_insert_validator,

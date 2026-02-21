@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks\Filters;
+namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
-use Fundrik\WordPress\Integration\Hooks\HookInterface;
-use Fundrik\WordPress\Integration\Hooks\HookLogger;
-use Fundrik\WordPress\Integration\Hooks\InvalidHookArgumentException;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use stdClass;
 use Throwable;
 use WP_Error;
@@ -21,7 +22,7 @@ use WP_REST_Request;
  *
  * @internal
  */
-final class RestPreInsertCampaignFilterHook implements HookInterface {
+final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherInterface {
 
 	/**
 	 * The resolved WordPress hook name.
@@ -42,15 +43,13 @@ final class RestPreInsertCampaignFilterHook implements HookInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $post_type The target post type ID.
-	 * @param HookLogger $logger Writes structured log entries for this hook.
+	 * @param HookDispatcherLogger $logger Writes structured log entries for this hook.
 	 */
 	public function __construct(
-		private readonly string $post_type,
-		private readonly HookLogger $logger,
+		private readonly HookDispatcherLogger $logger,
 	) {
 
-		$this->hook_name = 'rest_pre_insert_' . $this->post_type;
+		$this->hook_name = 'rest_pre_insert_' . CampaignPostTypeConfig::ID;
 
 		$this->logger->set_hook_name( $this->hook_name );
 		$this->logger->set_hook_class( self::class );
@@ -101,7 +100,7 @@ final class RestPreInsertCampaignFilterHook implements HookInterface {
 
 			$result = $this->dispatch_to_listeners( $valid_post, $valid_request );
 
-		} catch ( InvalidHookArgumentException $e ) {
+		} catch ( InvalidHookDispatcherArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
 
@@ -165,7 +164,7 @@ final class RestPreInsertCampaignFilterHook implements HookInterface {
 	private function validate_prepared_post( mixed $prepared_post ): stdClass {
 
 		if ( ! $prepared_post instanceof stdClass ) {
-			throw InvalidHookArgumentException::create( argument: 'prepared_post', hook: $this->hook_name );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'prepared_post', hook: $this->hook_name );
 		}
 
 		return $prepared_post;
@@ -187,7 +186,7 @@ final class RestPreInsertCampaignFilterHook implements HookInterface {
 	private function validate_request( mixed $request ): WP_REST_Request {
 
 		if ( ! $request instanceof WP_REST_Request ) {
-			throw InvalidHookArgumentException::create( argument: 'request', hook: $this->hook_name );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'request', hook: $this->hook_name );
 		}
 
 		return $request;
@@ -214,6 +213,6 @@ final class RestPreInsertCampaignFilterHook implements HookInterface {
 			return $result;
 		}
 
-		throw InvalidHookArgumentException::create( argument: 'returned', hook: $this->hook_name );
+		throw InvalidHookDispatcherArgumentException::create( argument: 'returned', hook: $this->hook_name );
 	}
 }

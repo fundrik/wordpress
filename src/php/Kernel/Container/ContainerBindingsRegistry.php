@@ -9,12 +9,12 @@ use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
-use Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistrar;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Integration\WpdbDatabase;
-use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort;
+use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
 use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
@@ -50,7 +50,7 @@ class ContainerBindingsRegistry {
 			StorageInterface::class => WordPressOptionsStorage::class,
 			CampaignRepositoryPort::class => CampaignRepository::class,
 
-			HookBridgeRegistrarPort::class => HookBridgeRegistrar::class,
+			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			WordPressContextInterface::class => WordPressContext::class,
 		];
 		// phpcs:enable

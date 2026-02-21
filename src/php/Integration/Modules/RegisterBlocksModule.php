@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Modules;
 
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
-use Fundrik\WordPress\Integration\Hooks\Actions\InitActionHook;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 
 /**
  * Registers all custom blocks declared in the plugin.
@@ -21,10 +21,10 @@ final readonly class RegisterBlocksModule implements ModuleInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param InitActionHook $init_hook Dispatches the WordPress 'init' action to attached listeners.
+	 * @param InitActionHookDispatcher $init_hook Dispatches the WordPress 'init' action to attached listeners.
 	 */
 	public function __construct(
-		private InitActionHook $init_hook,
+		private InitActionHookDispatcher $init_hook,
 	) {}
 
 	/**

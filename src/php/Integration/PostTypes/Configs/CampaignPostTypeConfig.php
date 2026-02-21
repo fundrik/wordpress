@@ -17,6 +17,8 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
  */
 class CampaignPostTypeConfig implements PostTypeConfigInterface {
 
+	public const string ID = 'fundrik_campaign';
+
 	public const string ENTITY_VERSION_FIELD_NAME = 'fundrik_campaign_version';
 
 	/**
@@ -46,7 +48,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 */
 	public function get_id(): string {
 
-		return 'fundrik_campaign';
+		return self::ID;
 	}
 
 	/**

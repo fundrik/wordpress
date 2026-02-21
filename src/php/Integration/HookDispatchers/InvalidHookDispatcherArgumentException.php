@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks;
+namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use InvalidArgumentException;
 
@@ -11,7 +11,7 @@ use InvalidArgumentException;
  *
  * @since 1.0.0
  */
-final class InvalidHookArgumentException extends InvalidArgumentException {
+final class InvalidHookDispatcherArgumentException extends InvalidArgumentException {
 
 	/**
 	 * Constructor.

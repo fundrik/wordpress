@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks;
+namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 /**
  * Provides methods for attaching listeners and registering WordPress hooks.
@@ -11,7 +11,7 @@ namespace Fundrik\WordPress\Integration\Hooks;
  *
  * @internal
  */
-interface HookInterface {
+interface HookDispatcherInterface {
 
 	/**
 	 * Attaches the given listener to the hook.

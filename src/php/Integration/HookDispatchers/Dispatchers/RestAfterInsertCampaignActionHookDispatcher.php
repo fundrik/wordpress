@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks\Actions;
+namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
-use Fundrik\WordPress\Integration\Hooks\HookInterface;
-use Fundrik\WordPress\Integration\Hooks\HookLogger;
-use Fundrik\WordPress\Integration\Hooks\InvalidHookArgumentException;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Throwable;
 use WP_Post;
 use WP_REST_Request;
@@ -20,7 +21,7 @@ use WP_REST_Request;
  *
  * @internal
  */
-final class RestAfterInsertCampaignActionHook implements HookInterface {
+final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatcherInterface {
 
 	/**
 	 * The resolved WordPress hook name.
@@ -41,15 +42,13 @@ final class RestAfterInsertCampaignActionHook implements HookInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $post_type The target post type ID.
-	 * @param HookLogger $logger Writes structured log entries for this hook.
+	 * @param HookDispatcherLogger $logger Writes structured log entries for this hook.
 	 */
 	public function __construct(
-		private readonly string $post_type,
-		private readonly HookLogger $logger,
+		private readonly HookDispatcherLogger $logger,
 	) {
 
-		$this->hook_name = 'rest_after_insert_' . $this->post_type;
+		$this->hook_name = 'rest_after_insert_' . CampaignPostTypeConfig::ID;
 
 		$this->logger->set_hook_name( $this->hook_name );
 		$this->logger->set_hook_class( self::class );
@@ -101,7 +100,7 @@ final class RestAfterInsertCampaignActionHook implements HookInterface {
 
 			$this->dispatch_to_listeners( $valid_post, $valid_request, $valid_creating );
 
-		} catch ( InvalidHookArgumentException $e ) {
+		} catch ( InvalidHookDispatcherArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
 			return;
@@ -155,7 +154,7 @@ final class RestAfterInsertCampaignActionHook implements HookInterface {
 	private function validate_post( mixed $post ): WP_Post {
 
 		if ( ! $post instanceof WP_Post ) {
-			throw InvalidHookArgumentException::create( argument: 'post', hook: $this->hook_name );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'post', hook: $this->hook_name );
 		}
 
 		return $post;
@@ -177,7 +176,7 @@ final class RestAfterInsertCampaignActionHook implements HookInterface {
 	private function validate_request( mixed $request ): WP_REST_Request {
 
 		if ( ! $request instanceof WP_REST_Request ) {
-			throw InvalidHookArgumentException::create( argument: 'request', hook: $this->hook_name );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'request', hook: $this->hook_name );
 		}
 
 		return $request;
@@ -197,7 +196,7 @@ final class RestAfterInsertCampaignActionHook implements HookInterface {
 	private function validate_creating( mixed $creating ): bool {
 
 		if ( ! is_bool( $creating ) ) {
-			throw InvalidHookArgumentException::create( argument: 'creating', hook: $this->hook_name );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'creating', hook: $this->hook_name );
 		}
 
 		return $creating;

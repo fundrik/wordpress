@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks\Actions;
+namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
-use Fundrik\WordPress\Integration\Hooks\HookInterface;
-use Fundrik\WordPress\Integration\Hooks\HookLogger;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Throwable;
 
 /**
@@ -15,7 +15,7 @@ use Throwable;
  *
  * @internal
  */
-final class InitActionHook implements HookInterface {
+final class InitActionHookDispatcher implements HookDispatcherInterface {
 
 	private const string HOOK_NAME = 'init';
 
@@ -31,10 +31,10 @@ final class InitActionHook implements HookInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param HookLogger $logger Writes structured log entries for this hook.
+	 * @param HookDispatcherLogger $logger Writes structured log entries for this hook.
 	 */
 	public function __construct(
-		private readonly HookLogger $logger,
+		private readonly HookDispatcherLogger $logger,
 	) {
 
 		$this->logger->set_hook_name( self::HOOK_NAME );

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Hooks\Filters;
+namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\Hooks\HookInterface;
-use Fundrik\WordPress\Integration\Hooks\HookLogger;
-use Fundrik\WordPress\Integration\Hooks\InvalidHookArgumentException;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
 use InvalidArgumentException;
 use Throwable;
 use WP_Block_Editor_Context;
@@ -21,7 +21,7 @@ use WP_Block_Editor_Context;
  *
  * @internal
  */
-final class AllowedBlockTypesAllFilterHook implements HookInterface {
+final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherInterface {
 
 	private const string HOOK_NAME = 'allowed_block_types_all';
 
@@ -37,10 +37,10 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param HookLogger $logger Writes structured log entries for this hook.
+	 * @param HookDispatcherLogger $logger Writes structured log entries for this hook.
 	 */
 	public function __construct(
-		private readonly HookLogger $logger,
+		private readonly HookDispatcherLogger $logger,
 	) {
 
 		$this->logger->set_hook_name( self::HOOK_NAME );
@@ -93,7 +93,7 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 
 			$result = $this->dispatch_to_listeners( $valid_allowed, $valid_context );
 
-		} catch ( InvalidHookArgumentException $e ) {
+		} catch ( InvalidHookDispatcherArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
 
@@ -163,12 +163,12 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 			try {
 				return array_map( TypeCaster::to_string( ... ), $allowed );
 			} catch ( InvalidArgumentException ) {
-				throw InvalidHookArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+				throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
 			}
 		}
 
 		if ( $allowed !== true && $allowed !== false ) {
-			throw InvalidHookArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
 		}
 
 		return $allowed;
@@ -188,7 +188,7 @@ final class AllowedBlockTypesAllFilterHook implements HookInterface {
 	private function validate_editor_context( mixed $editor_context ): WP_Block_Editor_Context {
 
 		if ( ! $editor_context instanceof WP_Block_Editor_Context ) {
-			throw InvalidHookArgumentException::create( argument: 'editor_context', hook: self::HOOK_NAME );
+			throw InvalidHookDispatcherArgumentException::create( argument: 'editor_context', hook: self::HOOK_NAME );
 		}
 
 		return $editor_context;

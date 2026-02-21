@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Modules;
 
-use Fundrik\WordPress\Integration\Hooks\Filters\AllowedBlockTypesAllFilterHook;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
@@ -20,7 +20,7 @@ use WP_Block_Editor_Context;
  *
  * @internal
  */
-final class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
+final readonly class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
 
 	/**
 	 * The map of block names to allowed post types.
@@ -29,7 +29,7 @@ final class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
 	 *
 	 * @var array<string, array<string>>
 	 */
-	private array $block_allowed_post_types = [];
+	private array $block_allowed_post_types;
 
 	/**
 	 * Constructor.
@@ -37,13 +37,13 @@ final class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
 	 * @since 1.0.0
 	 *
 	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
-	 * @param AllowedBlockTypesAllFilterHook $allowed_block_types_hook Dispatches the WordPress 'allowed_block_types_all' filter.
+	 * @param AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook Dispatches the WordPress 'allowed_block_types_all' filter.
 	 * @param WordPressContextInterface $wp_context Provides access to registered WordPress types.
 	 * @param PostTypeConfigRegistry $post_type_config_registry Provides the declared post type config classes.
 	 * @param PostTypeConfigFactory $post_type_config_factory Creates post type config instances.
 	 */
 	public function __construct(
-		private AllowedBlockTypesAllFilterHook $allowed_block_types_hook,
+		private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook,
 		private WordPressContextInterface $wp_context,
 		private PostTypeConfigRegistry $post_type_config_registry,
 		private PostTypeConfigFactory $post_type_config_factory,
