@@ -61,13 +61,4 @@ interface PostTypeConfigInterface {
 	 * @return array<string, string> The associative array of label strings.
 	 */
 	public function get_labels(): array;
-
-	/**
-	 * Returns the meta field key used for optimistic version checks.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string The meta field name storing the entity version.
-	 */
-	public function get_entity_version_field_name(): string;
 }

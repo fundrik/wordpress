@@ -4,169 +4,168 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Modules;
 
-use Fundrik\WordPress\Integration\Hooks\Filters\AllowedBlockTypesAllFilterHook;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
-use WP_Block_Editor_Context;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Integration\Hooks\Actions\RestAfterInsertCampaignActionHook;
+use Fundrik\WordPress\Integration\Hooks\Filters\RestPreInsertCampaignFilterHook;
+use Fundrik\WordPress\Integration\Hooks\Filters\RestPrepareCampaignFilterHook;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
+use stdClass;
+use WP_Error;
+use WP_Post;
+use WP_REST_Request;
+use WP_REST_Response;
 
 /**
- * Filters the allowed block types based on the current post type.
+ * Synchronizes the campaign post state between WordPress and the Campaign domain model.
  *
- * Only blocks explicitly registered for a given post type will be allowed.
- * Unrestricted blocks remain allowed by default.
+ * - Rejects REST writes when the payload cannot be synchronized safely.
+ * - Adds the current campaign version to REST responses for optimistic locking.
+ * - Persists the saved campaign snapshot into Fundrik storage after REST saves.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
+final readonly class SyncPostToCampaignModule implements ModuleInterface {
 
-	/**
-	 * The map of block names to allowed post types.
-	 *
-	 * Format: [ block_name => [ post_type_id1, post_type_id2, ... ] ]
-	 *
-	 * @var array<string, array<string>>
-	 */
-	private array $block_allowed_post_types = [];
-
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
-	 * @param AllowedBlockTypesAllFilterHook $allowed_block_types_hook Dispatches the WordPress 'allowed_block_types_all' filter.
-	 * @param WordPressContextInterface $wp_context Provides access to registered WordPress types.
-	 * @param PostTypeConfigRegistry $post_type_config_registry Provides the declared post type config classes.
-	 * @param PostTypeConfigFactory $post_type_config_factory Creates post type config instances.
+	 * @param RestPreInsertCampaignFilterHook $rest_pre_insert_hook The REST pre-insert filter hook for campaigns.
+	 * @param RestPrepareCampaignFilterHook $rest_prepare_hook The REST prepare filter hook for campaigns.
+	 * @param RestAfterInsertCampaignActionHook $rest_after_insert_hook The REST after-insert action hook for campaigns.
+	 * @param CampaignRepositoryPort $campaign_repository The campaign repository for reading the persisted version.
+	 * @param RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor The extractor for pre-insert synchronization data.
+	 * @param RestPreInsertCampaignSyncDataValidator $pre_insert_validator The validator for pre-insert synchronization data.
+	 * @param RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor The extractor for after-insert synchronization data.
+	 * @param RestAfterInsertCampaignSynchronizer $after_insert_synchronizer The synchronizer for persisting the saved snapshot.
 	 */
 	public function __construct(
-		private AllowedBlockTypesAllFilterHook $allowed_block_types_hook,
-		private WordPressContextInterface $wp_context,
-		private PostTypeConfigRegistry $post_type_config_registry,
-		private PostTypeConfigFactory $post_type_config_factory,
+		private RestPreInsertCampaignFilterHook $rest_pre_insert_hook,
+		private RestPrepareCampaignFilterHook $rest_prepare_hook,
+		private RestAfterInsertCampaignActionHook $rest_after_insert_hook,
+		private CampaignRepositoryPort $campaign_repository,
+		private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor,
+		private RestPreInsertCampaignSyncDataValidator $pre_insert_validator,
+		private RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor,
+		private RestAfterInsertCampaignSynchronizer $after_insert_synchronizer,
 	) {}
+	// phpcs:enable SlevomatCodingStandard.Files.LineLength.LineTooLong
 
 	/**
-	 * Attaches the filter and prepares the block restriction map.
+	 * Attaches the synchronization callbacks to campaign REST hooks.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
 	 */
 	public function boot(): void {
 
-		$this->block_allowed_post_types = $this->build_block_allowed_post_types_map();
-
-		$this->allowed_block_types_hook->attach(
-			$this->filter_allowed_block_types( ... ),
-		);
+		$this->rest_pre_insert_hook->attach( $this->reject_when_campaign_cannot_be_synced( ... ) );
+		$this->rest_prepare_hook->attach( $this->attach_campaign_version_for_sync( ... ) );
+		$this->rest_after_insert_hook->attach( $this->sync_campaign_after_rest_save( ... ) );
 	}
 
 	/**
-	 * Filters the allowed blocks list based on the current post type.
+	 * Rejects the REST insert/update when the post cannot be safely synchronized.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param bool|array<string> $allowed The allowed blocks list, or true/false.
-	 * @param WP_Block_Editor_Context $editor_context Provides the editor context, including the current post.
+	 * @param stdClass $prepared_post The prepared post object before insert/update.
+	 * @param WP_REST_Request $request The REST request object.
 	 *
-	 * @return bool|array<string> The filtered allowed blocks list, or true/false.
+	 * @return stdClass|WP_Error The unchanged prepared post, or a WP_Error when rejected.
 	 */
-	private function filter_allowed_block_types(
-		bool|array $allowed,
-		WP_Block_Editor_Context $editor_context,
-	): bool|array {
+	private function reject_when_campaign_cannot_be_synced(
+		stdClass $prepared_post,
+		WP_REST_Request $request,
+	): stdClass|WP_Error {
 
-		if ( $allowed === false ) {
-			return false;
+		$data = $this->pre_insert_extractor->extract_or_error( $prepared_post, $request );
+
+		if ( $data instanceof WP_Error ) {
+			return $data;
 		}
 
-		$current_post_type = $editor_context->post?->post_type;
+		$error = $this->pre_insert_validator->validate_or_error( $data );
 
-		if ( $current_post_type === null ) {
-			return $allowed;
+		if ( $error instanceof WP_Error ) {
+			return $error;
 		}
 
-		if ( $allowed === true ) {
-			$allowed = array_keys( $this->wp_context->get_registered_block_types() );
-		}
-
-		$filtered = array_filter(
-			$allowed,
-			fn ( string $block_name ): bool => $this->is_block_allowed( $block_name, $current_post_type ),
-		);
-
-		return array_values( $filtered );
+		return $prepared_post;
 	}
 
 	/**
-	 * Builds the map of block names to their allowed post types.
+	 * Attaches the current campaign version to the REST response meta.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, array<string>> The map of block names to allowed post types.
+	 * @param WP_REST_Response $response The REST response object.
+	 * @param WP_Post $post The campaign post.
+	 * @param WP_REST_Request $request The REST request object.
 	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
+	 * @return WP_REST_Response The modified response.
 	 */
-	private function build_block_allowed_post_types_map(): array {
+	private function attach_campaign_version_for_sync(
+		WP_REST_Response $response,
+		WP_Post $post,
+		// phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+		WP_REST_Request $request,
+	): WP_REST_Response {
 
-		$map = [];
+		$entity_id = EntityId::create( TypeCaster::to_int( $post->ID ) );
 
-		foreach ( $this->create_post_type_configs() as $post_type_config ) {
-
-			$post_type_id = $post_type_config->get_id();
-
-			foreach ( $post_type_config->get_specific_blocks() as $block_name ) {
-				$map[ $block_name ][] = $post_type_id;
-			}
+		try {
+			$campaign = $this->campaign_repository->find_by_id( $entity_id );
+		} catch ( CampaignRepositoryExceptionInterface ) {
+			return $response;
 		}
 
-		return $map;
+		if ( $campaign === null ) {
+			return $response;
+		}
+
+		$meta = $response->data['meta'] ?? [];
+
+		if ( ! is_array( $meta ) ) {
+			$meta = [];
+		}
+
+		$meta[ CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME ] = $campaign->get_version()->get_value();
+
+		$response->data['meta'] = $meta;
+
+		return $response;
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	/**
-	 * Creates all declared post type configs.
+	 * Persists the saved campaign post snapshot into Fundrik storage after REST saves.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, PostTypeConfigInterface> The list of post type config instances.
-	 *
-	 * @phpstan-return list<PostTypeConfigInterface>
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
+	 * @param WP_Post $post The inserted or updated post object.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param bool $creating Whether the post is being created (true) or updated (false).
 	 */
-	private function create_post_type_configs(): array {
+	private function sync_campaign_after_rest_save( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
 
-		$configs = [];
+		$data = $this->after_insert_extractor->extract_or_null( $post, $request );
 
-		foreach ( $this->post_type_config_registry->get_post_type_config_classes() as $class_name ) {
-			$configs[] = $this->post_type_config_factory->create( $class_name );
+		if ( $data === null ) {
+			return;
 		}
 
-		return $configs;
+		$this->after_insert_synchronizer->sync( $data );
 	}
-
-	/**
-	 * Checks whether the block is allowed for the given post type.
-	 *
-	 * If the block is not explicitly restricted, it is allowed by default.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $block_name The block name.
-	 * @param string $current_post_type The current post type slug.
-	 *
-	 * @return bool True if allowed.
-	 */
-	private function is_block_allowed( string $block_name, string $current_post_type, ): bool {
-
-		if ( ! isset( $this->block_allowed_post_types[ $block_name ] ) ) {
-			return true;
-		}
-
-		return in_array( $current_post_type, $this->block_allowed_post_types[ $block_name ], true );
-	}
+	// phpcs:enable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 }

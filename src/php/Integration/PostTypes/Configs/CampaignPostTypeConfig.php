@@ -17,6 +17,8 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
  */
 class CampaignPostTypeConfig implements PostTypeConfigInterface {
 
+	public const string ENTITY_VERSION_FIELD_NAME = 'fundrik_campaign_version';
+
 	/**
 	 * Stores whether the campaign is open for donations.
 	 */
@@ -125,16 +127,4 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 		];
 	}
 	// phpcs:enable
-
-	/**
-	 * Returns the meta field key used for optimistic version checks.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string The meta field name storing the entity version.
-	 */
-	public function get_entity_version_field_name(): string {
-
-		return 'fundrik_campaign_version';
-	}
 }
