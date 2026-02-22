@@ -52,7 +52,7 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 		$this->hook_name = 'rest_prepare_' . CampaignPostTypeConfig::ID;
 
 		$this->logger->set_hook_name( $this->hook_name );
-		$this->logger->set_hook_class( self::class );
+		$this->logger->set_hook_dispatcher_class( self::class );
 	}
 
 	/**

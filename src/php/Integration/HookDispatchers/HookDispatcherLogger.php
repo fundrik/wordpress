@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Writes structured log entries for WordPress hooks.
+ * Writes structured log entries for WordPress hook dispatchers.
  *
  * @since 1.0.0
  *
@@ -25,18 +25,18 @@ final readonly class HookDispatcherLogger {
 	private string $hook_name;
 
 	/**
-	 * The fully qualified hook class name.
+	 * The fully qualified hook dispatcher class name.
 	 *
 	 * @since 1.0.0
 	 */
-	private string $hook_class;
+	private string $hook_dispatcher_class;
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param LoggerInterface $logger Writes structured log entries for hook operations.
+	 * @param LoggerInterface $logger Writes structured log entries for hook dispatcher operations.
 	 */
 	public function __construct(
 		private LoggerInterface $logger,
@@ -47,7 +47,7 @@ final readonly class HookDispatcherLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $hook_name The WordPress hook name handled by this hook.
+	 * @param string $hook_name The WordPress hook name handled by the hook dispatcher.
 	 */
 	public function set_hook_name( string $hook_name ): void {
 
@@ -55,19 +55,19 @@ final readonly class HookDispatcherLogger {
 	}
 
 	/**
-	 * Sets the hook class for subsequent log entries.
+	 * Sets the hook dispatcher class for subsequent log entries.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $hook_class The fully qualified class name of the hook.
+	 * @param string $hook_dispatcher_class The fully qualified class name of the hook dispatcher.
 	 */
-	public function set_hook_class( string $hook_class ): void {
+	public function set_hook_dispatcher_class( string $hook_dispatcher_class ): void {
 
-		$this->hook_class = $hook_class;
+		$this->hook_dispatcher_class = $hook_dispatcher_class;
 	}
 
 	/**
-	 * Logs that the hook has been registered in WordPress (debug).
+	 * Logs that the hook dispatcher has been registered in WordPress (debug).
 	 *
 	 * @since 1.0.0
 	 */
@@ -76,10 +76,10 @@ final readonly class HookDispatcherLogger {
 		$this->assert_context_is_set();
 
 		$this->logger->debug(
-			'Hook registered.',
+			'Hook dispatcher registered.',
 			$this->logger_context(
 				[
-					'operation' => 'register_hook',
+					'operation' => 'register',
 					'outcome' => 'registered',
 				],
 			),
@@ -91,7 +91,7 @@ final readonly class HookDispatcherLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param InvalidHookDispatcherArgumentException $e The validation exception raised by the hook.
+	 * @param InvalidHookDispatcherArgumentException $e The validation exception raised by the hook dispatcher.
 	 */
 	public function log_invalid_input( InvalidHookDispatcherArgumentException $e ): void {
 
@@ -101,7 +101,7 @@ final readonly class HookDispatcherLogger {
 			$e->getMessage(),
 			$this->logger_context(
 				[
-					'operation' => 'validate_hook',
+					'operation' => 'validate',
 					'outcome' => 'invalid',
 					'invalid_argument' => $e->argument,
 					'invoked' => false,
@@ -122,10 +122,10 @@ final readonly class HookDispatcherLogger {
 		$this->assert_context_is_set();
 
 		$this->logger->error(
-			sprintf( "Hook dispatch failed for hook '%s'.", $this->hook_name ),
+			sprintf( "Hook dispatcher dispatch failed for hook '%s'.", $this->hook_name ),
 			$this->logger_context(
 				[
-					'operation' => 'dispatch_hook',
+					'operation' => 'dispatch',
 					'outcome' => 'error',
 					'invoked' => true,
 					'exception' => $e,
@@ -149,10 +149,10 @@ final readonly class HookDispatcherLogger {
 		$this->assert_context_is_set();
 
 		$this->logger->debug(
-			'Hook handled.',
+			'Hook dispatcher handled.',
 			$this->logger_context(
 				[
-					'operation' => 'handle_hook',
+					'operation' => 'handle',
 					'outcome' => $outcome,
 					'invoked' => true,
 				] + $extra,
@@ -161,7 +161,7 @@ final readonly class HookDispatcherLogger {
 	}
 
 	/**
-	 * Builds the structured logger context for the hook.
+	 * Builds the structured logger context for the hook dispatcher.
 	 *
 	 * @since 1.0.0
 	 *
@@ -179,12 +179,12 @@ final readonly class HookDispatcherLogger {
 			'layer' => 'integration',
 			'system' => 'wordpress',
 			'hook_name' => $this->hook_name,
-			'hook_class' => $this->hook_class,
+			'hook_dispatcher_class' => $this->hook_dispatcher_class,
 		] + $extra;
 	}
 
 	/**
-	 * Ensures that context (hook and class) is configured before logging.
+	 * Ensures that context (hook and dispatcher class) is configured before logging.
 	 *
 	 * @since 1.0.0
 	 *
@@ -192,10 +192,11 @@ final readonly class HookDispatcherLogger {
 	 */
 	private function assert_context_is_set(): void {
 
-		if ( ! isset( $this->hook_name, $this->hook_class ) ) {
+		if ( ! isset( $this->hook_name, $this->hook_dispatcher_class ) ) {
 
 			throw new LogicException(
-				'HookDispatcherLogger context is not set. Call set_hook_name() and set_hook_class() before logging.',
+				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+				'HookDispatcherLogger context is not set. Call set_hook_name() and set_hook_dispatcher_class() before logging.',
 			);
 		}
 	}

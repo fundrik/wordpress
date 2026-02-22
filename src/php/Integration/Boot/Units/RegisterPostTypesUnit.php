@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Modules;
+namespace Fundrik\WordPress\Integration\Boot\Units;
 
+use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
@@ -16,7 +17,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
  *
  * @internal
  */
-final readonly class RegisterPostTypesModule implements ModuleInterface {
+final readonly class RegisterPostTypesUnit implements BootUnitInterface {
 
 	/**
 	 * Constructor.

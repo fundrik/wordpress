@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Modules;
+namespace Fundrik\WordPress\Integration\Boot\Units;
 
+use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
@@ -20,7 +21,7 @@ use WP_Block_Editor_Context;
  *
  * @internal
  */
-final readonly class FilterAllowedBlocksByPostTypeModule implements ModuleInterface {
+final readonly class FilterAllowedBlocksByPostTypeUnit implements BootUnitInterface {
 
 	/**
 	 * The map of block names to allowed post types.

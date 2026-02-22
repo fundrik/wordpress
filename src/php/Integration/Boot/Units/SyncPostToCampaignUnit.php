@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Modules;
+namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
@@ -33,7 +34,7 @@ use WP_REST_Response;
  *
  * @internal
  */
-final readonly class SyncPostToCampaignModule implements ModuleInterface {
+final readonly class SyncPostToCampaignUnit implements BootUnitInterface {
 
 	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**

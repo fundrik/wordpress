@@ -44,7 +44,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	) {
 
 		$this->logger->set_hook_name( self::HOOK_NAME );
-		$this->logger->set_hook_class( self::class );
+		$this->logger->set_hook_dispatcher_class( self::class );
 	}
 
 	/**

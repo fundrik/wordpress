@@ -137,7 +137,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		$this->logger->log_migration_applying( $class_name, $version );
 
 		try {
-			$migration = $this->migration_factory->create( $class_name, $this->database );
+			$migration = $this->migration_factory->create( $class_name );
 			$migration->apply( $charset_collate );
 		} catch ( MigrationException $e ) {
 			$this->logger->log_migration_failed( $class_name, $version, $e );

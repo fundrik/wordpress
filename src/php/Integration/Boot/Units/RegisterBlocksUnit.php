@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Modules;
+namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
+use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 
 /**
@@ -14,7 +15,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDisp
  *
  * @internal
  */
-final readonly class RegisterBlocksModule implements ModuleInterface {
+final readonly class RegisterBlocksUnit implements BootUnitInterface {
 
 	/**
 	 * Constructor.

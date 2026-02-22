@@ -51,7 +51,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 		$this->hook_name = 'rest_after_insert_' . CampaignPostTypeConfig::ID;
 
 		$this->logger->set_hook_name( $this->hook_name );
-		$this->logger->set_hook_class( self::class );
+		$this->logger->set_hook_dispatcher_class( self::class );
 	}
 
 	/**

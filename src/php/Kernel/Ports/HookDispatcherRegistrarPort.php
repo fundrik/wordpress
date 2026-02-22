@@ -8,6 +8,8 @@ namespace Fundrik\WordPress\Kernel\Ports;
  * Provides methods for registering all hook dispatchers.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 interface HookDispatcherRegistrarPort {
 

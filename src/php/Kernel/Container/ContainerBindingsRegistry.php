@@ -9,15 +9,16 @@ use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Integration\WpdbDatabase;
+use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
-use Illuminate\Contracts\Events\Dispatcher as LaravelEventsDispatcherInterface;
-use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
 
 /**
  * Provides the list of container bindings.
@@ -27,6 +28,18 @@ use Illuminate\Events\Dispatcher as LaravelEventsDispatcher;
  * @internal
  */
 class ContainerBindingsRegistry {
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.0.0
+	 *
+	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
+	 * @param HookDispatcherRegistry $hook_dispatcher_registry Provides the declared hook dispatcher classes for container registration.
+	 */
+	public function __construct(
+		private HookDispatcherRegistry $hook_dispatcher_registry,
+	) {}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -42,8 +55,6 @@ class ContainerBindingsRegistry {
 
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
-			LaravelEventsDispatcherInterface::class => LaravelEventsDispatcher::class,
-
 			MigrationRunnerPort::class => MigrationRunner::class,
 
 			DatabaseInterface::class => WpdbDatabase::class,
@@ -51,8 +62,9 @@ class ContainerBindingsRegistry {
 			CampaignRepositoryPort::class => CampaignRepository::class,
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
+			BootUnitRunnerPort::class => BootUnitRunner::class,
 			WordPressContextInterface::class => WordPressContext::class,
-		];
+		] + $this->hook_dispatcher_registry->get_dispatcher_classes();
 		// phpcs:enable
 	}
 	// phpcs:enable

@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Kernel\Container\ContainerInterface;
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
 
 /**
- * Creates hook dispatcher instances.
+ * Resolves hook dispatcher instances.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class HookDispatcherFactory {
+final readonly class HookDispatcherResolver {
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param LoggerInterface $logger Writes structured log entries for hook operations.
+	 * @param ContainerInterface $container Resolves hook dispatcher instances through the container.
 	 */
 	public function __construct(
-		private LoggerInterface $logger,
+		private ContainerInterface $container,
 	) {}
 
 	/**
-	 * Creates a hook dispatcher instance by class name.
+	 * Resolves a hook dispatcher instance by class name.
 	 *
 	 * @since 1.0.0
 	 *
@@ -36,17 +36,18 @@ final readonly class HookDispatcherFactory {
 	 *
 	 * @phpstan-param class-string<HookDispatcherInterface> $class_name
 	 *
-	 * @return HookDispatcherInterface The created hook dispatcher.
+	 * @return HookDispatcherInterface The resolved hook dispatcher.
 	 *
 	 * @throws InvalidArgumentException When the class does not exist or does not implement HookDispatcherInterface.
+	 * @throws ContainerException When the container cannot resolve the hook dispatcher.
 	 */
-	public function create( string $class_name ): HookDispatcherInterface {
+	public function resolve( string $class_name ): HookDispatcherInterface {
 
 		if ( ! class_exists( $class_name ) ) {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot create the hook dispatcher: the class must exist. Given: %s.',
+					'Cannot resolve the hook dispatcher: the class must exist. Given: %s.',
 					$class_name,
 				),
 			);
@@ -56,13 +57,13 @@ final readonly class HookDispatcherFactory {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot create the hook dispatcher: the class must implement %s. Given: %s.',
+					'Cannot resolve the hook dispatcher: the class must implement %s. Given: %s.',
 					HookDispatcherInterface::class,
 					$class_name,
 				),
 			);
 		}
 
-		return new $class_name( new HookDispatcherLogger( $this->logger ) );
+		return $this->container->make( $class_name );
 	}
 }

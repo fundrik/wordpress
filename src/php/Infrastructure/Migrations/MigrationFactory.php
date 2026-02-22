@@ -16,12 +16,22 @@ use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 final readonly class MigrationFactory {
 
 	/**
+	 * Constructor.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param DatabaseInterface $database Executes SQL queries during the migration.
+	 */
+	public function __construct(
+		private DatabaseInterface $database,
+	) {}
+
+	/**
 	 * Creates the migration by the given class name.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $class_name The migration class name.
-	 * @param DatabaseInterface $database Executes SQL queries during the migration.
 	 *
 	 * @phpstan-param class-string<AbstractMigration> $class_name
 	 *
@@ -29,7 +39,7 @@ final readonly class MigrationFactory {
 	 *
 	 * @throws MigrationException When the class does not exist or does not extend AbstractMigration.
 	 */
-	public function create( string $class_name, DatabaseInterface $database ): AbstractMigration {
+	public function create( string $class_name ): AbstractMigration {
 
 		if ( ! class_exists( $class_name ) ) {
 
@@ -49,6 +59,6 @@ final readonly class MigrationFactory {
 			);
 		}
 
-		return new $class_name( $database );
+		return new $class_name( $this->database );
 	}
 }
