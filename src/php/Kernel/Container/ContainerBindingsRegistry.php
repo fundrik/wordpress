@@ -19,6 +19,8 @@ use Fundrik\WordPress\Integration\WpdbDatabase;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Provides the list of container bindings.
@@ -55,6 +57,9 @@ class ContainerBindingsRegistry {
 
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
+			// TODO: Implement Monolog logger.
+			LoggerInterface::class => NullLogger::class,
+
 			MigrationRunnerPort::class => MigrationRunner::class,
 
 			DatabaseInterface::class => WpdbDatabase::class,

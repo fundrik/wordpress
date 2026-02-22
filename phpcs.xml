@@ -29,15 +29,9 @@
 		<properties>
 			<property name="excludedParentClasses" type="array">
 				<element value="Throwable"/>
+				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface"/>
 			</property>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Integration\Events\FilterAllowedBlockTypesEvent"/>
-				<element value="Fundrik\WordPress\Integration\Events\FilterCampaignBeforeSavedViaRestEvent"/>
-				<element value="Fundrik\WordPress\Integration\Events\FilterCampaignRestResponseEvent"/>
-				<element value="Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPreInsertCampaignFilterBridge"/>
-				<element value="Fundrik\WordPress\Integration\HookToEventBridges\Bridges\RestPrepareCampaignFilterBridge"/>
-				<element value="Fundrik\WordPress\Integration\HookToEventBridges\BridgeLogger"/>
-				<element value="Fundrik\WordPress\Integration\Listeners\FilterAllowedBlocksByPostTypeListener"/>
 				<element value="Fundrik\WordPress\Integration\WordPressContext\WordPressContext"/>
 			</property>
 		</properties>
@@ -54,13 +48,15 @@
 	<rule ref="FundrikStandard.Classes.RequireAbstractOrFinal">
 		<properties>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry" />
+				<element value="Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistry" />
 				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
-				<element value="Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistry"/>
+				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry"/>
+				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry"/>
+				<element value="Fundrik\WordPress\Integration\Boot\BootUnitRegistry"/>
 			</property>
 			<property name="excludedParentClasses" type="array">
-				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeInterface"/>
+				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface"/>
 			</property>
 		</properties>
 	</rule>

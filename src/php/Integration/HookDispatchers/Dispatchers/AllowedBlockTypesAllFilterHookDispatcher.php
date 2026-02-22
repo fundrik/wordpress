@@ -96,14 +96,14 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 		} catch ( InvalidHookDispatcherArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
-
+			fundrik_set_failure_message( $e->getMessage() );
 			return $allowed;
 
 		} catch ( Throwable $e ) {
 
 			$this->logger->log_dispatch_failed( $e );
-
-			throw $e;
+			fundrik_set_failure_message( $e->getMessage() );
+			return $allowed;
 		}
 
 		$changed = $result !== $valid_allowed;

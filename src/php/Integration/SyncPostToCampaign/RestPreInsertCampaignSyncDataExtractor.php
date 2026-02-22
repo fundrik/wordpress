@@ -23,7 +23,7 @@ use WP_REST_Request;
  */
 final readonly class RestPreInsertCampaignSyncDataExtractor {
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	/**
 	 * Extracts and normalizes the synchronization data from the REST request.
 	 *
@@ -68,5 +68,5 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			);
 		}
 	}
-	// phpcs:enable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Files.LineLength.LineTooLong
+	// phpcs:enable
 }

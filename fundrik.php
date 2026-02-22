@@ -31,15 +31,6 @@ use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerFactory;
 use Fundrik\WordPress\Kernel\Plugin;
-use Monolog\Formatter\JsonFormatter as MonologJsonFormatter;
-use Monolog\Handler\StreamHandler as MonologStreamHandler;
-use Monolog\Level as MonologLevel;
-use Monolog\Logger as MonologLogger;
-use Monolog\LogRecord as MonologLogRecord;
-use Monolog\Processor\IntrospectionProcessor;
-use Monolog\Processor\UidProcessor as MonologUidProcessor;
-use Monolog\Processor\WebProcessor as MonologWebProcessor;
-use Psr\Log\LoggerInterface;
 
 defined( 'ABSPATH' ) || die;
 
@@ -56,61 +47,99 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 	 * Initializes the Fundrik plugin.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @internal
 	 */
 	function fundrik_init(): void {
 
-		$container = ( new ContainerFactory() )->create();
+		try {
+			$container = ( new ContainerFactory() )->create();
 
-		$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry( new HookDispatcherRegistry() ) );
-		$registrar->register_bindings_into_container( $container );
+			$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry( new HookDispatcherRegistry() ) );
+			$registrar->register_bindings_into_container( $container );
 
-		$container->singleton(
-			LoggerInterface::class,
-			static function (): LoggerInterface {
+			$container->make( Plugin::class )->run();
+		} catch ( Throwable $e ) {
 
-				$logger = new MonologLogger( 'fundrik' );
+			fundrik_set_failure_message( $e->getMessage() );
 
-				$logs_dir = FUNDRIK_PATH . '/logs';
-				$debug_handler = new MonologStreamHandler( $logs_dir . '/fundrik-debug.json', level: MonologLevel::Debug );
-				$info_handler = new MonologStreamHandler( $logs_dir . '/fundrik.json', level: MonologLevel::Info );
+			if ( fundrik_is_debug_enabled() ) {
 
-				$debug_handler->setFormatter( new MonologJsonFormatter() );
-				$info_handler->setFormatter( new MonologJsonFormatter() );
-
-				$logger->pushProcessor( new MonologUidProcessor() );
-				$logger->pushProcessor( new IntrospectionProcessor() );
-
-				$web = new MonologWebProcessor();
-				$logger->pushProcessor(
-					static function ( MonologLogRecord $record ) use ( $web ): MonologLogRecord {
-
-						$record = $web( $record );
-
-						unset( $record['extra']['server'] );
-
-						$record['extra']['is_admin'] = function_exists( 'is_admin' ) ? is_admin() : null;
-						$record['extra']['is_ajax'] = function_exists( 'wp_doing_ajax' ) ? wp_doing_ajax() : null;
-						$record['extra']['is_cron'] = function_exists( 'wp_doing_cron' ) ? wp_doing_cron() : null;
-						$record['extra']['is_json'] = function_exists( 'wp_is_json_request' ) ? wp_is_json_request() : null;
-						$record['extra']['user_id'] = function_exists( 'get_current_user_id' ) ? get_current_user_id() : null;
-
-						$start = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime( true );
-						$record['extra']['duration_ms'] = (int) round( ( microtime( true ) - $start ) * 1_000 );
-						$record['extra']['memory_peak_mb'] = round( memory_get_peak_usage( true ) / ( 1_024 * 1_024 ), 2 );
-
-						return $record;
-					},
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'Fundrik initialization failed: %s in %s:%d',
+						$e->getMessage(),
+						$e->getFile(),
+						$e->getLine(),
+					),
 				);
+			}
 
-				$logger->pushHandler( $debug_handler );
-				$logger->pushHandler( $info_handler );
-
-				return $logger;
-			},
-		);
-
-		$container->make( Plugin::class )->run();
+			return;
+		}
 	}
 }
 
 add_action( 'plugins_loaded', 'fundrik_init' );
+
+/**
+ * Renders an admin notice when the plugin failed during the current request.
+ *
+ * @since 1.0.0
+ *
+ * @internal
+ */
+function fundrik_render_failure_notice(): void {
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable
+	$message = $GLOBALS['fundrik_failure_message'] ?? null;
+
+	if ( empty( $message ) ) {
+		return;
+	}
+
+	echo '<div class="notice notice-error"><p>';
+	echo esc_html( 'Fundrik is disabled because it failed to run.' );
+
+	if ( fundrik_is_debug_enabled() ) {
+		echo '<br><code>';
+		echo esc_html( (string) $message );
+		echo '</code>';
+	}
+
+	echo '</p></div>';
+}
+
+add_action( 'admin_notices', 'fundrik_render_failure_notice' );
+
+/**
+ * Checks whether WordPress debug mode is enabled.
+ *
+ * @since 1.0.0
+ *
+ * @internal
+ */
+function fundrik_is_debug_enabled(): bool {
+
+	return defined( 'WP_DEBUG' ) && WP_DEBUG;
+}
+
+/**
+ * Stores the failure message for the current request.
+ *
+ * @since 1.0.0
+ *
+ * @param string $message The message describing the failure.
+ *
+ * @internal
+ */
+function fundrik_set_failure_message( string $message ): void {
+
+	// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable
+	$GLOBALS['fundrik_failure_message'] = $message;
+}

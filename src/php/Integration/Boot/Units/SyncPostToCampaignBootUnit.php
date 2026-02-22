@@ -69,7 +69,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		private RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor,
 		private RestAfterInsertCampaignSynchronizer $after_insert_synchronizer,
 	) {}
-	// phpcs:enable SlevomatCodingStandard.Files.LineLength.LineTooLong
+	// phpcs:enable
 
 	/**
 	 * Attaches the synchronization callbacks to campaign REST hooks.
@@ -206,5 +206,5 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 		$this->after_insert_synchronizer->sync( $data );
 	}
-	// phpcs:enable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+	// phpcs:enable
 }

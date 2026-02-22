@@ -103,12 +103,14 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 		} catch ( InvalidHookDispatcherArgumentException $e ) {
 
 			$this->logger->log_invalid_input( $e );
+			fundrik_set_failure_message( $e->getMessage() );
 			return;
 
 		} catch ( Throwable $e ) {
 
 			$this->logger->log_dispatch_failed( $e );
-			throw $e;
+			fundrik_set_failure_message( $e->getMessage() );
+			return;
 		}
 
 		$this->logger->log_handled(
