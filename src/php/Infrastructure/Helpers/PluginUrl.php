@@ -33,4 +33,18 @@ enum PluginUrl: string {
 
 		return FUNDRIK_URL . $this->value;
 	}
+
+	/**
+	 * Resolves the absolute URL to a file within this plugin resource path.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file The file name relative to this resource path.
+	 *
+	 * @return string The full absolute URL to the given file.
+	 */
+	public function file( string $file ): string {
+
+		return $this->get_full_url() . $file;
+	}
 }

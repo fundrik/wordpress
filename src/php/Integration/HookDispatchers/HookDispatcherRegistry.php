@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
@@ -31,9 +32,10 @@ class HookDispatcherRegistry {
 	public function get_dispatcher_classes(): array {
 
 		return [
+			AllowedBlockTypesAllFilterHookDispatcher::class,
+			EnqueueBlockEditorAssetsActionHookDispatcher::class,
 			InitActionHookDispatcher::class,
 			RestAfterInsertCampaignActionHookDispatcher::class,
-			AllowedBlockTypesAllFilterHookDispatcher::class,
 			RestPreInsertCampaignFilterHookDispatcher::class,
 			RestPrepareCampaignFilterHookDispatcher::class,
 		];

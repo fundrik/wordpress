@@ -26,6 +26,7 @@
 
 declare(strict_types=1);
 
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerFactory;
@@ -60,7 +61,7 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 
 		$container = ( new ContainerFactory() )->create();
 
-		$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry() );
+		$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry( new HookDispatcherRegistry() ) );
 		$registrar->register_bindings_into_container( $container );
 
 		$container->singleton(
