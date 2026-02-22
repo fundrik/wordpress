@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Boot;
 
-use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeUnit;
-use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksUnit;
-use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesUnit;
-use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignUnit;
+use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
 
 /**
  * Provides the list of boot unit classes.
@@ -27,13 +27,13 @@ class BootUnitRegistry {
 	 *
 	 * @phpstan-return list<class-string<BootUnitInterface>>
 	 */
-	public function get_dispatcher_classes(): array {
+	public function get_boot_unit_classes(): array {
 
 		return [
-			FilterAllowedBlocksByPostTypeUnit::class,
-			RegisterBlocksUnit::class,
-			RegisterPostTypesUnit::class,
-			SyncPostToCampaignUnit::class,
+			FilterAllowedBlocksByPostTypeBootUnit::class,
+			RegisterBlocksBootUnit::class,
+			RegisterPostTypesBootUnit::class,
+			SyncPostToCampaignBootUnit::class,
 		];
 	}
 }

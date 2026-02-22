@@ -17,7 +17,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
  *
  * @internal
  */
-final readonly class RegisterPostTypesUnit implements BootUnitInterface {
+final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 
 	/**
 	 * Constructor.

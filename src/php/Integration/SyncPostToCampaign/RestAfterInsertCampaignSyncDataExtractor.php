@@ -42,9 +42,9 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 			$id = TypeCaster::to_int( $post->ID );
 			$title = TypeCaster::to_string( $post->post_title );
 
-			$is_open = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_IS_OPEN );
-			$has_target = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET );
-			$target_amount = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT );
+			$is_open = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_IS_OPEN ) ?? '1';
+			$has_target = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? '0';
+			$target_amount = Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) ?? '0';
 
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );

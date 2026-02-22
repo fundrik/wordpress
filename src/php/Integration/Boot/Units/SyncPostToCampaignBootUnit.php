@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
@@ -39,7 +40,7 @@ use WP_Screen;
  *
  * @internal
  */
-final readonly class SyncPostToCampaignUnit implements BootUnitInterface {
+final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
@@ -139,9 +140,7 @@ final readonly class SyncPostToCampaignUnit implements BootUnitInterface {
 			return $response;
 		}
 
-		if ( $campaign === null ) {
-			return $response;
-		}
+		$version = $campaign === null ? EntityVersion::initial() : $campaign->get_version();
 
 		$meta = $response->data['meta'] ?? [];
 
@@ -149,7 +148,7 @@ final readonly class SyncPostToCampaignUnit implements BootUnitInterface {
 			$meta = [];
 		}
 
-		$meta[ CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME ] = $campaign->get_version()->get_value();
+		$meta[ CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME ] = $version->get_value();
 
 		$response->data['meta'] = $meta;
 

@@ -30,13 +30,13 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	/**
 	 * Stores whether the campaign has a fundraising target.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Boolean )]
+	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: false )]
 	public const string META_HAS_TARGET = 'fundrik_campaign_has_target';
 
 	/**
 	 * Stores the fundraising target amount in minor units.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Number )]
+	#[PostTypeMetaField( type: MetaFieldType::Number, default: 0 )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
 
 	/**

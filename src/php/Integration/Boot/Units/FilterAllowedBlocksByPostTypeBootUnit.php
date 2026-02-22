@@ -21,7 +21,7 @@ use WP_Block_Editor_Context;
  *
  * @internal
  */
-final readonly class FilterAllowedBlocksByPostTypeUnit implements BootUnitInterface {
+final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitInterface {
 
 	/**
 	 * The map of block names to allowed post types.

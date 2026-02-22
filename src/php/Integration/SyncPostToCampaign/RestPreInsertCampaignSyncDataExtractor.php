@@ -8,7 +8,6 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use InvalidArgumentException;
 use stdClass;
@@ -46,7 +45,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 
 			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 			$id = ArrayExtractor::extract_int_required( $params, 'id' );
-			$title = ArrayExtractor::extract_string_optional( $params, 'title' ) ?? TypeCaster::to_string( $prepared_post->post_title ?? '' );
+			$title = ArrayExtractor::extract_string_optional( $params, 'title' ) ?? 'Unchanged title';
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 

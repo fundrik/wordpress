@@ -15,7 +15,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDisp
  *
  * @internal
  */
-final readonly class RegisterBlocksUnit implements BootUnitInterface {
+final readonly class RegisterBlocksBootUnit implements BootUnitInterface {
 
 	/**
 	 * Constructor.

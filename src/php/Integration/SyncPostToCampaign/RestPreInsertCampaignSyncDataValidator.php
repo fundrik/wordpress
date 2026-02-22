@@ -8,6 +8,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
+use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use WP_Error;
 
 /**
@@ -110,16 +111,7 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 			);
 		}
 
-		if ( $persisted === null ) {
-
-			return new WP_Error(
-				'fundrik_campaign_not_found',
-				'Campaign no longer exists or is out of date. Refresh the page and try again.',
-				[ 'status' => 409 ],
-			);
-		}
-
-		$current_version = $persisted->get_version();
+		$current_version = $persisted === null ? EntityVersion::initial() : $persisted->get_version();
 
 		if ( $current_version->equals( $data->version ) ) {
 			return null;

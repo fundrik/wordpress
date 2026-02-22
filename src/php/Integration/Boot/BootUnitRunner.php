@@ -37,7 +37,7 @@ final readonly class BootUnitRunner implements BootUnitRunnerPort {
 	 */
 	public function boot_all(): void {
 
-		foreach ( $this->registry->get_dispatcher_classes() as $class_name ) {
+		foreach ( $this->registry->get_boot_unit_classes() as $class_name ) {
 
 			$dispatcher = $this->resolver->resolve( $class_name );
 			$dispatcher->boot();
