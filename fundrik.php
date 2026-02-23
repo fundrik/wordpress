@@ -55,6 +55,7 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 		try {
 			$container = ( new ContainerFactory() )->create();
 
+			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
 			$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry( new HookDispatcherRegistry() ) );
 			$registrar->register_bindings_into_container( $container );
 

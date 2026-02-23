@@ -32,6 +32,8 @@
 				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface"/>
 			</property>
 			<property name="excludedClasses" type="array">
+				<element value="Fundrik\WordPress\Integration\Boot\BootUnitLogger"/>
+				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger"/>
 				<element value="Fundrik\WordPress\Integration\WordPressContext\WordPressContext"/>
 			</property>
 		</properties>
