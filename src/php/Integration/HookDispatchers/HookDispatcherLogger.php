@@ -59,11 +59,11 @@ final readonly class HookDispatcherLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $hook_dispatcher_class The fully qualified class name of the hook dispatcher.
+	 * @param string $class_name The fully qualified class name of the hook dispatcher.
 	 */
-	public function set_hook_dispatcher_class( string $hook_dispatcher_class ): void {
+	public function set_hook_dispatcher_class( string $class_name ): void {
 
-		$this->hook_dispatcher_class = $hook_dispatcher_class;
+		$this->hook_dispatcher_class = $class_name;
 	}
 
 	/**
@@ -174,12 +174,12 @@ final readonly class HookDispatcherLogger {
 	private function logger_context( array $extra = [] ): array {
 
 		return [
+			'service_class' => $this->hook_dispatcher_class,
 			'logger_class' => self::class,
 			'component' => 'hook_dispatchers',
+			'hook_name' => $this->hook_name,
 			'layer' => 'integration',
 			'system' => 'wordpress',
-			'hook_name' => $this->hook_name,
-			'hook_dispatcher_class' => $this->hook_dispatcher_class,
 		] + $extra;
 	}
 

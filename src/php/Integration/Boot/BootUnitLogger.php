@@ -47,29 +47,12 @@ final readonly class BootUnitLogger {
 	}
 
 	/**
-	 * Logs that the boot unit has been started (debug).
-	 *
-	 * @param string $operation_name The operation name.
-	 *
-	 * @since 1.0.0
-	 */
-	public function log_started( string $operation_name ): void {
-
-		$this->assert_class_name_is_set();
-
-		$this->logger->debug(
-			sprintf( '%s started.', $operation_name ),
-			$this->logger_context(),
-		);
-	}
-
-	/**
-	 * Logs a debug entry with the boot unit context (debug).
+	 * Logs a debug entry (debug).
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $message The log message.
-	 * @param array<string, mixed> $extra Additional context entries to merge.
+	 * @param array<string, mixed> $extra Additional context entries.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -84,31 +67,51 @@ final readonly class BootUnitLogger {
 	}
 
 	/**
-	 * Logs that the boot unit has been completed (debug).
+	 * Logs a warning entry (warning).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $operation_name The operation name.
-	 * @param array<string, mixed> $extra Extra context entries describing additional unit data.
+	 * @param string $message The log message.
+	 * @param array<string, mixed> $extra Additional context entries.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function log_completed( string $operation_name, array $extra = [] ): void {
+	public function log_warning( string $message, array $extra = [] ): void {
 
 		$this->assert_class_name_is_set();
 
-		$this->logger->debug(
-			sprintf( '%s completed.', $operation_name ),
+		$this->logger->warning(
+			$message,
 			$this->logger_context( $extra ),
 		);
 	}
 
 	/**
-	 * Builds the structured logger context for the hook dispatcher.
+	 * Logs an error entry (error).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $extra Additional context entries to merge.
+	 * @param string $message The log message.
+	 * @param array<string, mixed> $extra Additional context entries.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	public function log_error( string $message, array $extra = [] ): void {
+
+		$this->assert_class_name_is_set();
+
+		$this->logger->error(
+			$message,
+			$this->logger_context( $extra ),
+		);
+	}
+
+	/**
+	 * Builds the structured logger context for the boot unit.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $extra Additional context entries.
 	 *
 	 * @return array<string, mixed> The structured context payload.
 	 *

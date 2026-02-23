@@ -7,7 +7,6 @@ namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
-use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 
 /**
@@ -45,23 +44,17 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 
 		$expected_version = $this->get_expected_version_or_initial( $data );
 
-		try {
+		$campaign = $this->campaign_factory->create(
+			id: $data->id,
+			version: $expected_version,
+			title: $data->title,
+			is_active: true,
+			is_open: $data->is_open,
+			has_target: $data->has_target,
+			target_amount: $data->target_amount,
+		);
 
-			$campaign = $this->campaign_factory->create(
-				id: $data->id,
-				version: $expected_version,
-				title: $data->title,
-				is_active: true,
-				is_open: $data->is_open,
-				has_target: $data->has_target,
-				target_amount: $data->target_amount,
-			);
-
-			$this->campaign_repository->save( $campaign );
-
-		} catch ( CampaignFactoryException | CampaignRepositoryExceptionInterface ) {
-			return;
-		}
+		$this->campaign_repository->save( $campaign );
 	}
 
 	/**

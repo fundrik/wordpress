@@ -6,11 +6,13 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
+use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
@@ -20,6 +22,7 @@ use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSync
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
+use InvalidArgumentException;
 use stdClass;
 use WP_Error;
 use WP_Post;
@@ -57,6 +60,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 * @param RestPreInsertCampaignSyncDataValidator $pre_insert_validator The validator for pre-insert synchronization data.
 	 * @param RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor The extractor for after-insert synchronization data.
 	 * @param RestAfterInsertCampaignSynchronizer $after_insert_synchronizer The synchronizer for persisting the saved snapshot.
+	 * @param BootUnitLogger $logger Writes structured log entries.
 	 */
 	public function __construct(
 		private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook,
@@ -68,7 +72,11 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		private RestPreInsertCampaignSyncDataValidator $pre_insert_validator,
 		private RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor,
 		private RestAfterInsertCampaignSynchronizer $after_insert_synchronizer,
-	) {}
+		private BootUnitLogger $logger,
+	) {
+
+		$this->logger->set_boot_unit_class( self::class );
+	}
 	// phpcs:enable
 
 	/**
@@ -114,6 +122,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		return $prepared_post;
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Attaches the current campaign version to the REST response meta.
 	 *
@@ -132,11 +141,22 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		WP_REST_Request $request,
 	): WP_REST_Response {
 
-		$entity_id = EntityId::create( TypeCaster::to_int( $post->ID ) );
+		$post_id = TypeCaster::to_int( $post->ID );
+		$entity_id = EntityId::create( $post_id );
 
 		try {
 			$campaign = $this->campaign_repository->find_by_id( $entity_id );
-		} catch ( CampaignRepositoryExceptionInterface ) {
+		} catch ( CampaignRepositoryExceptionInterface $e ) {
+
+			$this->logger->log_error(
+				'Failed to resolve campaign version for REST response.',
+				[
+					'post_id' => $post_id,
+					'entity_id' => $entity_id->get_value(),
+					'exception' => $e,
+				],
+			);
+
 			return $response;
 		}
 
@@ -154,6 +174,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 		return $response;
 	}
+	// phpcs:enable
 
 	/**
 	 * Enqueues the block editor scripts required by the plugin.
@@ -186,7 +207,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		);
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+	// phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Persists the saved campaign post snapshot into Fundrik storage after REST saves.
 	 *
@@ -198,13 +219,54 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 */
 	private function sync_campaign_after_rest_save( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
 
-		$data = $this->after_insert_extractor->extract_or_null( $post, $request );
+		$post_id = TypeCaster::to_int( $post->ID );
 
-		if ( $data === null ) {
-			return;
+		try {
+
+			$data = $this->after_insert_extractor->extract( $post, $request );
+
+		} catch ( InvalidArgumentException $e ) {
+
+			$this->logger->log_error(
+				'Campaign synchronization after REST save failed: payload is not usable.',
+				[
+					'post_id' => $post_id,
+					'creating' => $creating,
+				],
+			);
+
+			throw $e;
 		}
 
-		$this->after_insert_synchronizer->sync( $data );
+		try {
+
+			$this->after_insert_synchronizer->sync( $data );
+
+		} catch ( CampaignFactoryException | CampaignRepositoryExceptionInterface $e ) {
+
+			$this->logger->log_error(
+				'Campaign synchronization after REST save failed.',
+				[
+					'post_id' => $post_id,
+					'entity_id' => $data->id->get_value(),
+					'version' => $data->version->get_value(),
+					'creating' => $creating,
+					'exception' => $e,
+				],
+			);
+
+			throw $e;
+		}
+
+		$this->logger->log_debug(
+			'Campaign synchronization after REST save completed.',
+			[
+				'post_id' => $post_id,
+				'entity_id' => $data->id->get_value(),
+				'version' => $data->version->get_value(),
+				'creating' => $creating,
+			],
+		);
 	}
 	// phpcs:enable
 }

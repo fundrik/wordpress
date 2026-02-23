@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes;
 
+use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
+use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
+use WP_Error;
+
 /**
  * Registers the post type and its meta fields in WordPress.
  *
@@ -24,12 +28,16 @@ final readonly class PostTypeRegistrar {
 		private PostTypeMetaFieldReader $meta_reader,
 	) {}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Registers the given post type in WordPress.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param PostTypeConfigInterface $post_type_config Provides the post type config.
+	 *
+	 * @throws PostTypeRegistrationException When post type registration fails.
+	 * @throws PostMetaRegistrationException When meta field registration fails.
 	 */
 	public function register( PostTypeConfigInterface $post_type_config ): void {
 
@@ -57,7 +65,7 @@ final readonly class PostTypeRegistrar {
 		 */
 		$slug = apply_filters( "fundrik_{$id}_post_type_slug", $post_type_config->get_slug() );
 
-		register_post_type(
+		$result = register_post_type(
 			$id,
 			[
 				'labels' => $labels,
@@ -71,8 +79,20 @@ final readonly class PostTypeRegistrar {
 			],
 		);
 
+		if ( $result instanceof WP_Error ) {
+
+			throw new PostTypeRegistrationException(
+				sprintf(
+					'Cannot register the post type `%s`. The registration failed in WordPress: %s.',
+					$id,
+					$result->get_error_message(),
+				),
+			);
+		}
+
 		$this->register_post_meta_fields( $post_type_config );
 	}
+	// phpcs:enable
 
 	/**
 	 * Registers all meta fields for the given post type.
@@ -83,16 +103,30 @@ final readonly class PostTypeRegistrar {
 	 */
 	private function register_post_meta_fields( PostTypeConfigInterface $post_type_config ): void {
 
+		$post_type_id = $post_type_config->get_id();
+
 		foreach ( $this->meta_reader->get_meta_fields( $post_type_config ) as $meta_key => $args ) {
 
-			register_post_meta(
-				$post_type_config->get_id(),
+			$result = register_post_meta(
+				$post_type_id,
 				$meta_key,
 				$args + [
 					'show_in_rest' => true,
 					'single' => true,
 				],
 			);
+
+			if ( ! $result ) {
+
+				throw new PostMetaRegistrationException(
+					sprintf(
+						// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+						'Cannot register the post meta field `%s` for the post type `%s`. The registration failed in WordPress.',
+						$meta_key,
+						$post_type_id,
+					),
+				);
+			}
 		}
 	}
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
+use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
@@ -42,13 +43,20 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 * @param WordPressContextInterface $wp_context Provides access to registered WordPress types.
 	 * @param PostTypeConfigRegistry $post_type_config_registry Provides the declared post type config classes.
 	 * @param PostTypeConfigFactory $post_type_config_factory Creates post type config instances.
+	 * @param BootUnitLogger $logger Writes structured log entries.
 	 */
 	public function __construct(
 		private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook,
 		private WordPressContextInterface $wp_context,
 		private PostTypeConfigRegistry $post_type_config_registry,
 		private PostTypeConfigFactory $post_type_config_factory,
-	) {}
+		private BootUnitLogger $logger,
+	) {
+
+		$this->block_allowed_post_types = $this->build_block_allowed_post_types_map();
+
+		$this->logger->set_boot_unit_class( self::class );
+	}
 
 	/**
 	 * Attaches the filter and prepares the block restriction map.
@@ -59,13 +67,12 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 */
 	public function boot(): void {
 
-		$this->block_allowed_post_types = $this->build_block_allowed_post_types_map();
-
 		$this->allowed_block_types_hook->attach(
 			$this->filter_allowed_block_types( ... ),
 		);
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Filters the allowed blocks list based on the current post type.
 	 *
@@ -81,14 +88,18 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 		WP_Block_Editor_Context $editor_context,
 	): bool|array {
 
-		if ( $allowed === false ) {
-			return false;
-		}
-
 		$current_post_type = $editor_context->post?->post_type;
 
 		if ( $current_post_type === null ) {
 			return $allowed;
+		}
+
+		if ( $allowed === false ) {
+			$this->logger->log_debug(
+				'All blocks are disallowed by upstream filter.',
+				[ 'post_type' => $current_post_type ],
+			);
+			return false;
 		}
 
 		if ( $allowed === true ) {
@@ -100,8 +111,27 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 			fn ( string $block_name ): bool => $this->is_block_allowed( $block_name, $current_post_type ),
 		);
 
-		return array_values( $filtered );
+		$filtered = array_values( $filtered );
+
+		$fundrik_blocks_count = count(
+			array_filter(
+				$filtered,
+				static fn ( string $block_name ): bool => str_starts_with( $block_name, 'fundrik/' ),
+			),
+		);
+
+		$this->logger->log_debug(
+			'Filtering allowed blocks by post type completed.',
+			[
+				'post_type' => $current_post_type,
+				'allowed_blocks_count' => count( $filtered ),
+				'allowed_fundrik_blocks_count' => $fundrik_blocks_count,
+			],
+		);
+
+		return $filtered;
 	}
+	// phpcs:enable
 
 	/**
 	 * Builds the map of block names to their allowed post types.
@@ -162,7 +192,7 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 *
 	 * @return bool True if allowed.
 	 */
-	private function is_block_allowed( string $block_name, string $current_post_type, ): bool {
+	private function is_block_allowed( string $block_name, string $current_post_type ): bool {
 
 		if ( ! isset( $this->block_allowed_post_types[ $block_name ] ) ) {
 			return true;
