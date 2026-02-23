@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\PostTypes;
 
 use Fundrik\Toolbox\TypeCaster;
+use InvalidArgumentException;
 use ReflectionClass;
 
 /**

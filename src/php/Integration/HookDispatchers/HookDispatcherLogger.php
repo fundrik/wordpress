@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
  *
  * @internal
  */
-final readonly class HookDispatcherLogger {
+final class HookDispatcherLogger {
 
 	/**
 	 * The WordPress hook name.

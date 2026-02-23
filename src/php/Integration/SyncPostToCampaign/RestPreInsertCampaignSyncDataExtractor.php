@@ -23,7 +23,7 @@ use WP_REST_Request;
  */
 final readonly class RestPreInsertCampaignSyncDataExtractor {
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+	// // phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint, SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	/**
 	 * Extracts and normalizes the synchronization data from the REST request.
 	 *
@@ -39,6 +39,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		WP_REST_Request $request,
 	): RestCampaignSyncDataDto|WP_Error {
 
+		/** @var array<string, mixed> $params */
 		$params = $request->get_json_params();
 
 		try {
@@ -46,6 +47,8 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 			$id = ArrayExtractor::extract_int_required( $params, 'id' );
 			$title = ArrayExtractor::extract_string_optional( $params, 'title' ) ?? 'Unchanged title';
+
+			/** @var array<string, mixed> $meta */
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 

@@ -33,8 +33,6 @@ final readonly class MigrationFactory {
 	 *
 	 * @param string $class_name The migration class name.
 	 *
-	 * @phpstan-param class-string<AbstractMigration> $class_name
-	 *
 	 * @return AbstractMigration The migration instance.
 	 *
 	 * @throws MigrationException When the class does not exist or does not extend AbstractMigration.

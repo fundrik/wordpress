@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories;
 
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
@@ -359,10 +360,12 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			);
 		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
 
+			$id = is_string( $row['id'] ?? null ) ? $row['id'] : '-1';
+
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot map campaign row to entity. Given: ID %d.',
-					(int) ( $row['id'] ?? -1 ),
+					'Cannot map campaign row to entity. Given: ID %s.',
+					$id,
 				),
 				previous: $e,
 			);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Boot;
 
+use Fundrik\WordPress\Kernel\Container\ContainerException;
 use Fundrik\WordPress\Kernel\Container\ContainerInterface;
 use InvalidArgumentException;
 
@@ -33,8 +34,6 @@ final readonly class BootUnitResolver {
 	 * @since 1.0.0
 	 *
 	 * @param string $class_name The boot unit class.
-	 *
-	 * @phpstan-param class-string<BootUnitInterface> $class_name
 	 *
 	 * @return BootUnitInterface The resolved boot unit.
 	 *

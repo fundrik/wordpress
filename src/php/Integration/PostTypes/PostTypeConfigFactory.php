@@ -22,8 +22,6 @@ final readonly class PostTypeConfigFactory {
 	 *
 	 * @param string $class_name The post type config class name.
 	 *
-	 * @phpstan-param class-string<PostTypeConfigInterface> $class_name
-	 *
 	 * @return PostTypeConfigInterface The post type config instance.
 	 *
 	 * @throws InvalidArgumentException When the class does not exist or does not implement PostTypeConfigInterface.

@@ -8,8 +8,10 @@ use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
+use InvalidArgumentException;
 use WP_Block_Editor_Context;
 
 /**

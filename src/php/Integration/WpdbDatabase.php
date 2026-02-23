@@ -127,9 +127,9 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		$casted_results = [];
 
-		foreach ( $results as $index => $row ) {
+		foreach ( $results as $row ) {
 
-			$casted_results[ $index ] = $this->sanitize_db_row( $row );
+			$casted_results[] = $this->sanitize_db_row( $row );
 		}
 
 		return $casted_results;

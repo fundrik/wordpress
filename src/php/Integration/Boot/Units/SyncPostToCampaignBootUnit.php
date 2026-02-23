@@ -162,15 +162,22 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 		$version = $campaign === null ? EntityVersion::initial() : $campaign->get_version();
 
-		$meta = $response->data['meta'] ?? [];
+		$data = $response->get_data();
+
+		if ( ! is_array( $data ) ) {
+			$data = [];
+		}
+
+		$meta = $data['meta'] ?? [];
 
 		if ( ! is_array( $meta ) ) {
 			$meta = [];
 		}
 
 		$meta[ CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME ] = $version->get_value();
+		$data['meta'] = $meta;
 
-		$response->data['meta'] = $meta;
+		$response->set_data( $data );
 
 		return $response;
 	}

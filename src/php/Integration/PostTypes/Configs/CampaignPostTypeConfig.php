@@ -45,6 +45,8 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string The post type ID.
+	 *
+	 * @phpstan-return non-empty-lowercase-string
 	 */
 	public function get_id(): string {
 

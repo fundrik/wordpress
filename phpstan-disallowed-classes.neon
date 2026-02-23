@@ -3,58 +3,34 @@ parameters:
 
 		# ContainerBindingsRegistry
 		-
-			class: Illuminate\Events\Dispatcher
-			message: 'Use Illuminate\Contracts\Events\Dispatcher instead.'
-			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
-
-		-
-			class: Fundrik\WordPress\Infrastructure\EventDispatcher\EventDispatcher
-			message: 'Use Fundrik\WordPress\Infrastructure\EventDispatcher\InfrastructureEventDispatcherInterface instead.'
-			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
-
-		-
-			class: Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistrar
-			message: 'Use Fundrik\WordPress\Kernel\Ports\EventListenerRegistrarPort instead.'
-			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
-
-		-
 			class: Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner
 			message: 'Use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort instead.'
 			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
+				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Fundrik\WordPress\Integration\WpdbDatabase
 			message: 'Use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface instead.'
 			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
+				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Fundrik\WordPress\Integration\WordPressOptionsStorage
 			message: 'Use Fundrik\WordPress\Infrastructure\StorageInterface instead.'
 			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
+				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository
 			message: 'Use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort instead.'
 			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
-
-		-
-			class: Fundrik\WordPress\Integration\HookToEventBridges\HookBridgeRegistrar
-			message: 'Use Fundrik\WordPress\Kernel\Ports\HookBridgeRegistrarPort instead.'
-			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
+				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Fundrik\WordPress\Integration\WordPressContext\WordPressContext
 			message: 'Use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface instead.'
 			allowIn:
-				- src/php/Bootstrap/Container/ContainerBindingsRegistry.php
+				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Monolog\Logger

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot;
 
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
+use RuntimeException;
 
 /**
  * Registers all WordPress integration boot units.

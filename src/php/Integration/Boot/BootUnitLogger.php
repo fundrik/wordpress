@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
  *
  * @internal
  */
-final readonly class BootUnitLogger {
+final class BootUnitLogger {
 
 	/**
 	 * The fully qualified boot unit class name.

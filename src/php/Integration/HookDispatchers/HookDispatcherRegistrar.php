@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
+use RuntimeException;
 
 /**
  * Registers all WordPress hook dispatchers.

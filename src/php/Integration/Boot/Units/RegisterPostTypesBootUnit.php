@@ -10,6 +10,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDisp
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
+use InvalidArgumentException;
 use Throwable;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Kernel\Container\ContainerException;
 use Fundrik\WordPress\Kernel\Container\ContainerInterface;
 use InvalidArgumentException;
 
@@ -33,8 +34,6 @@ final readonly class HookDispatcherResolver {
 	 * @since 1.0.0
 	 *
 	 * @param string $class_name The hook dispatcher class.
-	 *
-	 * @phpstan-param class-string<HookDispatcherInterface> $class_name
 	 *
 	 * @return HookDispatcherInterface The resolved hook dispatcher.
 	 *

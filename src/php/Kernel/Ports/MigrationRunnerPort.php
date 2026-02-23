@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel\Ports;
 
+use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
+
 /**
  * Provides methods for running database migrations.
  *

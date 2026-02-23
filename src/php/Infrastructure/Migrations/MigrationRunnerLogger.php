@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -136,7 +137,7 @@ final readonly class MigrationRunnerLogger {
 			$this->logger_context(
 				extra: [
 					'operation' => 'migrate',
-					'outcome' => $applied ? 'applied' : 'skipped',
+					'outcome' => $applied > 0 ? 'applied' : 'skipped',
 					'applied' => $applied,
 					'from_version' => $from,
 					'to_version' => $to,
@@ -162,7 +163,7 @@ final readonly class MigrationRunnerLogger {
 	private function logger_context( array $extra = [], ?string $class_name = null, ?string $version = null ): array {
 
 		$base = [
-			'service_class' => MigrationRunner::class,
+			'service_class' => MigrationRunnerPort::class,
 			'logger_class' => self::class,
 			'component' => 'migrations',
 			'layer' => 'infrastructure',
