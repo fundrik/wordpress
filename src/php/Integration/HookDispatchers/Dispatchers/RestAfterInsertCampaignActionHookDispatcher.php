@@ -74,11 +74,8 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	public function register(): void {
 
 		add_action( $this->hook_name, $this->handle( ... ), 10, 3 );
-
-		$this->logger->log_registered();
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Handles the WordPress action and dispatches it to listeners.
 	 *
@@ -108,23 +105,10 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 
 		} catch ( Throwable $e ) {
 
-			$this->logger->log_dispatch_failed( $e );
 			fundrik_set_failure_message( $e->getMessage() );
 			return;
 		}
-
-		$this->logger->log_handled(
-			'handled',
-			[
-				'listener_count' => count( $this->listeners ),
-				'post_id' => $valid_post->ID,
-				'post_type' => $valid_post->post_type,
-				'creating' => $valid_creating,
-				'method' => $valid_request->get_method(),
-			],
-		);
 	}
-	// phpcs:enable
 
 	/**
 	 * Dispatches the validated hook arguments to attached listeners.

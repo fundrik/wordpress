@@ -61,8 +61,6 @@ final class InitActionHookDispatcher implements HookDispatcherInterface {
 	public function register(): void {
 
 		add_action( self::HOOK_NAME, $this->handle( ... ) );
-
-		$this->logger->log_registered();
 	}
 
 	/**
@@ -79,16 +77,8 @@ final class InitActionHookDispatcher implements HookDispatcherInterface {
 			}
 		} catch ( Throwable $e ) {
 
-			$this->logger->log_dispatch_failed( $e );
 			fundrik_set_failure_message( $e->getMessage() );
 			return;
 		}
-
-		$this->logger->log_handled(
-			'handled',
-			[
-				'listener_count' => count( $this->listeners ),
-			],
-		);
 	}
 }

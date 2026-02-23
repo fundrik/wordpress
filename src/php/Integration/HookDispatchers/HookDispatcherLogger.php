@@ -6,7 +6,6 @@ namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Writes structured log entries for WordPress hook dispatchers.
@@ -67,27 +66,7 @@ final readonly class HookDispatcherLogger {
 	}
 
 	/**
-	 * Logs that the hook dispatcher has been registered in WordPress (debug).
-	 *
-	 * @since 1.0.0
-	 */
-	public function log_registered(): void {
-
-		$this->assert_context_is_set();
-
-		$this->logger->debug(
-			'Hook dispatcher registered.',
-			$this->logger_context(
-				[
-					'operation' => 'register',
-					'outcome' => 'registered',
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs that the input arguments failed validation and the hook call is invalid (warning).
+	 * Logs that the input arguments failed validation and the hook call is invalid (error).
 	 *
 	 * @since 1.0.0
 	 *
@@ -97,7 +76,7 @@ final readonly class HookDispatcherLogger {
 
 		$this->assert_context_is_set();
 
-		$this->logger->warning(
+		$this->logger->error(
 			$e->getMessage(),
 			$this->logger_context(
 				[
@@ -106,56 +85,6 @@ final readonly class HookDispatcherLogger {
 					'invalid_argument' => $e->argument,
 					'invoked' => false,
 				],
-			),
-		);
-	}
-
-	/**
-	 * Logs that dispatch failed due to an exception in listeners (error).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param Throwable $e The thrown exception from the dispatch stage.
-	 */
-	public function log_dispatch_failed( Throwable $e ): void {
-
-		$this->assert_context_is_set();
-
-		$this->logger->error(
-			sprintf( "Hook dispatcher dispatch failed for hook '%s'.", $this->hook_name ),
-			$this->logger_context(
-				[
-					'operation' => 'dispatch',
-					'outcome' => 'error',
-					'invoked' => true,
-					'exception' => $e,
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs the final outcome of handling the hook call (debug).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $outcome The result status, such as 'handled' or 'skipped'.
-	 * @param array<string, mixed> $extra Extra context entries describing additional hook data.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	public function log_handled( string $outcome, array $extra = [] ): void {
-
-		$this->assert_context_is_set();
-
-		$this->logger->debug(
-			'Hook dispatcher handled.',
-			$this->logger_context(
-				[
-					'operation' => 'handle',
-					'outcome' => $outcome,
-					'invoked' => true,
-				] + $extra,
 			),
 		);
 	}

@@ -67,11 +67,8 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	public function register(): void {
 
 		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 2 );
-
-		$this->logger->log_registered();
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Handles the WordPress filter and dispatches it to listeners.
 	 *
@@ -101,25 +98,12 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 
 		} catch ( Throwable $e ) {
 
-			$this->logger->log_dispatch_failed( $e );
 			fundrik_set_failure_message( $e->getMessage() );
 			return $allowed;
 		}
 
-		$changed = $result !== $valid_allowed;
-
-		$this->logger->log_handled(
-			$changed ? 'changed' : 'unchanged',
-			[
-				'listener_count' => count( $this->listeners ),
-				'returned_type' => is_bool( $result ) ? 'bool' : 'array',
-				'returned_count' => is_array( $result ) ? count( $result ) : null,
-			],
-		);
-
 		return $result;
 	}
-	// phpcs:enable
 
 	/**
 	 * Dispatches the validated hook arguments to attached listeners.

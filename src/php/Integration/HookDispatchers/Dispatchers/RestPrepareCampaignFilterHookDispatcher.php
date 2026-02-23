@@ -75,11 +75,8 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 	public function register(): void {
 
 		add_filter( $this->hook_name, $this->handle( ... ), 10, 3 );
-
-		$this->logger->log_registered();
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Handles the WordPress filter and dispatches it to listeners.
 	 *
@@ -111,23 +108,12 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 
 		} catch ( Throwable $e ) {
 
-			$this->logger->log_dispatch_failed( $e );
 			fundrik_set_failure_message( $e->getMessage() );
 			return $response;
 		}
 
-		$changed = $result !== $valid_response;
-
-		$this->logger->log_handled(
-			$changed ? 'changed' : 'unchanged',
-			[
-				'listener_count' => count( $this->listeners ),
-			],
-		);
-
 		return $result;
 	}
-	// phpcs:enable
 
 	/**
 	 * Dispatches the validated hook arguments to attached listeners.
