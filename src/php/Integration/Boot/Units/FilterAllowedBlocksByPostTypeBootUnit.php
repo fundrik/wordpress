@@ -120,7 +120,7 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 			),
 		);
 
-		$this->logger->log_debug(
+		$this->logger->log_info(
 			'Filtering allowed blocks by post type completed.',
 			[
 				'post_type' => $current_post_type,

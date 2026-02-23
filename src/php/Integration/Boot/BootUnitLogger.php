@@ -67,6 +67,26 @@ final readonly class BootUnitLogger {
 	}
 
 	/**
+	 * Logs a info entry (info).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message The log message.
+	 * @param array<string, mixed> $extra Additional context entries.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	public function log_info( string $message, array $extra = [] ): void {
+
+		$this->assert_class_name_is_set();
+
+		$this->logger->info(
+			$message,
+			$this->logger_context( $extra ),
+		);
+	}
+
+	/**
 	 * Logs a warning entry (warning).
 	 *
 	 * @since 1.0.0

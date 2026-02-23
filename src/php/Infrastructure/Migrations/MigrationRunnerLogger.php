@@ -28,46 +28,6 @@ final readonly class MigrationRunnerLogger {
 	) {}
 
 	/**
-	 * Logs the start of the migration process (debug).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $current The current database version.
-	 * @param string $target The target database version.
-	 */
-	public function log_migrations_start( string $current, string $target ): void {
-
-		$this->logger->debug(
-			'Running migrations started.',
-			$this->logger_context(
-				extra: [
-					'operation' => 'migrate',
-					'current_version' => $current,
-					'target_version' => $target,
-				],
-			),
-		);
-	}
-
-	/**
-	 * Logs that no migrations are required (debug).
-	 *
-	 * @since 1.0.0
-	 */
-	public function log_no_migrations_needed(): void {
-
-		$this->logger->debug(
-			'Running migrations skipped (already up to date).',
-			$this->logger_context(
-				extra: [
-					'operation' => 'migrate',
-					'outcome' => 'skipped',
-				],
-			),
-		);
-	}
-
-	/**
 	 * Logs a failure to fetch the database charset/collation string (error).
 	 *
 	 * @since 1.0.0
@@ -84,51 +44,6 @@ final readonly class MigrationRunnerLogger {
 					'outcome' => 'failed',
 					'exception' => $e,
 				],
-			),
-		);
-	}
-
-	/**
-	 * Logs that a migration will be applied (debug).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $class_name The migration class name.
-	 * @param string $version The migration version.
-	 */
-	public function log_migration_applying( string $class_name, string $version ): void {
-
-		$this->logger->debug(
-			'Applying migration started.',
-			$this->logger_context(
-				extra: [
-					'operation' => 'apply_migration',
-				],
-				class_name: $class_name,
-				version: $version,
-			),
-		);
-	}
-
-	/**
-	 * Logs that a migration was skipped as already applied (debug).
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $class_name The migration class name.
-	 * @param string $version The migration version.
-	 */
-	public function log_migration_skipped( string $class_name, string $version ): void {
-
-		$this->logger->debug(
-			'Applying migration skipped (already applied).',
-			$this->logger_context(
-				extra: [
-					'operation' => 'apply_migration',
-					'outcome' => 'skipped',
-				],
-				class_name: $class_name,
-				version: $version,
 			),
 		);
 	}
@@ -157,7 +72,7 @@ final readonly class MigrationRunnerLogger {
 	}
 
 	/**
-	 * Logs failure to update the stored DB version after a successful migration (warning).
+	 * Logs failure to update the stored DB version after a successful migration (error).
 	 *
 	 * @since 1.0.0
 	 *
@@ -166,7 +81,7 @@ final readonly class MigrationRunnerLogger {
 	 */
 	public function log_db_version_update_failed( string $class_name, string $version ): void {
 
-		$this->logger->warning(
+		$this->logger->error(
 			'Updating stored DB version failed.',
 			$this->logger_context(
 				extra: [

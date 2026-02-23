@@ -57,10 +57,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		$from_db_version = $this->get_current_db_version();
 		$target_db_version = $this->registry->get_target_db_version();
 
-		$this->logger->log_migrations_start( $from_db_version, $target_db_version );
-
 		if ( ! $this->should_migrate( $from_db_version, $target_db_version ) ) {
-			$this->logger->log_no_migrations_needed();
 			return;
 		}
 
@@ -130,11 +127,8 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	): bool {
 
 		if ( version_compare( $version, $current_db_version, '<=' ) ) {
-			$this->logger->log_migration_skipped( $class_name, $version );
 			return false;
 		}
-
-		$this->logger->log_migration_applying( $class_name, $version );
 
 		try {
 			$migration = $this->migration_factory->create( $class_name );

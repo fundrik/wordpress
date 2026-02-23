@@ -258,7 +258,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 			throw $e;
 		}
 
-		$this->logger->log_debug(
+		$this->logger->log_info(
 			'Campaign synchronization after REST save completed.',
 			[
 				'post_id' => $post_id,
