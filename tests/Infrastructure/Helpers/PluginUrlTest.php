@@ -31,11 +31,29 @@ final class PluginUrlTest extends FundrikTestCase {
 	}
 
 	#[Test]
-	public function editor_scripts_url_resolves_relative_to_plugin_root(): void {
+	public function javascripts_url_resolves_relative_to_plugin_root(): void {
 
 		$this->assertSame(
 			FUNDRIK_URL . 'assets/js/',
-			PluginUrl::EditorScripts->get_full_url(),
+			PluginUrl::JavaScripts->get_full_url(),
+		);
+	}
+
+	#[Test]
+	public function file_url_is_resolved_within_the_resource_path(): void {
+
+		$this->assertSame(
+			FUNDRIK_URL . 'assets/js/app.js',
+			PluginUrl::JavaScripts->file( 'app.js' ),
+		);
+	}
+
+	#[Test]
+	public function file_url_supports_nested_paths(): void {
+
+		$this->assertSame(
+			FUNDRIK_URL . 'assets/js/build/app.js',
+			PluginUrl::JavaScripts->file( 'build/app.js' ),
 		);
 	}
 }

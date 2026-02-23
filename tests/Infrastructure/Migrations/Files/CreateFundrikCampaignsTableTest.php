@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations\Files;
 
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
@@ -37,15 +37,18 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
 
 		$this->db
-		->shouldReceive( 'query' )
-		->once()
-		->with(
-			Mockery::on(
-				static fn ( string $sql ): bool => str_contains( $sql, 'CREATE TABLE IF NOT EXISTS `fundrik_campaigns`' )
+			->shouldReceive( 'query' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( string $sql ): bool => str_contains(
+						$sql,
+						'CREATE TABLE IF NOT EXISTS `fundrik_campaigns`',
+					)
 						&& str_contains( $sql, $charset_collate )
 						&& str_contains( $sql, 'PRIMARY KEY (`id`)' ),
-			),
-		);
+				),
+			);
 
 		$this->migration->apply( $charset_collate );
 	}

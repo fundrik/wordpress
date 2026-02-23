@@ -4,17 +4,19 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
+use Fundrik\WordPress\Infrastructure\Migrations\MigrationFactory;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersionReader;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Fundrik\WordPress\Tests\Fixtures\Migrations\DuplicateVersionMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\FailingMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\NewMigration1;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\NewMigration2;
@@ -27,16 +29,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 #[CoversClass( MigrationRunner::class )]
 #[UsesClass( AbstractMigration::class )]
 #[UsesClass( MigrationRunnerLogger::class )]
+#[UsesClass( MigrationFactory::class )]
 #[UsesClass( MigrationVersion::class )]
 #[UsesClass( MigrationVersionReader::class )]
 final class MigrationRunnerTest extends MockeryTestCase {
 
-	private ContainerInterface&MockInterface $container;
 	private DatabaseInterface&MockInterface $database;
 	private StorageInterface&MockInterface $storage;
 	private MigrationRegistry&MockInterface $registry;
@@ -45,13 +46,14 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	private MigrationRunnerLogger $logger;
 
 	private MigrationVersionReader $version_reader;
+	private MigrationFactory $migration_factory;
+
 	private MigrationRunner $runner;
 
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->container = Mockery::mock( ContainerInterface::class );
 		$this->database = Mockery::mock( DatabaseInterface::class );
 		$this->storage = Mockery::mock( StorageInterface::class );
 		$this->registry = Mockery::mock( MigrationRegistry::class );
@@ -60,92 +62,42 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->logger = new MigrationRunnerLogger( $this->psr_logger );
 
 		$this->version_reader = new MigrationVersionReader();
+		$this->migration_factory = new MigrationFactory( $this->database );
 
 		$this->runner = new MigrationRunner(
-			$this->container,
 			$this->database,
 			$this->storage,
 			$this->version_reader,
 			$this->registry,
 			$this->logger,
+			$this->migration_factory,
 		);
 	}
 
-	// Helpers
 	// ---------------------------------------------------------------------
-
-	/**
-	 * Arranges the common migration environment for tests.
-	 *
-	 * Note: the runner reads the current DB version multiple times, so the test passes
-	 * an explicit sequence of versions returned by StorageInterface::get().
-	 *
-	 * @param array<string> $current_versions Provides the sequential stored DB versions.
-	 * @param string $target_version Provides the target DB version available in the registry.
-	 * @param bool $expect_migration_classes Whether the runner is expected to request migration classes.
-	 * @param array<string> $migration_classes Provides the migration classes returned by the registry.
-	 * @param bool $expect_charset_collate Whether the runner is expected to request charset/collate.
-	 * @param string $charset_collate Provides the charset/collate string returned by the database.
-	 *
-	 * @phpstan-param non-empty-list<string> $current_versions
-	 * @phpstan-param array<class-string<AbstractMigration>> $migration_classes
-	 */
-	private function arrange_migration_environment(
-		array $current_versions,
-		string $target_version = '2400_01_12_01',
-		bool $expect_migration_classes = false,
-		array $migration_classes = [],
-		bool $expect_charset_collate = false,
-		string $charset_collate = 'utf8mb4_unicode_ci',
-	): void {
-
-		$this->registry
-			->shouldReceive( 'get_target_db_version' )
-			->once()
-			->andReturn( $target_version );
-
-		$this->storage
-			->shouldReceive( 'get' )
-			->times( count( $current_versions ) )
-			->with( 'fundrik_db_version', '0000_00_00_00' )
-			// phpcs:ignore SlevomatCodingStandard.Operators.SpreadOperatorSpacing.IncorrectSpacesAfterOperator
-			->andReturn( ...$current_versions );
-
-		if ( $expect_charset_collate ) {
-			$this->database
-				->shouldReceive( 'get_charset_collate' )
-				->once()
-				->andReturn( $charset_collate );
-		} else {
-			$this->database->shouldNotReceive( 'get_charset_collate' );
-		}
-
-		if ( $expect_migration_classes ) {
-			$this->registry
-				->shouldReceive( 'get_migration_classes' )
-				->once()
-				->andReturn( $migration_classes );
-		} else {
-			$this->registry->shouldNotReceive( 'get_migration_classes' );
-		}
-	}
-
 	// Skips
 	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function it_skips_migration_if_current_version_is_equal(): void {
 
-		$this->arrange_migration_environment(
-			current_versions: [ '2400_01_12_01' ],
-			target_version: '2400_01_12_01',
-		);
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
 
-		$this->container->shouldNotReceive( 'make' );
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '2400_01_12_01' );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->registry->shouldNotReceive( 'get_migration_classes' );
 		$this->storage->shouldNotReceive( 'set' );
 
 		$this->psr_logger->shouldNotReceive( 'info' );
-		$this->psr_logger->shouldNotReceive( 'warning' );
+		$this->psr_logger->shouldNotReceive( 'debug' );
 		$this->psr_logger->shouldNotReceive( 'error' );
 
 		$this->runner->migrate();
@@ -154,21 +106,29 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	#[Test]
 	public function it_skips_migration_if_current_version_is_newer(): void {
 
-		$this->arrange_migration_environment(
-			current_versions: [ '2500_01_01_00' ],
-			target_version: '2400_01_12_01',
-		);
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
 
-		$this->container->shouldNotReceive( 'make' );
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '2500_01_01_00' );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->registry->shouldNotReceive( 'get_migration_classes' );
 		$this->storage->shouldNotReceive( 'set' );
 
 		$this->psr_logger->shouldNotReceive( 'info' );
-		$this->psr_logger->shouldNotReceive( 'warning' );
+		$this->psr_logger->shouldNotReceive( 'debug' );
 		$this->psr_logger->shouldNotReceive( 'error' );
 
 		$this->runner->migrate();
 	}
 
+	// ---------------------------------------------------------------------
 	// Applies and updates
 	// ---------------------------------------------------------------------
 
@@ -179,38 +139,63 @@ final class MigrationRunnerTest extends MockeryTestCase {
 
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
 
-		$old = new OldMigration( $this->database );
-		$new1 = new NewMigration1( $this->database );
-		$new2 = new NewMigration2( $this->database );
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
 
-		$old_class = $old::class;
-		$new1_class = $new1::class;
-		$new2_class = $new2::class;
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '2025_06_14_00' );
 
-		$this->arrange_migration_environment(
-			current_versions: [ '2025_06_14_00', '2400_01_12_01' ],
-			target_version: '2400_01_12_01',
-			expect_migration_classes: true,
-			migration_classes: [ $old_class, $new2_class, $new1_class ], // wrong order on purpose.
-			expect_charset_collate: true,
-			charset_collate: $charset_collate,
-		);
+		$this->database
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( $charset_collate );
 
-		$this->container
-			->shouldReceive( 'make' )
-			->twice()
-			->andReturnUsing(
-				static fn ( string $class ) => match ( $class ) {
-					$new1_class => $new1,
-					$new2_class => $new2,
-					default => throw new RuntimeException( "Unexpected class requested: {$class}" ),
-				},
+		// wrong order on purpose — the runner must sort by version.
+		$this->registry
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn(
+				[
+					OldMigration::class,
+					NewMigration2::class,
+					NewMigration1::class,
+				],
 			);
 
 		$this->storage
 			->shouldReceive( 'set' )
-			->twice()
+			->once()
+			->with( 'fundrik_db_version', '2400_01_12_00' )
 			->andReturn( true );
+
+		$this->storage
+			->shouldReceive( 'set' )
+			->once()
+			->with( 'fundrik_db_version', '2400_01_12_01' )
+			->andReturn( true );
+
+		$this->psr_logger
+			->shouldReceive( 'debug' )
+			->twice()
+			->with(
+				'Applying migration succeeded.',
+				Mockery::subset(
+					[
+						'service_class' => MigrationRunnerPort::class,
+						'logger_class' => MigrationRunnerLogger::class,
+						'component' => 'migrations',
+						'layer' => 'infrastructure',
+						'system' => 'wordpress',
+						'operation' => 'apply_migration',
+						'outcome' => 'applied',
+					],
+				),
+			);
 
 		$this->psr_logger
 			->shouldReceive( 'info' )
@@ -219,7 +204,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 				'Running migrations completed.',
 				Mockery::subset(
 					[
-						'service_class' => MigrationRunner::class,
+						'service_class' => MigrationRunnerPort::class,
 						'logger_class' => MigrationRunnerLogger::class,
 						'component' => 'migrations',
 						'layer' => 'infrastructure',
@@ -237,11 +222,15 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->runner->migrate();
 
 		$this->assertSame(
-			[ NewMigration1::class, NewMigration2::class ],
+			[
+				NewMigration1::class,
+				NewMigration2::class,
+			],
 			TestMigrationTrace::$calls,
 		);
 	}
 
+	// ---------------------------------------------------------------------
 	// Errors
 	// ---------------------------------------------------------------------
 
@@ -250,21 +239,24 @@ final class MigrationRunnerTest extends MockeryTestCase {
 
 		$e = new DatabaseException( 'No charset' );
 
-		$this->arrange_migration_environment(
-			current_versions: [ '0000_00_00_00' ],
-			target_version: '2400_01_12_01',
-			expect_migration_classes: false,
-			expect_charset_collate: false,
-		);
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
 
-		$this->registry->shouldNotReceive( 'get_migration_classes' );
-		$this->container->shouldNotReceive( 'make' );
-		$this->storage->shouldNotReceive( 'set' );
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '0000_00_00_00' );
 
 		$this->database
 			->shouldReceive( 'get_charset_collate' )
 			->once()
 			->andThrow( $e );
+
+		$this->registry->shouldNotReceive( 'get_migration_classes' );
+		$this->storage->shouldNotReceive( 'set' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -273,17 +265,16 @@ final class MigrationRunnerTest extends MockeryTestCase {
 				'Fetching database charset/collation failed.',
 				Mockery::subset(
 					[
-						'service_class' => MigrationRunner::class,
+						'service_class' => MigrationRunnerPort::class,
 						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'get_charset_collate',
 						'outcome' => 'failed',
 						'exception' => $e,
 					],
 				),
 			);
+
+		$this->psr_logger->shouldNotReceive( 'info' );
 
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Cannot determine database charset and collation.' );
@@ -294,24 +285,28 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	#[Test]
 	public function it_logs_and_rethrows_when_migration_application_fails(): void {
 
-		$migration = new FailingMigration( $this->database );
-		$migration_class = $migration::class;
-		$migration_version = $this->version_reader->get_version( $migration_class );
+		$migration_version = $this->version_reader->get_version( FailingMigration::class );
 
-		$this->arrange_migration_environment(
-			current_versions: [ '0000_00_00_00' ],
-			target_version: '2400_01_12_01',
-			expect_migration_classes: true,
-			migration_classes: [ $migration_class ],
-			expect_charset_collate: true,
-			charset_collate: 'utf8mb4_unicode_ci',
-		);
-
-		$this->container
-			->shouldReceive( 'make' )
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
 			->once()
-			->with( $migration_class )
-			->andReturn( $migration );
+			->andReturn( '2400_01_12_01' );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '0000_00_00_00' );
+
+		$this->database
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( 'utf8mb4_unicode_ci' );
+
+		$this->registry
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn( [ FailingMigration::class ] );
 
 		$this->storage->shouldNotReceive( 'set' );
 
@@ -322,18 +317,17 @@ final class MigrationRunnerTest extends MockeryTestCase {
 				'Applying migration failed.',
 				Mockery::subset(
 					[
-						'service_class' => MigrationRunner::class,
+						'service_class' => MigrationRunnerPort::class,
 						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'apply_migration',
 						'outcome' => 'failed',
-						'migration_class' => $migration_class,
+						'migration_class' => FailingMigration::class,
 						'migration_version' => $migration_version,
 					],
 				),
 			);
+
+		$this->psr_logger->shouldNotReceive( 'info' );
 
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Test migration failed.' );
@@ -341,32 +335,33 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->runner->migrate();
 	}
 
-	// Warnings
-	// ---------------------------------------------------------------------
-
 	#[Test]
-	public function it_logs_warning_if_version_update_fails(): void {
+	public function it_logs_and_throws_when_db_version_update_fails(): void {
 
 		TestMigrationTrace::reset();
 
-		$migration = new NewMigration1( $this->database );
-		$migration_class = $migration::class;
-		$migration_version = $this->version_reader->get_version( $migration_class );
+		$migration_version = $this->version_reader->get_version( NewMigration1::class );
 
-		$this->arrange_migration_environment(
-			current_versions: [ '0000_00_00_00', '0000_00_00_00' ], // still old because update failed.
-			target_version: '2400_01_12_01',
-			expect_migration_classes: true,
-			migration_classes: [ $migration_class ],
-			expect_charset_collate: true,
-			charset_collate: 'utf8mb4_unicode_ci',
-		);
-
-		$this->container
-			->shouldReceive( 'make' )
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
 			->once()
-			->with( $migration_class )
-			->andReturn( $migration );
+			->andReturn( '2400_01_12_01' );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '0000_00_00_00' );
+
+		$this->database
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( 'utf8mb4_unicode_ci' );
+
+		$this->registry
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn( [ NewMigration1::class ] );
 
 		$this->storage
 			->shouldReceive( 'set' )
@@ -375,44 +370,74 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->psr_logger
-			->shouldReceive( 'warning' )
+			->shouldReceive( 'error' )
 			->once()
 			->with(
 				'Updating stored DB version failed.',
 				Mockery::subset(
 					[
-						'service_class' => MigrationRunner::class,
+						'service_class' => MigrationRunnerPort::class,
 						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'update_db_version',
 						'outcome' => 'failed',
-						'migration_class' => $migration_class,
+						'migration_class' => NewMigration1::class,
 						'migration_version' => $migration_version,
 					],
 				),
 			);
 
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Running migrations completed.',
-				Mockery::subset(
-					[
-						'operation' => 'migrate',
-						'outcome' => 'applied',
-						'applied' => 1,
-						'from_version' => '0000_00_00_00',
-						'to_version' => '0000_00_00_00',
-						'target_version' => '2400_01_12_01',
-					],
-				),
-			);
+		// migration_applied is logged only after successful version update.
+		$this->psr_logger->shouldNotReceive( 'debug' );
+		$this->psr_logger->shouldNotReceive( 'info' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage(
+			'Cannot complete migration: the stored DB version must be updated after applying.',
+		);
 
 		$this->runner->migrate();
 
 		$this->assertSame( [ NewMigration1::class ], TestMigrationTrace::$calls );
+	}
+
+	#[Test]
+	public function it_throws_when_two_migrations_have_the_same_version(): void {
+
+		$this->registry
+			->shouldReceive( 'get_target_db_version' )
+			->once()
+			->andReturn( '2400_01_12_01' );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->andReturn( '0000_00_00_00' );
+
+		$this->database
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( 'utf8mb4_unicode_ci' );
+
+		$this->registry
+			->shouldReceive( 'get_migration_classes' )
+			->once()
+			->andReturn(
+				[
+					NewMigration1::class,
+					DuplicateVersionMigration::class, // Same version as NewMigration1.
+				],
+			);
+
+		$this->storage->shouldNotReceive( 'set' );
+		$this->psr_logger->shouldNotReceive( 'info' );
+		$this->psr_logger->shouldNotReceive( 'debug' );
+		$this->psr_logger->shouldNotReceive( 'error' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage( 'Migration version must be unique.' );
+		$this->expectExceptionMessage( 'Given: 2400_01_12_00.' );
+
+		$this->runner->migrate();
 	}
 }

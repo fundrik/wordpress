@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Integration;
 
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Integration\WpdbDatabase;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -69,6 +69,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		new WpdbDatabase();
 	}
 
+	// ---------------------------------------------------------------------
+	// get_by_id()
+	// ---------------------------------------------------------------------
+
 	#[Test]
 	public function get_by_id_prepares_query_with_int_placeholder_and_returns_sanitized_row(): void {
 
@@ -98,7 +102,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function get_by_id_prepares_query_with_string_placeholder(): void {
+	public function get_by_id_prepares_query_with_string_placeholder_and_returns_row(): void {
 
 		$table = 'wp_table';
 		$id = 'abc';
@@ -212,8 +216,12 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->db->get_by_id( $table, $id );
 	}
 
+	// ---------------------------------------------------------------------
+	// get_all()
+	// ---------------------------------------------------------------------
+
 	#[Test]
-	public function get_all_returns_rows_as_list(): void {
+	public function get_all_returns_rows_as_list_and_sanitizes_each_row(): void {
 
 		$table = 'wp_table';
 
@@ -221,8 +229,14 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$query = 'prepared_query';
 
 		$results = [
-			[ 'id' => 2 ],
-			[ 'id' => 1 ],
+			[
+				'id' => 2,
+				'title' => 'B',
+			],
+			[
+				'id' => 1,
+				'title' => 'A',
+			],
 		];
 
 		$this->wpdb
@@ -328,6 +342,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->db->get_all( $table );
 	}
 
+	// ---------------------------------------------------------------------
+	// exists_by_id()
+	// ---------------------------------------------------------------------
+
 	#[Test]
 	public function exists_by_id_returns_true_when_row_exists_and_false_when_not(): void {
 
@@ -361,6 +379,30 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function exists_by_id_uses_string_placeholder_when_id_is_string(): void {
+
+		$table = 'wp_table';
+		$id = 'abc';
+
+		$sql = 'SELECT 1 FROM %i WHERE id = %s LIMIT 1';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $id )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		self::assertTrue( $this->db->exists_by_id( $table, $id ) );
+	}
+
+	#[Test]
 	public function exists_by_id_throws_when_query_fails(): void {
 
 		$table = 'wp_table';
@@ -390,6 +432,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->db->exists_by_id( $table, $id );
 	}
+
+	// ---------------------------------------------------------------------
+	// exists_by_column()
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function exists_by_column_returns_true_when_row_exists_and_false_when_not(): void {
@@ -425,6 +471,31 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function exists_by_column_uses_int_placeholder_when_value_is_int(): void {
+
+		$table = 'wp_table';
+		$column = 'user_id';
+		$value = 123;
+
+		$sql = 'SELECT 1 FROM %i WHERE %i = %d LIMIT 1';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		self::assertTrue( $this->db->exists_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
 	public function exists_by_column_throws_when_query_fails(): void {
 
 		$table = 'wp_table';
@@ -455,6 +526,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->db->exists_by_column( $table, $column, $value );
 	}
+
+	// ---------------------------------------------------------------------
+	// insert()
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function insert_calls_wpdb_and_succeeds_when_result_is_truthy(): void {
@@ -514,6 +589,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->db->insert( $table, $data );
 	}
+
+	// ---------------------------------------------------------------------
+	// update()
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function update_calls_wpdb_and_returns_affected_rows(): void {
@@ -575,6 +654,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->db->update( $table, $data, $where );
 	}
 
+	// ---------------------------------------------------------------------
+	// delete()
+	// ---------------------------------------------------------------------
+
 	#[Test]
 	public function delete_calls_wpdb_and_succeeds_when_result_is_truthy(): void {
 
@@ -632,6 +715,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->db->delete( $table, $id );
 	}
 
+	// ---------------------------------------------------------------------
+	// query()
+	// ---------------------------------------------------------------------
+
 	#[Test]
 	public function query_calls_wpdb_and_succeeds_when_result_is_truthy(): void {
 
@@ -681,6 +768,10 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->db->query( $sql );
 	}
+
+	// ---------------------------------------------------------------------
+	// get_charset_collate()
+	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function get_charset_collate_returns_value(): void {

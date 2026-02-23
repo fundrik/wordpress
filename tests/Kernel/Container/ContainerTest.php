@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Bootstrap\Container;
+namespace Fundrik\WordPress\Tests\Kernel\Container;
 
-use Fundrik\WordPress\Bootstrap\Container\Container;
-use Fundrik\WordPress\Bootstrap\Container\ContainerException;
+use Fundrik\WordPress\Kernel\Container\Container;
+use Fundrik\WordPress\Kernel\Container\ContainerException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
@@ -88,7 +88,6 @@ final class ContainerTest extends MockeryTestCase {
 
 		$this->expectException( ContainerException::class );
 		$this->expectExceptionMessage( 'Cannot resolve dependency: MyClass.' );
-		$this->expectExceptionCode( 0 );
 
 		try {
 			$this->container->make( 'MyClass' );

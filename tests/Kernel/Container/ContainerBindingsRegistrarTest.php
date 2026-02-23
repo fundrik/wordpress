@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Bootstrap\Container;
+namespace Fundrik\WordPress\Tests\Kernel\Container;
 
 use Closure;
-use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistrar;
-use Fundrik\WordPress\Bootstrap\Container\ContainerBindingsRegistry;
-use Fundrik\WordPress\Bootstrap\Container\ContainerInterface;
+use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
+use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
+use Fundrik\WordPress\Kernel\Container\ContainerInterface;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -37,13 +37,13 @@ final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 	public function it_registers_singletons_and_bindings_into_the_container(): void {
 
 		$singletons = [
-			0 => 'My\\ServiceA',
+			0 => 'My\\ServiceA', // "partially keyed" style: abstract == concrete
 			'My\\ContractB' => 'My\\ServiceB',
 		];
 
 		$bindings = [
 			'My\\ContractC' => 'My\\ServiceC',
-			'My\\ContractD' => static fn () => new stdClass(),
+			'My\\ContractD' => static fn (): stdClass => new stdClass(),
 		];
 
 		$this->registry

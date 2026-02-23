@@ -43,7 +43,7 @@ final class MigrationVersionReaderTest extends FundrikTestCase {
 	public function it_throws_if_attribute_is_missing(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'is missing #[MigrationVersion] attribute' );
+		$this->expectExceptionMessage( 'must declare exactly one #[MigrationVersion]' );
 
 		$this->reader->get_version( UnversionedMigration::class );
 	}
@@ -52,7 +52,8 @@ final class MigrationVersionReaderTest extends FundrikTestCase {
 	public function it_throws_if_version_is_empty(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'has an empty #[MigrationVersion] value' );
+		$this->expectExceptionMessage( 'must follow "YYYY_MM_DD_XX"' );
+		$this->expectExceptionMessage( 'Given:' );
 
 		$this->reader->get_version( EmptyVersionMigration::class );
 	}
@@ -61,7 +62,8 @@ final class MigrationVersionReaderTest extends FundrikTestCase {
 	public function it_throws_if_version_is_only_whitespace(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'has an empty #[MigrationVersion] value' );
+		$this->expectExceptionMessage( 'must follow "YYYY_MM_DD_XX"' );
+		$this->expectExceptionMessage( 'Given:' );
 
 		$this->reader->get_version( WhitespacedVersionMigration::class );
 	}
@@ -70,8 +72,8 @@ final class MigrationVersionReaderTest extends FundrikTestCase {
 	public function it_throws_if_version_has_invalid_format_due_to_prefix(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( "has an invalid format '" );
-		$this->expectExceptionMessage( "Expected 'YYYY_MM_DD_XX'" );
+		$this->expectExceptionMessage( 'must follow "YYYY_MM_DD_XX"' );
+		$this->expectExceptionMessage( 'Given:' );
 
 		$this->reader->get_version( InvalidVersionPrefixMigration::class );
 	}
@@ -80,8 +82,8 @@ final class MigrationVersionReaderTest extends FundrikTestCase {
 	public function it_throws_if_version_has_invalid_format_due_to_suffix(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( "has an invalid format '" );
-		$this->expectExceptionMessage( "Expected 'YYYY_MM_DD_XX'" );
+		$this->expectExceptionMessage( 'must follow "YYYY_MM_DD_XX"' );
+		$this->expectExceptionMessage( 'Given:' );
 
 		$this->reader->get_version( InvalidVersionSuffixMigration::class );
 	}

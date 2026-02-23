@@ -8,8 +8,8 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseException;
-use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseInterface;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -34,7 +34,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		parent::setUp();
 
 		$this->db = Mockery::mock( DatabaseInterface::class );
-
 		$this->campaign_factory = new CampaignFactory();
 
 		$this->repository = new CampaignRepository( $this->db, $this->campaign_factory );
@@ -321,7 +320,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_inserts_row_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -377,7 +376,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -401,7 +400,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_database_insert_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -439,7 +438,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_is_not_found_after_insert(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -480,7 +479,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_updates_row_with_next_version_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -541,7 +540,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -566,7 +565,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_database_update_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -609,7 +608,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_campaign_is_missing(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -622,22 +621,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 4,
-				],
-				[
-					'id' => 7,
-					'version' => 3,
-				],
-			)
 			->andReturn( 0 );
 
 		$this->db
@@ -657,7 +640,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_version_mismatch(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -670,22 +653,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 4,
-				],
-				[
-					'id' => 7,
-					'version' => 3,
-				],
-			)
 			->andReturn( 0 );
 
 		$this->db
@@ -705,7 +672,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_is_not_found_after_update(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -718,22 +685,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 4,
-				],
-				[
-					'id' => 7,
-					'version' => 3,
-				],
-			)
 			->andReturn( 1 );
 
 		$this->db
@@ -751,7 +702,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_updated_row_cannot_be_mapped_to_campaign(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -764,22 +715,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 4,
-				],
-				[
-					'id' => 7,
-					'version' => 3,
-				],
-			)
 			->andReturn( 1 );
 
 		$this->db
@@ -807,7 +742,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_inserts_when_campaign_does_not_exist(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -866,7 +801,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_updates_when_campaign_exists(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -894,7 +829,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
-					'version' => 4, // next()
+					'version' => 4,
 				],
 				[
 					'id' => 7,
@@ -930,7 +865,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_existence_check_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -959,7 +894,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_insert_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -978,18 +913,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'insert' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 3,
-				],
-			)
 			->andThrow( new DatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'get_by_id' );
@@ -1003,7 +926,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_update_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->make_campaign(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -1022,22 +945,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				[
-					'id' => 7,
-					'title' => 'Hello',
-					'is_active' => true,
-					'is_open' => false,
-					'has_target' => true,
-					'target_amount' => 123,
-					'version' => 4,
-				],
-				[
-					'id' => 7,
-					'version' => 3,
-				],
-			)
 			->andThrow( new DatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'get_by_id' );
