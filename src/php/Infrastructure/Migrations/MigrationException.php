@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
+use Fundrik\WordPress\Kernel\Ports\MigrationRunnerExceptionInterface;
 use RuntimeException;
 
 /**
@@ -13,4 +14,4 @@ use RuntimeException;
  *
  * @internal
  */
-final class MigrationException extends RuntimeException {}
+final class MigrationException extends RuntimeException implements MigrationRunnerExceptionInterface {}

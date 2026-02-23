@@ -4,34 +4,27 @@ deptrac:
 
   layers:
 
-    # Bootstrap root
-    - name: Bootstrap
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\WordPress\\Bootstrap\\(?!Container\\).+
-
-    # Container adapter only
-    - name: BootstrapContainer
+    # Container
+    - name: Container
       collectors:
         - type: bool
           must:
             - type: classLike
-              value: ^Fundrik\\WordPress\\Bootstrap\\Container\\.+$
+              value: ^Fundrik\\WordPress\\Kernel\\Container\\.+$
           must_not:
             - type: classLike
-              value: ^Fundrik\\WordPress\\Bootstrap\\Container\\ContainerBindings(Registrar|Registry)$
+              value: ^Fundrik\\WordPress\\Kernel\\Container\\ContainerBindings(Registrar|Registry)$
 
-    # Container bindings
     - name: ContainerBindings
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Bootstrap\\Container\\ContainerBindings(Registrar|Registry)$
+          value: ^Fundrik\\WordPress\\Kernel\\Container\\ContainerBindings(Registrar|Registry)$
 
     # Kernel
     - name: Kernel
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Kernel\\(?!Ports\\).+
+          value: ^Fundrik\\WordPress\\Kernel\\(?!Ports|Container\\).+
 
     - name: KernelPorts
       collectors:
@@ -64,23 +57,24 @@ deptrac:
     # Infrastructure
     - name: Infrastructure
       collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Infrastructure\\.+
+
+    # Integration
+    - name: WordPressIntegration
+      collectors:
         - type: bool
           must:
             - type: classLike
-              value: ^Fundrik\\WordPress\\Infrastructure\\(?!Integration\\).+
+              value: ^Fundrik\\WordPress\\Integration\\.+$
           must_not:
             - type: classLike
-              value: ^Fundrik\\WordPress\\Infrastructure\\EventDispatcher\\EventListener(Registrar|Registry)$
+              value: ^Fundrik\\WordPress\\Integration\\.+Resolver$
 
-    - name: EventBindings
+    - name: WordPressIntegrationResolvers
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Infrastructure\\EventDispatcher\\EventListener(Registrar|Registry)$
-
-    - name: WordPressIntegration
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\WordPress\\Infrastructure\\Integration\\.+
+          value: ^Fundrik\\WordPress\\Integration\\.+Resolver$
 
     # Core / Components
     - name: CoreDomain
@@ -115,65 +109,45 @@ deptrac:
 
   ruleset:
 
-    Bootstrap:
-      - BootstrapContainer
-      - Laravel
-      - Kernel
-      - KernelPorts
-
-    BootstrapContainer:
+    Container:
       - Laravel
 
     ContainerBindings:
-      - EventBindings
-      - BootstrapContainer
-      - Laravel
-      - Kernel
+      - Container
+      - WordPressIntegration
+      - PsrLogger
       - KernelPorts
-      - Application
-      - ApplicationPorts
-      - CoreApplicationPorts
       - Infrastructure
       - WordPressIntegration
-
-    Infrastructure:
-      - Laravel
-      - BootstrapContainer
-      - PsrLogger
-      - Toolbox
-      - KernelPorts
-      - CoreDomain
-      - Domain
       - CoreApplicationPorts
-      - ApplicationPorts
+      - WordPressIntegrationBoot
 
     Kernel:
       - KernelPorts
 
-    EventBindings:
-      - KernelPorts
-      - Infrastructure
-      - WordPressIntegration
-
     Domain:
-      - CoreDomain
 
     Application:
-      - CoreDomain
-      - Domain
-      - CoreApplication
-      - CoreApplicationPorts
-      - ApplicationPorts
 
     ApplicationPorts:
-      - CoreDomain
-      - Domain
+
+    Infrastructure:
+      - KernelPorts
       - CoreApplicationPorts
+      - CoreDomain
+      - Toolbox
+      - PsrLogger
 
     WordPressIntegration:
-      - BootstrapContainer
-      - PsrLogger
-      - Toolbox
-      - KernelPorts
+      - WordPressIntegrationResolvers
       - WordPressExternal
+      - CoreDomain
+      - Toolbox
+      - PsrLogger
       - Infrastructure
+      - CoreApplicationPorts
+      - KernelPorts
+
+    WordPressIntegrationResolvers:
+      - WordPressIntegration
+      - Container
