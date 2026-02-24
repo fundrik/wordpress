@@ -58,7 +58,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage = Mockery::mock( StorageInterface::class );
 		$this->registry = Mockery::mock( MigrationRegistry::class );
 
-		$this->psr_logger = Mockery::mock( LoggerInterface::class )->shouldIgnoreMissing();
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
 		$this->logger = new MigrationRunnerLogger( $this->psr_logger );
 
 		$this->version_reader = new MigrationVersionReader();
