@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration;
+namespace Fundrik\WordPress\Tests\Integration;
 
 use Fundrik\WordPress\Infrastructure\DatabaseException;
 use Fundrik\WordPress\Infrastructure\DatabaseInterface;

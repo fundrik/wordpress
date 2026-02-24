@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Integration;
+namespace Fundrik\WordPress\Tests\Integration;
 
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Infrastructure\StorageInterface;
