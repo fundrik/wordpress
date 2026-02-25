@@ -47,6 +47,23 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->once()
 			->andReturn( [] ); // no meta
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
+			->andReturn( false );
+
+		Functions\expect( 'get_post_meta' )->never();
+
 		$this->expectException( InvalidArgumentException::class );
 
 		$this->extractor->extract( $post, $this->request );
