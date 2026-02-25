@@ -320,7 +320,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_inserts_row_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -376,7 +376,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -400,7 +400,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_database_insert_fails(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -438,7 +438,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_is_not_found_after_insert(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -479,7 +479,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_updates_row_with_next_version_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -540,7 +540,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -565,7 +565,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_database_update_fails(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -608,7 +608,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_campaign_is_missing(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -640,7 +640,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_version_mismatch(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -672,7 +672,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_is_not_found_after_update(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -702,7 +702,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_updated_row_cannot_be_mapped_to_campaign(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -742,7 +742,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_inserts_when_campaign_does_not_exist(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -801,7 +801,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_updates_when_campaign_exists(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -865,7 +865,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_existence_check_fails(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -894,7 +894,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_insert_fails(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -926,7 +926,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_update_fails(): void {
 
-		$campaign = $this->make_campaign(
+		$campaign = $this->campaign_factory->create(
 			id: 7,
 			version: 3,
 			title: 'Hello',
