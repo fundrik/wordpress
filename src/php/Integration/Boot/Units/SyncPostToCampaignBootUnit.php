@@ -13,6 +13,7 @@ use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
@@ -36,6 +37,7 @@ use WP_Screen;
  * - Rejects REST writes when the payload cannot be synchronized safely.
  * - Adds the current campaign version to REST responses for optimistic locking.
  * - Persists the saved campaign snapshot into Fundrik storage after REST saves.
+ * - Deletes the synchronized campaign when the campaign post is deleted.
  *
  * Also enqueues the block editor script required by the synchronization workflow.
  *
@@ -54,6 +56,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 * @param RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook The REST pre-insert filter hook for campaigns.
 	 * @param RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook The REST prepare filter hook for campaigns.
 	 * @param RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook The REST after-insert action hook for campaigns.
+	 * @param DeletePostActionHookDispatcher $delete_post_hook The post deletion action hook.
 	 * @param EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook The block editor assets action hook.
 	 * @param CampaignRepositoryPort $campaign_repository The campaign repository for reading the persisted version.
 	 * @param RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor The extractor for pre-insert synchronization data.
@@ -66,6 +69,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook,
 		private RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook,
 		private RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook,
+		private DeletePostActionHookDispatcher $delete_post_hook,
 		private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook,
 		private CampaignRepositoryPort $campaign_repository,
 		private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor,
@@ -89,6 +93,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		$this->rest_pre_insert_hook->attach( $this->reject_when_campaign_cannot_be_synced( ... ) );
 		$this->rest_prepare_hook->attach( $this->attach_campaign_version_for_sync( ... ) );
 		$this->rest_after_insert_hook->attach( $this->sync_campaign_after_rest_save( ... ) );
+		$this->delete_post_hook->attach( $this->delete_campaign_after_post_delete( ... ) );
 		$this->enqueue_block_editor_assets_hook->attach( $this->enqueue_block_editor_script( ... ) );
 	}
 
@@ -272,6 +277,51 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 				'entity_id' => $data->id->get_value(),
 				'version' => $data->version->get_value(),
 				'creating' => $creating,
+			],
+		);
+	}
+	// phpcs:enable
+
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Removes the synchronized campaign when the source campaign post is deleted.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The deleted post ID.
+	 * @param WP_Post $post The deleted post snapshot.
+	 */
+	private function delete_campaign_after_post_delete( int $post_id, WP_Post $post ): void {
+
+		if ( $post->post_type !== CampaignPostTypeConfig::ID ) {
+			return;
+		}
+
+		$entity_id = EntityId::create( $post_id );
+
+		try {
+			$this->campaign_repository->delete( $entity_id );
+		} catch ( CampaignRepositoryExceptionInterface $e ) {
+
+			$this->logger->log_error(
+				'Campaign synchronization after post delete failed.',
+				[
+					'post_id' => $post_id,
+					'entity_id' => $entity_id->get_value(),
+					'post_type' => $post->post_type,
+					'exception' => $e,
+				],
+			);
+
+			throw $e;
+		}
+
+		$this->logger->log_info(
+			'Campaign synchronization after post delete completed.',
+			[
+				'post_id' => $post_id,
+				'entity_id' => $entity_id->get_value(),
+				'post_type' => $post->post_type,
 			],
 		);
 	}

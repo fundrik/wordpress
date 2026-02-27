@@ -15,6 +15,7 @@ use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
 use Fundrik\WordPress\Integration\Helpers\Meta;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
@@ -47,6 +48,7 @@ use WP_Screen;
 #[UsesClass( RestPreInsertCampaignFilterHookDispatcher::class )]
 #[UsesClass( RestPrepareCampaignFilterHookDispatcher::class )]
 #[UsesClass( RestAfterInsertCampaignActionHookDispatcher::class )]
+#[UsesClass( DeletePostActionHookDispatcher::class )]
 #[UsesClass( EnqueueBlockEditorAssetsActionHookDispatcher::class )]
 #[UsesClass( CampaignPostTypeConfig::class )]
 #[UsesClass( RestPreInsertCampaignSyncDataExtractor::class )]
@@ -61,6 +63,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook;
 	private RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook;
 	private RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook;
+	private DeletePostActionHookDispatcher $delete_post_hook;
 	private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook;
 
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
@@ -96,6 +99,10 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			new HookDispatcherLogger( $this->psr_logger ),
 		);
 
+		$this->delete_post_hook = new DeletePostActionHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
+		);
+
 		$this->enqueue_block_editor_assets_hook = new EnqueueBlockEditorAssetsActionHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
 		);
@@ -123,6 +130,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->rest_pre_insert_hook,
 			$this->rest_prepare_hook,
 			$this->rest_after_insert_hook,
+			$this->delete_post_hook,
 			$this->enqueue_block_editor_assets_hook,
 			$this->campaign_repository,
 			$this->pre_insert_extractor,
@@ -464,6 +472,116 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	}
 
 	#[Test]
+	public function boot_deletes_campaign_after_campaign_post_delete(): void {
+
+		$post = $this->make_post( 31, 'Campaign title', CampaignPostTypeConfig::ID );
+
+		$this->campaign_repository
+			->shouldReceive( 'delete' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 31,
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Campaign synchronization after post delete completed.',
+				Mockery::subset(
+					[
+						'service_class' => SyncPostToCampaignBootUnit::class,
+						'component' => 'boot_units',
+						'post_id' => 31,
+						'entity_id' => 31,
+						'post_type' => CampaignPostTypeConfig::ID,
+					],
+				),
+			);
+
+		Functions\expect( 'fundrik_set_failure_message' )->never();
+
+		$this->boot_unit->boot();
+
+		$this->delete_post_hook->handle( 31, $post );
+	}
+
+	#[Test]
+	public function boot_skips_campaign_delete_for_non_campaign_post_type(): void {
+
+		$post = $this->make_post( 32, 'Regular post', 'post' );
+
+		$this->campaign_repository->shouldNotReceive( 'delete' );
+		$this->psr_logger->shouldNotReceive( 'info' );
+
+		Functions\expect( 'fundrik_set_failure_message' )->never();
+
+		$this->boot_unit->boot();
+
+		$this->delete_post_hook->handle( 32, $post );
+	}
+
+	#[Test]
+	public function boot_logs_error_and_sets_failure_message_when_campaign_delete_fails(): void {
+
+		$exception = new FakeCampaignRepositoryException( 'DB delete failed.' );
+		$post = $this->make_post( 33, 'Campaign title', CampaignPostTypeConfig::ID );
+
+		$this->campaign_repository
+			->shouldReceive( 'delete' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 33,
+				),
+			)
+			->andThrow( $exception );
+
+		$this->psr_logger
+			->shouldReceive( 'error' )
+			->once()
+			->with(
+				'Campaign synchronization after post delete failed.',
+				Mockery::on(
+					static function ( array $context ) use ( $exception ): bool {
+
+						if ( ( $context['service_class'] ?? null ) !== SyncPostToCampaignBootUnit::class ) {
+							return false;
+						}
+
+						if ( ( $context['component'] ?? null ) !== 'boot_units' ) {
+							return false;
+						}
+
+						if ( ( $context['post_id'] ?? null ) !== 33 ) {
+							return false;
+						}
+
+						if ( ( $context['entity_id'] ?? null ) !== 33 ) {
+							return false;
+						}
+
+						if ( ( $context['post_type'] ?? null ) !== CampaignPostTypeConfig::ID ) {
+							return false;
+						}
+
+						return ( $context['exception'] ?? null ) === $exception;
+					},
+				),
+			);
+
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( Mockery::type( 'string' ) );
+
+		$this->boot_unit->boot();
+
+		$this->delete_post_hook->handle( 33, $post );
+	}
+
+	#[Test]
 	public function boot_logs_error_and_sets_failure_message_when_after_insert_payload_is_invalid(): void {
 
 		$post = $this->make_post( 21, 'Campaign title' );
@@ -647,11 +765,16 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		return $request;
 	}
 
-	private function make_post( int $id, string $title = 'Campaign title' ): WP_Post {
+	private function make_post(
+		int $id,
+		string $title = 'Campaign title',
+		string $post_type = CampaignPostTypeConfig::ID,
+	): WP_Post {
 
 		$post = Mockery::mock( WP_Post::class );
 		$post->ID = $id;
 		$post->post_title = $title;
+		$post->post_type = $post_type;
 
 		return $post;
 	}
