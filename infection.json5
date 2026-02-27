@@ -1,15 +1,6 @@
 {
     "$schema": "vendor/infection/infection/resources/schema.json",
     "source": {
-		"directories": ["src/php"],
-		"excludes": [
-            "Infrastructure/Integration/HookToEventBridges/Bridges"
-        ]
-  	},
-    "mutators": {
-		"@default": true,
-		"global-ignoreSourceCodeByRegex": [
-			"\\$this->logger->debug\\(.*"
-		]
-	}
+		"directories": ["src/php"]
+  	}
 }

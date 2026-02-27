@@ -63,17 +63,17 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Fundrik\\WordPress\\Tests\\": "tests/"
+			"Fundrik\\WordPress\\Tests\\": "tests/unit/"
 		}
 	},
 	"scripts": {
 		"lint": "vendor/bin/phpcs .",
 		"lint:fix": "vendor/bin/phpcbf .",
 		"test": "vendor/bin/phpunit",
-		"test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-html=.phpunit.cache/report-coverage",
+		"test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit",
 		"phpstan": "vendor/bin/phpstan analyze --memory-limit=2048M",
 		"deptrac": "vendor/bin/deptrac analyze --report-uncovered",
-		"infection": "vendor/bin/infection --show-mutations "
+		"infection": "vendor/bin/infection"
 	},
 	"config": {
 		"allow-plugins": {
