@@ -63,7 +63,8 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"Fundrik\\WordPress\\Tests\\": "tests/unit/"
+			"Fundrik\\WordPress\\Tests\\": "tests/unit/",
+			"Fundrik\\WordPress\\IntegrationTests\\": "tests/integration/"
 		}
 	},
 	"scripts": {

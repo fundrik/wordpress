@@ -223,45 +223,6 @@ test.describe( 'Fundrik campaign admin', () => {
 		expect( response?.meta?.fundrik_campaign_target_amount ).toBe( 0 );
 	} );
 
-	test( 'deletes campaign post', async ( { admin, editor, page, requestUtils } ) => {
-		await admin.createNewPost( {
-			postType: 'fundrik_campaign',
-			title: 'E2E Campaign To Delete',
-			showWelcomeGuide: false,
-			fullscreenMode: false,
-		} );
-
-		await setCampaignTitle( editor, 'E2E Campaign To Delete' );
-		await editor.canvas.getByLabel( 'Has Target' ).check();
-		await editor.canvas.getByLabel( 'Target Amount' ).fill( '1500' );
-
-		const initialSaveResponse = await saveCampaignAndGetResponse( page );
-		expect( initialSaveResponse.ok() ).toBe( true );
-
-		const postId = await getPostIdFromEditorStore( page );
-		expect( typeof postId ).toBe( 'number' );
-		expect( postId ).toBeGreaterThan( 0 );
-
-		const deleteResponse = await requestUtils.rest( {
-			method: 'DELETE',
-			path: `/wp/v2/fundrik_campaign/${ postId }`,
-			params: { force: true },
-		} );
-
-		expect( deleteResponse?.deleted ).toBe( true );
-		expect( deleteResponse?.previous?.id ).toBe( postId );
-
-		let getDeletedError = null;
-		try {
-			await getCampaignByPostId( requestUtils, postId );
-		} catch ( error ) {
-			getDeletedError = error;
-		}
-
-		expect( getDeletedError?.code ).toBe( 'rest_post_invalid_id' );
-		expect( getDeletedError?.data?.status ).toBe( 404 );
-	} );
-
 	test( 'preloads campaign settings block and keeps it locked', async ( {
 		admin,
 		page,

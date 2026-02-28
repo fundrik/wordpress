@@ -11,9 +11,10 @@
 		"wp-env:start": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env start",
 		"wp-env:stop": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env stop",
 		"wp-env:destroy": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env destroy",
-		"e2e:install-browsers": "playwright install chromium",
-		"e2e:test": "playwright test",
-		"e2e:test:headed": "playwright test --headed",
-		"e2e:test:ui": "playwright test --ui"
+		"test:integration": "npm run wp-env:start && cross-env WP_ENV_HOME=.tmp/wp-env wp-env run tests-cli --env-cwd=wp-content/plugins/fundrik vendor/bin/phpunit -c phpunit.integration.xml",
+		"test:e2e": "playwright test",
+		"test:e2e:headed": "playwright test --headed",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:install-browsers": "playwright install chromium"
 	}
 }

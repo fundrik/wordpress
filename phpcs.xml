@@ -21,6 +21,7 @@
 			<property name="rootNamespaces" type="array">
 				<element key="src/php" value="Fundrik\WordPress"/>
 				<element key="tests/unit" value="Fundrik\WordPress\Tests"/>
+				<element key="tests/integration" value="Fundrik\WordPress\IntegrationTests"/>
 			</property>
 		</properties>
 	</rule>
