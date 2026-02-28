@@ -32,5 +32,20 @@ return array(
 		'usesContext' => array(
 			'postType'
 		)
+	),
+	'donation-form' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'fundrik/donation-form',
+		'title' => 'Donation Form',
+		'category' => 'widgets',
+		'icon' => 'heart',
+		'description' => 'Donation form.',
+		'supports' => array(
+			'html' => false
+		),
+		'textdomain' => 'fundrik',
+		'editorScript' => 'file:./index.js',
+		'render' => 'file:./render.php'
 	)
 );

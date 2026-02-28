@@ -1,0 +1,1 @@
+(()=>{"use strict";const i=window.wp.blocks,n=window.wp.blockEditor,o=window.ReactJSXRuntime,e=JSON.parse('{"UU":"fundrik/donation-form"}');(0,i.registerBlockType)(e.UU,{edit:function(){return(0,o.jsx)("div",{...(0,n.useBlockProps)(),children:(0,o.jsx)("div",{children:"Форма"})})},save:()=>null})})();

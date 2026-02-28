@@ -76,7 +76,10 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 */
 	public function get_block_template(): array {
 
-		return [ [ 'fundrik/campaign-settings' ] ];
+		return [
+			[ 'fundrik/campaign-settings' ],
+			[ 'fundrik/donation-form' ],
+		];
 	}
 
 	/**
@@ -90,7 +93,10 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 */
 	public function get_specific_blocks(): array {
 
-		return [ 'fundrik/campaign-settings' ];
+		return [
+			'fundrik/campaign-settings',
+			'fundrik/donation-form',
+		];
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength

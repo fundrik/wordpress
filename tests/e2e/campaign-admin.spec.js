@@ -304,22 +304,30 @@ test.describe( 'Fundrik campaign admin', () => {
 		const blockState = await page.evaluate( () => {
 			const blocks = wp.data.select( 'core/block-editor' ).getBlocks();
 			const firstBlock = blocks[ 0 ];
+			const secondBlock = blocks[ 1 ];
 			const lock = firstBlock?.attributes?.lock ?? null;
 			const canRemove =
 				firstBlock == null
 					? null
 					: wp.data.select( 'core/block-editor' ).canRemoveBlock( firstBlock.clientId );
+			const hasDonationFormBlock = blocks.some(
+				( block ) => block.name === 'fundrik/donation-form',
+			);
 
 			return {
 				total: blocks.length,
 				firstName: firstBlock?.name ?? null,
+				secondName: secondBlock?.name ?? null,
 				lock,
 				canRemove,
+				hasDonationFormBlock,
 			};
 		} );
 
-		expect( blockState.total ).toBe( 1 );
+		expect( blockState.total ).toBe( 2 );
 		expect( blockState.firstName ).toBe( 'fundrik/campaign-settings' );
+		expect( blockState.secondName ).toBe( 'fundrik/donation-form' );
+		expect( blockState.hasDonationFormBlock ).toBe( true );
 		expect( blockState.lock ).toEqual( { move: true, remove: true } );
 		expect( blockState.canRemove ).toBe( false );
 	} );
@@ -372,18 +380,28 @@ test.describe( 'Fundrik campaign admin', () => {
 			const hasCampaignSettingsBlock = blocks.some(
 				( block ) => block.name === 'fundrik/campaign-settings',
 			);
+			const hasDonationFormBlock = blocks.some(
+				( block ) => block.name === 'fundrik/donation-form',
+			);
 
 			const isAllowedInCurrentEditor = Array.isArray( allowedBlockTypes )
 				? allowedBlockTypes.includes( 'fundrik/campaign-settings' )
 				: allowedBlockTypes === true;
+			const isDonationFormAllowedInCurrentEditor = Array.isArray( allowedBlockTypes )
+				? allowedBlockTypes.includes( 'fundrik/donation-form' )
+				: allowedBlockTypes === true;
 
 			return {
 				hasCampaignSettingsBlock,
+				hasDonationFormBlock,
 				isAllowedInCurrentEditor,
+				isDonationFormAllowedInCurrentEditor,
 			};
 		} );
 
 		expect( blockVisibility.hasCampaignSettingsBlock ).toBe( false );
+		expect( blockVisibility.hasDonationFormBlock ).toBe( false );
 		expect( blockVisibility.isAllowedInCurrentEditor ).toBe( false );
+		expect( blockVisibility.isDonationFormAllowedInCurrentEditor ).toBe( false );
 	} );
 } );

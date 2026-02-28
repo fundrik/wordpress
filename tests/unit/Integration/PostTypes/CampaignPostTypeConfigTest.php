@@ -49,7 +49,10 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 	public function get_block_template_returns_expected_value(): void {
 
 		self::assertSame(
-			[ [ 'fundrik/campaign-settings' ] ],
+			[
+				[ 'fundrik/campaign-settings' ],
+				[ 'fundrik/donation-form' ],
+			],
 			$this->config->get_block_template(),
 		);
 	}
@@ -57,7 +60,13 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 	#[Test]
 	public function get_specific_blocks_returns_expected_value(): void {
 
-		self::assertSame( [ 'fundrik/campaign-settings' ], $this->config->get_specific_blocks() );
+		self::assertSame(
+			[
+				'fundrik/campaign-settings',
+				'fundrik/donation-form',
+			],
+			$this->config->get_specific_blocks(),
+		);
 	}
 
 	#[Test]
