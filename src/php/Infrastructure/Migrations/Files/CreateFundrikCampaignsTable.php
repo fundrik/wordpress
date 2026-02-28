@@ -33,14 +33,13 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 		$sql = "
 			CREATE TABLE IF NOT EXISTS `fundrik_campaigns` (
 				`id` BIGINT UNSIGNED NOT NULL,
+				`version` INT UNSIGNED NOT NULL DEFAULT 1,
 				`title` TEXT NOT NULL,
-				`slug` VARCHAR(200) NOT NULL,
 				`is_active` TINYINT(1) NOT NULL DEFAULT 0,
 				`is_open` TINYINT(1) NOT NULL DEFAULT 0,
 				`has_target` TINYINT(1) NOT NULL DEFAULT 0,
 				`target_amount` INT UNSIGNED NOT NULL DEFAULT 0,
-				PRIMARY KEY (`id`),
-				UNIQUE KEY `slug` (`slug`(191))
+				PRIMARY KEY (`id`)
 			) ENGINE=InnoDB {$charset_collate};
 		";
 
