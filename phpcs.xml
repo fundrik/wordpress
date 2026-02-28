@@ -20,7 +20,7 @@
 		<properties>
 			<property name="rootNamespaces" type="array">
 				<element key="src/php" value="Fundrik\WordPress"/>
-				<element key="tests" value="Fundrik\WordPress\Tests"/>
+				<element key="tests/unit" value="Fundrik\WordPress\Tests"/>
 			</property>
 		</properties>
 	</rule>
