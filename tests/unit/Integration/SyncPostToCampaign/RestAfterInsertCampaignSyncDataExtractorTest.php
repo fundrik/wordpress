@@ -123,6 +123,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertSame( 'Campaign title', $result->title );
 		self::assertSame( 7, $result->version->get_value() );
 
+		self::assertTrue( $result->is_active );
 		self::assertFalse( $result->is_open );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
@@ -167,6 +168,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertSame( 'Campaign title', $result->title );
 		self::assertSame( 2, $result->version->get_value() );
 
+		self::assertTrue( $result->is_active );
 		// Defaults in extractor:
 		// - META_IS_OPEN defaults to '1' -> true
 		// - META_HAS_TARGET defaults to '0' -> false
@@ -224,16 +226,56 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		$result = $this->extractor->extract( $post, $this->request );
 
+		self::assertTrue( $result->is_active );
 		self::assertFalse( $result->is_open );
 		self::assertFalse( $result->has_target );
 		self::assertSame( 0, $result->target_amount );
 	}
 
-	private function make_post( int $id, string $title ): WP_Post {
+	#[Test]
+	public function extract_sets_campaign_inactive_when_post_status_is_not_publish(): void {
+
+		$post = $this->make_post( 10, 'Campaign title', 'draft' );
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 2,
+					],
+				],
+			);
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
+			->andReturn( false );
+
+		Functions\expect( 'get_post_meta' )->never();
+
+		$result = $this->extractor->extract( $post, $this->request );
+
+		self::assertFalse( $result->is_active );
+	}
+
+	private function make_post( int $id, string $title, string $status = 'publish' ): WP_Post {
 
 		$post = Mockery::mock( WP_Post::class );
 		$post->ID = $id;
 		$post->post_title = $title;
+		$post->post_status = $status;
 
 		return $post;
 	}

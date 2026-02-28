@@ -89,6 +89,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertInstanceOf( EntityVersion::class, $result->version );
 		self::assertSame( 3, $result->version->get_value() );
 
+		self::assertSame( true, $result->is_active );
 		self::assertSame( true, $result->is_open );
 		self::assertSame( false, $result->has_target );
 		self::assertSame( 0, $result->target_amount );
@@ -106,6 +107,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 				[
 					'id' => 15,
 					'title' => 'Ok',
+					'status' => 'draft',
 					'meta' => [
 						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 7,
 						CampaignPostTypeConfig::META_IS_OPEN => false,
@@ -123,6 +125,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( 'Ok', $result->title );
 		self::assertSame( 7, $result->version->get_value() );
 
+		self::assertFalse( $result->is_active );
 		self::assertFalse( $result->is_open );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );

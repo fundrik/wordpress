@@ -50,6 +50,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			id: EntityId::create( 10 ),
 			title: 'Title',
 			version: EntityVersion::create( 999 ), // Should NOT be used as expected_version here.
+			is_active: false,
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
@@ -81,7 +82,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 					self::assertSame( 10, $campaign->get_id() );
 					self::assertSame( 5, $campaign->get_version()->get_value() );
 					self::assertSame( 'Title', $campaign->get_title() );
-					self::assertTrue( $campaign->is_active() );
+					self::assertFalse( $campaign->is_active() );
 					self::assertTrue( $campaign->is_open() );
 					self::assertFalse( $campaign->has_target() );
 					self::assertSame( 0, $campaign->get_target_amount() );
@@ -103,6 +104,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			id: EntityId::create( 10 ),
 			title: 'Title',
 			version: EntityVersion::create( 3 ),
+			is_active: true,
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
@@ -145,6 +147,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			id: EntityId::create( 10 ),
 			title: 'Title',
 			version: EntityVersion::create( 3 ),
+			is_active: true,
 			is_open: true,
 			has_target: false,
 			target_amount: 0,

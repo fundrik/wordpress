@@ -43,6 +43,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 
 		$id = TypeCaster::to_int( $post->ID );
 		$title = TypeCaster::to_string( $post->post_title );
+		$status = TypeCaster::to_string( $post->post_status );
 
 		$is_open = TypeCaster::to_string(
 			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_IS_OPEN ) ?? '1',
@@ -62,6 +63,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 			id: EntityId::create( $id ),
 			title: $title,
 			version: EntityVersion::create( $version ),
+			is_active: $status === 'publish',
 			is_open: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $is_open ) ),
 			has_target: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $has_target ) ),
 			target_amount: TypeCaster::to_int( $target_amount ),

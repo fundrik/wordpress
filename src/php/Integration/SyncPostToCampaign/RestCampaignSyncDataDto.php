@@ -24,6 +24,7 @@ final readonly class RestCampaignSyncDataDto {
 	 * @param EntityId $id The campaign ID.
 	 * @param string $title The campaign title.
 	 * @param EntityVersion $version The campaign version.
+	 * @param bool $is_active Whether the campaign is active.
 	 * @param bool $is_open Whether the campaign is open for donations.
 	 * @param bool $has_target Whether the campaign has a fundraising target.
 	 * @param int $target_amount The fundraising target amount in minor units.
@@ -32,6 +33,7 @@ final readonly class RestCampaignSyncDataDto {
 		public EntityId $id,
 		public string $title,
 		public EntityVersion $version,
+		public bool $is_active,
 		public bool $is_open,
 		public bool $has_target,
 		public int $target_amount,

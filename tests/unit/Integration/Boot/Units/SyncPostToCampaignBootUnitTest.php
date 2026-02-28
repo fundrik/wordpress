@@ -740,6 +740,66 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->rest_after_insert_hook->handle( $post, $request, true );
 	}
 
+	#[Test]
+	public function boot_saves_inactive_campaign_when_post_status_is_not_publish(): void {
+
+		$post = $this->make_post( 24, 'Campaign title', CampaignPostTypeConfig::ID, 'draft' );
+		$request = $this->make_request(
+			[
+				'meta' => [
+					CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 4,
+				],
+			],
+		);
+
+		$this->expect_after_insert_meta_defaults( 24 );
+
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( null );
+
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'save' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andReturnUsing(
+				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
+
+					self::assertFalse( $campaign->is_active() );
+
+					return new CampaignRepositorySaveOutcome(
+						result: CampaignRepositorySaveResult::Inserted,
+						campaign: $campaign,
+					);
+				},
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Campaign synchronization after REST save completed.',
+				Mockery::subset(
+					[
+						'service_class' => SyncPostToCampaignBootUnit::class,
+						'component' => 'boot_units',
+						'post_id' => 24,
+						'entity_id' => 24,
+						'version' => 4,
+						'creating' => true,
+					],
+				),
+			);
+
+		Functions\expect( 'fundrik_set_failure_message' )->never();
+
+		$this->boot_unit->boot();
+
+		$this->rest_after_insert_hook->handle( $post, $request, true );
+	}
+
 	private function create_persisted_campaign( int $id, int $version ): Campaign {
 
 		return $this->campaign_factory->create(
@@ -769,12 +829,14 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		int $id,
 		string $title = 'Campaign title',
 		string $post_type = CampaignPostTypeConfig::ID,
+		string $status = 'publish',
 	): WP_Post {
 
 		$post = Mockery::mock( WP_Post::class );
 		$post->ID = $id;
 		$post->post_title = $title;
 		$post->post_type = $post_type;
+		$post->post_status = $status;
 
 		return $post;
 	}

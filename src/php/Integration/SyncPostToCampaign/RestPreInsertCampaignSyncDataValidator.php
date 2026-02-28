@@ -70,7 +70,7 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 				id: $data->id,
 				version: $data->version,
 				title: $data->title,
-				is_active: true,
+				is_active: $data->is_active,
 				is_open: $data->is_open,
 				has_target: $data->has_target,
 				target_amount: $data->target_amount,

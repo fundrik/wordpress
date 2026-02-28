@@ -24,6 +24,7 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 			id: $id,
 			title: 'Title',
 			version: $version,
+			is_active: false,
 			is_open: true,
 			has_target: false,
 			target_amount: 123,
@@ -32,6 +33,7 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 		self::assertSame( $id, $dto->id );
 		self::assertSame( 'Title', $dto->title );
 		self::assertSame( $version, $dto->version );
+		self::assertFalse( $dto->is_active );
 		self::assertTrue( $dto->is_open );
 		self::assertFalse( $dto->has_target );
 		self::assertSame( 123, $dto->target_amount );

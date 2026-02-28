@@ -47,6 +47,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 			$id = ArrayExtractor::extract_int_required( $params, 'id' );
 			$title = ArrayExtractor::extract_string_optional( $params, 'title' ) ?? 'Unchanged title';
+			$status = ArrayExtractor::extract_string_optional( $params, 'status' ) ?? 'publish';
 
 			/** @var array<string, mixed> $meta */
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
@@ -56,6 +57,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 				id: EntityId::create( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),
+				is_active: $status === 'publish',
 				is_open: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_IS_OPEN ) ?? true,
 				has_target: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? false,
 				target_amount: ArrayExtractor::extract_int_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT ) ?? 0,
