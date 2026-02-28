@@ -18,6 +18,42 @@ const setCampaignTitle = async ( editor, title ) => {
 	await editor.canvas.getByRole( 'textbox', { name: 'Add title' } ).fill( title );
 };
 
+const editCampaignFromEditorStore = async ( page, { title, hasTarget, targetAmount } ) => {
+	await page.waitForFunction( () =>
+		typeof wp !== 'undefined' &&
+		typeof wp.data !== 'undefined' &&
+		typeof wp.data.dispatch === 'function' &&
+		typeof wp.data.select === 'function' &&
+		typeof wp.data.select( 'core/editor' )?.getCurrentPostId === 'function'
+	);
+
+	await page.evaluate(
+		( payload ) => {
+			const nextPost = {};
+			const nextMeta = {};
+
+			if ( payload.title !== undefined ) {
+				nextPost.title = payload.title;
+			}
+
+			if ( payload.hasTarget !== undefined ) {
+				nextMeta.fundrik_campaign_has_target = payload.hasTarget;
+			}
+
+			if ( payload.targetAmount !== undefined ) {
+				nextMeta.fundrik_campaign_target_amount = payload.targetAmount;
+			}
+
+			if ( Object.keys( nextMeta ).length > 0 ) {
+				nextPost.meta = nextMeta;
+			}
+
+			wp.data.dispatch( 'core/editor' ).editPost( nextPost );
+		},
+		{ title, hasTarget, targetAmount },
+	);
+};
+
 const saveCampaignAndGetResponse = async ( page, postId ) => {
 	await expect( getSaveButton( page ) ).toBeEnabled();
 
@@ -37,6 +73,34 @@ const saveCampaignAndGetResponse = async ( page, postId ) => {
 	} );
 
 	await getSaveButton( page ).click();
+
+	return responsePromise;
+};
+
+const saveCampaignFromEditorStoreAndGetResponse = async ( page, postId ) => {
+	const responsePromise = page.waitForResponse( ( response ) => {
+		const requestMethod = response.request().method().toUpperCase();
+		const url = decodeURIComponent( response.url() );
+		const matchesPostSaveRoute =
+			postId === undefined || postId === null
+				? /\/wp\/v2\/fundrik_campaign\/\d+/.test( url )
+				: url.includes( `/wp/v2/fundrik_campaign/${ postId }` );
+
+		return (
+			( requestMethod === 'POST' || requestMethod === 'PUT' || requestMethod === 'PATCH' ) &&
+			matchesPostSaveRoute &&
+			! url.includes( '/autosaves' )
+		);
+	} );
+
+	await page.waitForFunction( () =>
+		typeof wp !== 'undefined' &&
+		typeof wp.data !== 'undefined' &&
+		typeof wp.data.dispatch === 'function' &&
+		typeof wp.data.dispatch( 'core/editor' )?.savePost === 'function'
+	);
+
+	await page.evaluate( () => wp.data.dispatch( 'core/editor' ).savePost() );
 
 	return responsePromise;
 };
@@ -163,7 +227,6 @@ test.describe( 'Fundrik campaign admin', () => {
 
 	test( 'shows version mismatch when editor data is stale', async ( {
 		admin,
-		editor,
 		page,
 		requestUtils,
 	} ) => {
@@ -174,9 +237,12 @@ test.describe( 'Fundrik campaign admin', () => {
 			fullscreenMode: false,
 		} );
 
-		await setCampaignTitle( editor, 'E2E Campaign Version Mismatch' );
-		await editor.canvas.getByLabel( 'Has Target' ).check();
-		await editor.canvas.getByLabel( 'Target Amount' ).fill( '500' );
+		await editCampaignFromEditorStore( page, {
+			title: 'E2E Campaign Version Mismatch',
+			hasTarget: true,
+			targetAmount: 500,
+		} );
+
 		const initialSaveResponse = await saveCampaignAndGetResponse( page );
 		expect( initialSaveResponse.ok() ).toBe( true );
 		const postId = await getPostIdFromEditorStore( page );
@@ -184,43 +250,44 @@ test.describe( 'Fundrik campaign admin', () => {
 		expect( typeof postId ).toBe( 'number' );
 		expect( postId ).toBeGreaterThan( 0 );
 
-		const currentPost = await getCampaignByPostId( requestUtils, postId );
-		const currentVersion = currentPost?.meta?.fundrik_campaign_version;
+		const secondPage = await page.context().newPage();
+		try {
+			await secondPage.goto( `/wp-admin/post.php?post=${ postId }&action=edit` );
 
-		expect( typeof currentVersion ).toBe( 'number' );
-
-		await requestUtils.rest( {
-			method: 'POST',
-			path: `/wp/v2/fundrik_campaign/${ postId }`,
-			data: {
-				id: postId,
+			await editCampaignFromEditorStore( secondPage, {
 				title: 'External Update',
-				meta: {
-					fundrik_campaign_version: currentVersion,
-					fundrik_campaign_is_open: true,
-					fundrik_campaign_has_target: false,
-					fundrik_campaign_target_amount: 0,
-				},
-			},
-		} );
+				hasTarget: false,
+				targetAmount: 0,
+			} );
 
-		await editor.canvas.getByLabel( 'Has Target' ).check();
-		await editor.canvas.getByLabel( 'Target Amount' ).fill( '900' );
+			const secondTabSaveResponse = await saveCampaignFromEditorStoreAndGetResponse(
+				secondPage,
+				postId,
+			);
+			expect( secondTabSaveResponse.ok() ).toBe( true );
 
-		const failedSaveResponse = await saveCampaignAndGetResponse( page, postId );
-		const failedPayload = await failedSaveResponse.json();
+			await editCampaignFromEditorStore( page, {
+				hasTarget: true,
+				targetAmount: 900,
+			} );
 
-		expect( failedSaveResponse.status() ).toBe( 409 );
-		expect( failedPayload?.code ).toBe( 'fundrik_campaign_version_mismatch' );
-		expect( failedPayload?.message ).toMatch(
-			/Campaign data is out of date\. Refresh the page and try again\./i,
-		);
+			const failedSaveResponse = await saveCampaignAndGetResponse( page, postId );
+			const failedPayload = await failedSaveResponse.json();
 
-		const response = await getCampaignByPostId( requestUtils, postId );
+			expect( failedSaveResponse.status() ).toBe( 409 );
+			expect( failedPayload?.code ).toBe( 'fundrik_campaign_version_mismatch' );
+			expect( failedPayload?.message ).toMatch(
+				/Campaign data is out of date\. Refresh the page and try again\./i,
+			);
 
-		expect( response?.title?.raw ).toBe( 'External Update' );
-		expect( response?.meta?.fundrik_campaign_has_target ).toBe( false );
-		expect( response?.meta?.fundrik_campaign_target_amount ).toBe( 0 );
+			const response = await getCampaignByPostId( requestUtils, postId );
+
+			expect( response?.title?.raw ).toBe( 'External Update' );
+			expect( response?.meta?.fundrik_campaign_has_target ).toBe( false );
+			expect( response?.meta?.fundrik_campaign_target_amount ).toBe( 0 );
+		} finally {
+			await secondPage.close();
+		}
 	} );
 
 	test( 'preloads campaign settings block and keeps it locked', async ( {

@@ -1,6 +1,6 @@
 const { defineConfig } = require('@playwright/test');
 
-process.env.WP_BASE_URL ??= 'http://localhost:8889';
+process.env.WP_BASE_URL ??= 'http://localhost:8888';
 process.env.STORAGE_STATE_PATH ??= '.tmp/playwright/storage-states/admin.json';
 
 module.exports = defineConfig({
@@ -15,7 +15,7 @@ module.exports = defineConfig({
   },
   webServer: {
     command: 'npm run wp-env:start',
-    port: 8889,
+    url: process.env.WP_BASE_URL,
     reuseExistingServer: true,
   },
 });
