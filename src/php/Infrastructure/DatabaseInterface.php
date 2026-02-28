@@ -122,6 +122,31 @@ interface DatabaseInterface {
 	public function query( string $sql ): void;
 
 	/**
+	 * Executes a SQL query with bound placeholder values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $sql The SQL query template with placeholders.
+	 * @param int|float|string|bool|null ...$args The values to bind to placeholders.
+	 *
+	 * @throws DatabaseException When preparing or executing fails.
+	 */
+	public function query_with_args( string $sql, int|float|string|bool|null ... $args ): void;
+
+	/**
+	 * Resolves table name using the configured table prefix.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name with or without prefix.
+	 *
+	 * @return string The table name with prefix applied.
+	 *
+	 * @throws DatabaseException When the prefix cannot be determined.
+	 */
+	public function qualify_table_name( string $table ): string;
+
+	/**
 	 * Returns the charset and collation string for the database.
 	 *
 	 * @since 1.0.0

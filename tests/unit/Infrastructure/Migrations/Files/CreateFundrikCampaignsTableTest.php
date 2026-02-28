@@ -35,20 +35,28 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 	public function apply_executes_expected_create_table_query(): void {
 
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
+		$table_name = 'wp_fundrik_campaigns';
 
 		$this->db
-			->shouldReceive( 'query' )
+			->shouldReceive( 'qualify_table_name' )
+			->once()
+			->with( 'fundrik_campaigns' )
+			->andReturn( $table_name );
+
+		$this->db
+			->shouldReceive( 'query_with_args' )
 			->once()
 			->with(
 				Mockery::on(
 					static fn ( string $sql ): bool => str_contains(
 						$sql,
-						'CREATE TABLE IF NOT EXISTS `fundrik_campaigns`',
+						'CREATE TABLE IF NOT EXISTS %i',
 					)
 						&& str_contains( $sql, $charset_collate )
 						&& str_contains( $sql, '`version` INT UNSIGNED NOT NULL DEFAULT 1' )
 						&& str_contains( $sql, 'PRIMARY KEY (`id`)' ),
 				),
+				$table_name,
 			);
 
 		$this->migration->apply( $charset_collate );
@@ -60,12 +68,18 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
 
 		$this->db
-			->shouldReceive( 'query' )
+			->shouldReceive( 'qualify_table_name' )
+			->once()
+			->with( 'fundrik_campaigns' )
+			->andReturn( 'wp_fundrik_campaigns' );
+
+		$this->db
+			->shouldReceive( 'query_with_args' )
 			->once()
 			->andThrow( new DatabaseException( 'DB failed' ) );
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Cannot create the "fundrik_campaigns" table.' );
+		$this->expectExceptionMessage( 'Cannot create the "wp_fundrik_campaigns" table.' );
 
 		$this->migration->apply( $charset_collate );
 	}

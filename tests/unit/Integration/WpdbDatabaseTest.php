@@ -28,6 +28,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->wpdb = Mockery::mock( 'wpdb' );
 		$this->wpdb->last_error = '';
+		$this->wpdb->prefix = 'wp_';
 
 		// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable, WordPress.WP.GlobalVariablesOverride.Prohibited
 		$GLOBALS['wpdb'] = $this->wpdb;
@@ -674,6 +675,21 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function delete_prefixes_table_name_when_unprefixed(): void {
+
+		$table = 'table';
+		$id = 7;
+
+		$this->wpdb
+			->shouldReceive( 'delete' )
+			->once()
+			->with( 'wp_table', [ 'id' => $id ] )
+			->andReturn( 1 );
+
+		$this->db->delete( $table, $id );
+	}
+
+	#[Test]
 	public function delete_throws_when_wpdb_returns_false(): void {
 
 		$table = 'wp_table';
@@ -767,6 +783,104 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->expectExceptionMessage( 'Cannot execute query: database operation failed. Error: Query failed.' );
 
 		$this->db->query( $sql );
+	}
+
+	// ---------------------------------------------------------------------
+	// query_with_args()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function query_with_args_prepares_and_executes_query(): void {
+
+		$sql = 'UPDATE %i SET title = %s WHERE id = %d';
+		$args = [ 'wp_table', 'A', 7 ];
+		$prepared_sql = 'prepared_sql';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, ...$args )
+			->andReturn( $prepared_sql );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $prepared_sql )
+			->andReturn( 1 );
+
+		$this->db->query_with_args( $sql, ...$args );
+	}
+
+	#[Test]
+	public function query_with_args_throws_when_prepare_returns_invalid_value(): void {
+
+		$sql = 'SELECT * FROM %i WHERE id = %d';
+		$args = [ 'wp_table', 7 ];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, ...$args )
+			->andReturn( null );
+
+		$this->expectException( DatabaseException::class );
+		$this->expectExceptionMessage(
+			'Cannot prepare query: wpdb->prepare() must return a non-empty string. Given: null.',
+		);
+
+		$this->db->query_with_args( $sql, ...$args );
+	}
+
+	#[Test]
+	public function query_with_args_throws_when_query_execution_fails(): void {
+
+		$sql = 'DELETE FROM %i WHERE id = %d';
+		$args = [ 'wp_table', 7 ];
+		$prepared_sql = 'prepared_sql';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, ...$args )
+			->andReturn( $prepared_sql );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $prepared_sql )
+			->andReturn( false );
+
+		$this->expectException( DatabaseException::class );
+		$this->expectExceptionMessage( 'Cannot execute query: database operation failed. Error: Unknown error.' );
+
+		$this->db->query_with_args( $sql, ...$args );
+	}
+
+	// ---------------------------------------------------------------------
+	// qualify_table_name()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function qualify_table_name_prefixes_unprefixed_name(): void {
+
+		self::assertSame( 'wp_table', $this->db->qualify_table_name( 'table' ) );
+	}
+
+	#[Test]
+	public function qualify_table_name_does_not_double_prefix_when_name_is_prefixed(): void {
+
+		self::assertSame( 'wp_table', $this->db->qualify_table_name( 'wp_table' ) );
+	}
+
+	#[Test]
+	public function qualify_table_name_throws_when_wpdb_returns_invalid_prefix_type(): void {
+
+		$this->wpdb->prefix = [ 'invalid' ];
+
+		$this->expectException( DatabaseException::class );
+		$this->expectExceptionMessage( 'Cannot determine database table prefix: wpdb returned invalid type array.' );
+
+		$this->db->qualify_table_name( 'table' );
 	}
 
 	// ---------------------------------------------------------------------

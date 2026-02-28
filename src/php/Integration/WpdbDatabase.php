@@ -58,6 +58,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function get_by_id( string $table, int|string $id ): ?array {
 
+		$table = $this->qualify_table_name( $table );
 		$placeholder = is_int( $id ) ? '%d' : '%s';
 
 		$sql = "SELECT * FROM %i WHERE id = {$placeholder} LIMIT 1";
@@ -87,6 +88,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		return $this->sanitize_db_row( $row );
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Retrieves all rows from the given table.
 	 *
@@ -102,6 +104,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function get_all( string $table ): array {
 
+		$table = $this->qualify_table_name( $table );
 		$sql = 'SELECT * FROM %i';
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$query = $this->wpdb->prepare( $sql, $table );
@@ -134,6 +137,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		return $casted_results;
 	}
+	// phpcs:enable
 
 	/**
 	 * Determines whether the table contains a row with the given ID.
@@ -149,6 +153,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function exists_by_id( string $table, int|string $id ): bool {
 
+		$table = $this->qualify_table_name( $table );
 		$placeholder = is_int( $id ) ? '%d' : '%s';
 
 		$sql = "SELECT 1 FROM %i WHERE id = {$placeholder} LIMIT 1";
@@ -188,6 +193,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool {
 
+		$table = $this->qualify_table_name( $table );
 		$placeholder = is_int( $value ) ? '%d' : '%s';
 
 		$sql = "SELECT 1 FROM %i WHERE %i = {$placeholder} LIMIT 1";
@@ -226,6 +232,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function insert( string $table, array $data ): void {
 
+		$table = $this->qualify_table_name( $table );
 		$result = $this->wpdb->insert( $table, $data );
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
@@ -255,6 +262,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function update( string $table, array $data, array $where ): int {
 
+		$table = $this->qualify_table_name( $table );
 		$result = $this->wpdb->update( $table, $data, $where );
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
@@ -283,6 +291,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 */
 	public function delete( string $table, int|string $id ): void {
 
+		$table = $this->qualify_table_name( $table );
 		$result = $this->wpdb->delete(
 			$table,
 			[ 'id' => $id ],
@@ -327,6 +336,34 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	}
 
 	/**
+	 * Executes a SQL query with bound placeholder values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $sql The SQL query template with placeholders.
+	 * @param int|float|string|bool|null ...$args The values to bind to placeholders.
+	 *
+	 * @throws DatabaseException When preparing or executing fails.
+	 */
+	public function query_with_args( string $sql, int|float|string|bool|null ...$args ): void {
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$query = $this->wpdb->prepare( $sql, ...$args );
+
+		if ( ! is_string( $query ) ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot prepare query: wpdb->prepare() must return a non-empty string. Given: %s.',
+					get_debug_type( $query ),
+				),
+			);
+		}
+
+		$this->query( $query );
+	}
+
+	/**
 	 * Returns the charset and collation string for the database.
 	 *
 	 * @since 1.0.0
@@ -347,6 +384,38 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 		}
 
 		return $charset_collate;
+	}
+
+	/**
+	 * Resolves table name using the configured table prefix.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name with or without prefix.
+	 *
+	 * @return string The table name with prefix applied.
+	 *
+	 * @throws DatabaseException When the prefix cannot be determined.
+	 */
+	public function qualify_table_name( string $table ): string {
+
+		$prefix = $this->wpdb->prefix;
+
+		if ( ! is_string( $prefix ) ) {
+
+			throw new DatabaseException(
+				sprintf(
+					'Cannot determine database table prefix: wpdb returned invalid type %s.',
+					get_debug_type( $prefix ),
+				),
+			);
+		}
+
+		if ( $prefix === '' || str_starts_with( $table, $prefix ) ) {
+			return $table;
+		}
+
+		return $prefix . $table;
 	}
 
 	/**
