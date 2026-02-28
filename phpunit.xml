@@ -24,10 +24,5 @@
             <directory>src/php</directory>
         </include>
     </source>
-
-    <coverage>
-        <report>
-            <html outputDirectory=".tmp/phpunit/report-coverage"/>
-        </report>
-    </coverage>
 </phpunit>
+
