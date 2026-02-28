@@ -1,8 +1,19 @@
 {
 	"devDependencies": {
-		"@wordpress/scripts": "^30.18.0"
+		"@playwright/test": "^1.52.0",
+		"@wordpress/e2e-test-utils-playwright": "^1.25.0",
+		"@wordpress/env": "^10.36.0",
+		"@wordpress/scripts": "^31.5.0",
+		"cross-env": "^10.1.0"
 	},
 	"scripts": {
-		"build": "wp-scripts build --source-path=src/js/blocks --output-path=assets/js/blocks --blocks-manifest"
+		"build": "wp-scripts build --source-path=src/js/blocks --output-path=assets/js/blocks --blocks-manifest",
+		"wp-env:start": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env start",
+		"wp-env:stop": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env stop",
+		"wp-env:destroy": "cross-env WP_ENV_HOME=.tmp/wp-env wp-env destroy",
+		"e2e:install-browsers": "playwright install chromium",
+		"e2e:test": "playwright test",
+		"e2e:test:headed": "playwright test --headed",
+		"e2e:test:ui": "playwright test --ui"
 	}
 }
