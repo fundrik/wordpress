@@ -8,36 +8,33 @@ use Fundrik\WordPress\Integration\MetaFieldType;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 
-final class GammaPostTypeConfig implements PostTypeConfigInterface {
+final class InvalidDefaultTypePostTypeConfig implements PostTypeConfigInterface {
 
-	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
-	public const string META_IS_OPEN = 'gamma_is_open';
-
-	#[PostTypeMetaField( type: MetaFieldType::Integer, default: 0 )]
-	public const string META_AMOUNT = 'gamma_amount';
+	#[PostTypeMetaField( type: MetaFieldType::Integer, default: true )]
+	public const string META_BAD_DEFAULT = 'invalid_default';
 
 	public function get_id(): string {
 
-		return 'gamma';
+		return 'invalid-default';
 	}
 
 	public function get_slug(): string {
 
-		return 'gamma';
+		return 'invalid-default';
 	}
 
 	public function get_block_template(): array {
 
-		return [ [ 'gamma/block' ] ];
+		return [];
 	}
 
 	public function get_specific_blocks(): array {
 
-		return [ 'gamma/block' ];
+		return [];
 	}
 
 	public function get_labels(): array {
 
-		return [ 'name' => 'Gamma' ];
+		return [];
 	}
 }

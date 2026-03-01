@@ -8,36 +8,36 @@ use Fundrik\WordPress\Integration\MetaFieldType;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 
-final class GammaPostTypeConfig implements PostTypeConfigInterface {
+final class StringMetaWithOptionalDefaultPostTypeConfig implements PostTypeConfigInterface {
 
-	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
-	public const string META_IS_OPEN = 'gamma_is_open';
+	#[PostTypeMetaField( type: MetaFieldType::String, default: 'RUB' )]
+	public const string META_TARGET_CURRENCY = 'fixture_target_currency';
 
-	#[PostTypeMetaField( type: MetaFieldType::Integer, default: 0 )]
-	public const string META_AMOUNT = 'gamma_amount';
+	#[PostTypeMetaField( type: MetaFieldType::Boolean )]
+	public const string META_HAS_TARGET = 'fixture_has_target';
 
 	public function get_id(): string {
 
-		return 'gamma';
+		return 'string-meta';
 	}
 
 	public function get_slug(): string {
 
-		return 'gamma';
+		return 'string-meta';
 	}
 
 	public function get_block_template(): array {
 
-		return [ [ 'gamma/block' ] ];
+		return [];
 	}
 
 	public function get_specific_blocks(): array {
 
-		return [ 'gamma/block' ];
+		return [];
 	}
 
 	public function get_labels(): array {
 
-		return [ 'name' => 'Gamma' ];
+		return [];
 	}
 }

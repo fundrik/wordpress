@@ -53,7 +53,7 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 						'CREATE TABLE IF NOT EXISTS %i',
 					)
 						&& str_contains( $sql, $charset_collate )
-						&& str_contains( $sql, '`version` INT UNSIGNED NOT NULL DEFAULT 1' )
+						&& str_contains( $sql, '`version` INT UNSIGNED NOT NULL' )
 						&& str_contains( $sql, '`target_currency` CHAR(3) NOT NULL' )
 						&& str_contains( $sql, 'PRIMARY KEY (`id`)' ),
 				),

@@ -85,7 +85,7 @@ final class PostTypeRegistrarTest extends MockeryTestCase {
 				'gamma',
 				'gamma_amount',
 				[
-					'type' => 'number',
+					'type' => 'integer',
 					'default' => 0,
 					'show_in_rest' => true,
 					'single' => true,

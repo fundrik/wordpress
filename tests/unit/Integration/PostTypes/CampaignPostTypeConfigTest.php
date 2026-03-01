@@ -131,7 +131,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_TARGET_AMOUNT',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => MetaFieldType::Number,
+				'type' => MetaFieldType::Integer,
 				'default' => 0,
 			],
 		);
@@ -142,7 +142,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => MetaFieldType::String,
-				'default' => CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY,
+				'default' => 'RUB',
 			],
 		);
 	}

@@ -333,7 +333,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -392,7 +392,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db->shouldNotReceive( 'insert' );
@@ -417,7 +417,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -457,7 +457,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -500,7 +500,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -564,7 +564,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db->shouldNotReceive( 'update' );
@@ -590,7 +590,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -635,7 +635,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -668,7 +668,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -701,7 +701,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -732,7 +732,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -774,7 +774,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -836,7 +836,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -903,7 +903,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -933,7 +933,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -966,7 +966,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
-		target_currency: 'RUB',
+			target_currency: 'RUB',
 		);
 
 		$this->db
@@ -1035,4 +1035,3 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->repository->delete( $id );
 	}
 }
-

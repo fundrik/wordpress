@@ -22,6 +22,8 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampa
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
@@ -58,6 +60,8 @@ use WP_Screen;
 #[UsesClass( RestCampaignSyncDataDto::class )]
 #[UsesClass( Meta::class )]
 #[UsesClass( PluginUrl::class )]
+#[UsesClass( PostTypeMetaField::class )]
+#[UsesClass( PostTypeMetaFieldReader::class )]
 final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 	private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook;
@@ -113,12 +117,13 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->validator_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->synchronizer_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 
-		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor();
+		$meta_field_reader = new PostTypeMetaFieldReader();
+		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $meta_field_reader );
 		$this->pre_insert_validator = new RestPreInsertCampaignSyncDataValidator(
 			$this->campaign_factory,
 			$this->validator_campaign_repository,
 		);
-		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor();
+		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor( $meta_field_reader );
 		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer(
 			$this->campaign_factory,
 			$this->synchronizer_campaign_repository,

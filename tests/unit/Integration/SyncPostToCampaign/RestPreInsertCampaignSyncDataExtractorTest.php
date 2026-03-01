@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -21,6 +22,7 @@ use WP_REST_Request;
 
 #[CoversClass( RestPreInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( PostTypeMetaFieldReader::class )]
 final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 	private WP_REST_Request&MockInterface $request;
@@ -33,7 +35,9 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		$this->request = Mockery::mock( WP_REST_Request::class );
 
-		$this->extractor = new RestPreInsertCampaignSyncDataExtractor();
+		$this->extractor = new RestPreInsertCampaignSyncDataExtractor(
+			new PostTypeMetaFieldReader(),
+		);
 	}
 
 	#[Test]
@@ -93,7 +97,13 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( true, $result->is_open );
 		self::assertSame( false, $result->has_target );
 		self::assertSame( 0, $result->target_amount );
-		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
+		self::assertSame(
+			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
+				CampaignPostTypeConfig::class,
+				CampaignPostTypeConfig::META_TARGET_CURRENCY,
+			),
+			$result->target_currency,
+		);
 	}
 
 	#[Test]
@@ -133,4 +143,5 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( 123, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
+
 }

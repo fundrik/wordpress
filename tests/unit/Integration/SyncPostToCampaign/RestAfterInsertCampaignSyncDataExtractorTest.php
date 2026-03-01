@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\Helpers\Meta;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -22,6 +23,7 @@ use WP_REST_Request;
 #[CoversClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestCampaignSyncDataDto::class )]
 #[UsesClass( Meta::class )]
+#[UsesClass( PostTypeMetaFieldReader::class )]
 final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 	private WP_REST_Request&MockInterface $request;
@@ -34,7 +36,9 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		$this->request = Mockery::mock( WP_REST_Request::class );
 
-		$this->extractor = new RestAfterInsertCampaignSyncDataExtractor();
+		$this->extractor = new RestAfterInsertCampaignSyncDataExtractor(
+			new PostTypeMetaFieldReader(),
+		);
 	}
 
 	#[Test]
@@ -193,7 +197,13 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertTrue( $result->is_open );
 		self::assertFalse( $result->has_target );
 		self::assertSame( 0, $result->target_amount );
-		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
+		self::assertSame(
+			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
+				CampaignPostTypeConfig::class,
+				CampaignPostTypeConfig::META_TARGET_CURRENCY,
+			),
+			$result->target_currency,
+		);
 	}
 
 	#[Test]
@@ -302,7 +312,13 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		$result = $this->extractor->extract( $post, $this->request );
 
 		self::assertFalse( $result->is_active );
-		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
+		self::assertSame(
+			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
+				CampaignPostTypeConfig::class,
+				CampaignPostTypeConfig::META_TARGET_CURRENCY,
+			),
+			$result->target_currency,
+		);
 	}
 
 	private function make_post( int $id, string $title, string $status = 'publish' ): WP_Post {

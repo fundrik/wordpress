@@ -20,7 +20,6 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	public const string ID = 'fundrik_campaign';
 
 	public const string ENTITY_VERSION_FIELD_NAME = 'fundrik_campaign_version';
-	public const string DEFAULT_TARGET_CURRENCY = 'RUB';
 
 	/**
 	 * Stores whether the campaign is open for donations.
@@ -37,13 +36,13 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	/**
 	 * Stores the fundraising target amount in minor units.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Number, default: 0 )]
+	#[PostTypeMetaField( type: MetaFieldType::Integer, default: 0 )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
 
 	/**
 	 * Stores the fundraising target currency as an ISO 4217 code.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::String, default: self::DEFAULT_TARGET_CURRENCY )]
+	#[PostTypeMetaField( type: MetaFieldType::String, default: 'RUB' )]
 	public const string META_TARGET_CURRENCY = 'fundrik_campaign_target_currency';
 
 	/**

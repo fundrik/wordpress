@@ -158,6 +158,7 @@ abstract class FundrikTestCase extends PHPUnitTestCase {
 			return sprintf( '%s::%s', $value::class, $value->name );
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 		return sprintf( '%s(%s)', get_debug_type( $value ), json_encode( $value ) ?: 'unserializable' );
 	}
 }
