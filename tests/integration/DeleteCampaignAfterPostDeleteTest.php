@@ -84,8 +84,9 @@ final class DeleteCampaignAfterPostDeleteTest extends TestCase {
 				'is_open' => 1,
 				'has_target' => 0,
 				'target_amount' => 0,
+				'target_currency' => 'RUB',
 			],
-			[ '%d', '%d', '%s', '%d', '%d', '%d', '%d' ],
+			[ '%d', '%d', '%s', '%d', '%d', '%d', '%d', '%s' ],
 		);
 
 		self::assertSame( 1, $insert_result );

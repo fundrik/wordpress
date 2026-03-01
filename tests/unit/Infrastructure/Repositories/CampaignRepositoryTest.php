@@ -52,6 +52,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			'is_open' => '0',
 			'has_target' => '1',
 			'target_amount' => '123',
+			'target_currency' => 'RUB',
 		];
 
 		$this->db
@@ -62,13 +63,13 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$result = $this->repository->find_by_id( $id );
 
-		self::assertSame( 7, $result->get_id() );
+		self::assertSame( 7, $result->get_id()->get_value() );
 		self::assertSame( 3, $result->get_version()->get_value() );
 		self::assertSame( 'Hello', $result->get_title() );
 		self::assertTrue( $result->is_active() );
 		self::assertFalse( $result->is_open() );
 		self::assertTrue( $result->has_target() );
-		self::assertSame( 123, $result->get_target_amount() );
+		self::assertSame( 123, $result->get_target_money()->get_amount_minor() );
 	}
 
 	#[Test]
@@ -132,6 +133,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			'is_open' => '0',
 			'has_target' => '1',
 			'target_amount' => '123',
+			'target_currency' => 'RUB',
 		];
 
 		$this->db
@@ -158,6 +160,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 				'is_open' => '0',
 				'has_target' => '1',
 				'target_amount' => '123',
+				'target_currency' => 'RUB',
 			],
 			[
 				'id' => '8',
@@ -167,6 +170,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 				'is_open' => '1',
 				'has_target' => '0',
 				'target_amount' => '0',
+				'target_currency' => 'RUB',
 			],
 		];
 
@@ -180,21 +184,21 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		self::assertCount( 2, $result );
 
-		self::assertSame( 7, $result[0]->get_id() );
+		self::assertSame( 7, $result[0]->get_id()->get_value() );
 		self::assertSame( 3, $result[0]->get_version()->get_value() );
 		self::assertSame( 'Hello', $result[0]->get_title() );
 		self::assertTrue( $result[0]->is_active() );
 		self::assertFalse( $result[0]->is_open() );
 		self::assertTrue( $result[0]->has_target() );
-		self::assertSame( 123, $result[0]->get_target_amount() );
+		self::assertSame( 123, $result[0]->get_target_money()->get_amount_minor() );
 
-		self::assertSame( 8, $result[1]->get_id() );
+		self::assertSame( 8, $result[1]->get_id()->get_value() );
 		self::assertSame( 1, $result[1]->get_version()->get_value() );
 		self::assertSame( 'World', $result[1]->get_title() );
 		self::assertFalse( $result[1]->is_active() );
 		self::assertTrue( $result[1]->is_open() );
 		self::assertFalse( $result[1]->has_target() );
-		self::assertSame( 0, $result[1]->get_target_amount() );
+		self::assertSame( 0, $result[1]->get_target_money()->get_amount_minor() );
 	}
 
 	#[Test]
@@ -238,6 +242,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 				'is_open' => '0',
 				'has_target' => '1',
 				'target_amount' => '123',
+				'target_currency' => 'RUB',
 			],
 		];
 
@@ -320,7 +325,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_inserts_row_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -328,6 +333,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -342,6 +348,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 3,
 				],
 			);
@@ -359,24 +366,25 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => '0',
 					'has_target' => '1',
 					'target_amount' => '123',
+					'target_currency' => 'RUB',
 				],
 			);
 
 		$result = $this->repository->insert( $campaign );
 
-		self::assertSame( 7, $result->get_id() );
+		self::assertSame( 7, $result->get_id()->get_value() );
 		self::assertSame( 3, $result->get_version()->get_value() );
 		self::assertSame( 'Hello', $result->get_title() );
 		self::assertTrue( $result->is_active() );
 		self::assertFalse( $result->is_open() );
 		self::assertTrue( $result->has_target() );
-		self::assertSame( 123, $result->get_target_amount() );
+		self::assertSame( 123, $result->get_target_money()->get_amount_minor() );
 	}
 
 	#[Test]
 	public function insert_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -384,6 +392,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db->shouldNotReceive( 'insert' );
@@ -400,7 +409,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_database_insert_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -408,6 +417,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -422,6 +432,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 3,
 				],
 			)
@@ -438,7 +449,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_is_not_found_after_insert(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -446,6 +457,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -460,6 +472,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 3,
 				],
 			);
@@ -479,7 +492,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_updates_row_with_next_version_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -487,6 +500,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -501,6 +515,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 4,
 				],
 				[
@@ -523,24 +538,25 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => '0',
 					'has_target' => '1',
 					'target_amount' => '123',
+					'target_currency' => 'RUB',
 				],
 			);
 
 		$result = $this->repository->update( $campaign );
 
-		self::assertSame( 7, $result->get_id() );
+		self::assertSame( 7, $result->get_id()->get_value() );
 		self::assertSame( 4, $result->get_version()->get_value() );
 		self::assertSame( 'Hello', $result->get_title() );
 		self::assertTrue( $result->is_active() );
 		self::assertFalse( $result->is_open() );
 		self::assertTrue( $result->has_target() );
-		self::assertSame( 123, $result->get_target_amount() );
+		self::assertSame( 123, $result->get_target_money()->get_amount_minor() );
 	}
 
 	#[Test]
 	public function update_throws_when_campaign_entity_id_is_not_int_compatible(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: '019b6bcb-2f32-7461-838f-67a1479fbdbe',
 			version: 3,
 			title: 'Hello',
@@ -548,6 +564,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db->shouldNotReceive( 'update' );
@@ -565,7 +582,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_database_update_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -573,6 +590,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -587,6 +605,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 4,
 				],
 				[
@@ -608,7 +627,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_campaign_is_missing(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -616,6 +635,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -640,7 +660,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_version_mismatch(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -648,6 +668,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -672,7 +693,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_is_not_found_after_update(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -680,6 +701,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -702,7 +724,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_updated_row_cannot_be_mapped_to_campaign(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -710,6 +732,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -730,6 +753,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => '0',
 					'has_target' => '1',
 					'target_amount' => '123',
+					'target_currency' => 'RUB',
 				],
 			);
 
@@ -742,7 +766,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_inserts_when_campaign_does_not_exist(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -750,6 +774,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -770,6 +795,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 3,
 				],
 			);
@@ -787,6 +813,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => '0',
 					'has_target' => '1',
 					'target_amount' => '123',
+					'target_currency' => 'RUB',
 				],
 			);
 
@@ -794,14 +821,14 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		self::assertInstanceOf( CampaignRepositorySaveOutcome::class, $outcome );
 		self::assertSame( CampaignRepositorySaveResult::Inserted, $outcome->result );
-		self::assertSame( 7, $outcome->campaign->get_id() );
+		self::assertSame( 7, $outcome->campaign->get_id()->get_value() );
 		self::assertSame( 3, $outcome->campaign->get_version()->get_value() );
 	}
 
 	#[Test]
 	public function save_updates_when_campaign_exists(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -809,6 +836,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -829,6 +857,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => false,
 					'has_target' => true,
 					'target_amount' => 123,
+					'target_currency' => 'RUB',
 					'version' => 4,
 				],
 				[
@@ -851,6 +880,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'is_open' => '0',
 					'has_target' => '1',
 					'target_amount' => '123',
+					'target_currency' => 'RUB',
 				],
 			);
 
@@ -858,14 +888,14 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		self::assertInstanceOf( CampaignRepositorySaveOutcome::class, $outcome );
 		self::assertSame( CampaignRepositorySaveResult::Updated, $outcome->result );
-		self::assertSame( 7, $outcome->campaign->get_id() );
+		self::assertSame( 7, $outcome->campaign->get_id()->get_value() );
 		self::assertSame( 4, $outcome->campaign->get_version()->get_value() );
 	}
 
 	#[Test]
 	public function save_throws_when_existence_check_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -873,6 +903,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -894,7 +925,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_insert_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -902,6 +933,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -926,7 +958,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function save_throws_when_update_fails(): void {
 
-		$campaign = $this->campaign_factory->create(
+		$campaign = $this->campaign_factory->create_from_primitives(
 			id: 7,
 			version: 3,
 			title: 'Hello',
@@ -934,6 +966,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			is_open: false,
 			has_target: true,
 			target_amount: 123,
+		target_currency: 'RUB',
 		);
 
 		$this->db
@@ -1002,3 +1035,4 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->repository->delete( $id );
 	}
 }
+

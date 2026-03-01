@@ -93,6 +93,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( true, $result->is_open );
 		self::assertSame( false, $result->has_target );
 		self::assertSame( 0, $result->target_amount );
+		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
 	}
 
 	#[Test]
@@ -113,6 +114,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 						CampaignPostTypeConfig::META_IS_OPEN => false,
 						CampaignPostTypeConfig::META_HAS_TARGET => true,
 						CampaignPostTypeConfig::META_TARGET_AMOUNT => 123,
+						CampaignPostTypeConfig::META_TARGET_CURRENCY => 'USD',
 					],
 				],
 			);
@@ -129,5 +131,6 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertFalse( $result->is_open );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
+		self::assertSame( 'USD', $result->target_currency );
 	}
 }

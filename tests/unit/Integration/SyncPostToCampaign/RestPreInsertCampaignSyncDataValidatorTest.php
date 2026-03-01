@@ -52,6 +52,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
@@ -74,6 +75,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository
@@ -100,9 +102,10 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
-		$persisted = $this->campaign_factory->create(
+		$persisted = $this->campaign_factory->create_from_primitives(
 			id: 10,
 			version: 5,
 			title: 'Persisted',
@@ -110,6 +113,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository
@@ -133,9 +137,10 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
-		$persisted = $this->campaign_factory->create(
+		$persisted = $this->campaign_factory->create_from_primitives(
 			id: 10,
 			version: 5,
 			title: 'Persisted',
@@ -143,6 +148,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository
@@ -172,6 +178,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository

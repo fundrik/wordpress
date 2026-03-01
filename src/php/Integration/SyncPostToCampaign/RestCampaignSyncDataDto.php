@@ -28,6 +28,7 @@ final readonly class RestCampaignSyncDataDto {
 	 * @param bool $is_open Whether the campaign is open for donations.
 	 * @param bool $has_target Whether the campaign has a fundraising target.
 	 * @param int $target_amount The fundraising target amount in minor units.
+	 * @param string $target_currency The fundraising target currency (ISO 4217).
 	 */
 	public function __construct(
 		public EntityId $id,
@@ -37,5 +38,6 @@ final readonly class RestCampaignSyncDataDto {
 		public bool $is_open,
 		public bool $has_target,
 		public int $target_amount,
+		public string $target_currency,
 	) {}
 }

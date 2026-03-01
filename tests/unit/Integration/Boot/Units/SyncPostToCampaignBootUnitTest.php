@@ -802,7 +802,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 	private function create_persisted_campaign( int $id, int $version ): Campaign {
 
-		return $this->campaign_factory->create(
+		return $this->campaign_factory->create_from_primitives(
 			id: $id,
 			version: $version,
 			title: 'Persisted campaign',
@@ -810,6 +810,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 	}
 
@@ -856,6 +857,11 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'metadata_exists' )
 			->once()
 			->with( 'post', $post_id, CampaignPostTypeConfig::META_TARGET_AMOUNT )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, CampaignPostTypeConfig::META_TARGET_CURRENCY )
 			->andReturn( false );
 
 		Functions\expect( 'get_post_meta' )->never();

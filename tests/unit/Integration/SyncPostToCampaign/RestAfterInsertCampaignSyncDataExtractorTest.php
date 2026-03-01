@@ -62,6 +62,11 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( false );
+
 		Functions\expect( 'get_post_meta' )->never();
 
 		$this->expectException( InvalidArgumentException::class );
@@ -115,6 +120,16 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->with( 10, CampaignPostTypeConfig::META_TARGET_AMOUNT, true )
 			->andReturn( '123' );
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( 10, CampaignPostTypeConfig::META_TARGET_CURRENCY, true )
+			->andReturn( 'USD' );
+
 		$result = $this->extractor->extract( $post, $this->request );
 
 		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
@@ -127,6 +142,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertFalse( $result->is_open );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
+		self::assertSame( 'USD', $result->target_currency );
 	}
 
 	#[Test]
@@ -160,6 +176,11 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( false );
+
 		Functions\expect( 'get_post_meta' )->never();
 
 		$result = $this->extractor->extract( $post, $this->request );
@@ -169,13 +190,10 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertSame( 2, $result->version->get_value() );
 
 		self::assertTrue( $result->is_active );
-		// Defaults in extractor:
-		// - META_IS_OPEN defaults to '1' -> true
-		// - META_HAS_TARGET defaults to '0' -> false
-		// - META_TARGET_AMOUNT defaults to '0' -> 0
 		self::assertTrue( $result->is_open );
 		self::assertFalse( $result->has_target );
 		self::assertSame( 0, $result->target_amount );
+		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
 	}
 
 	#[Test]
@@ -224,12 +242,23 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->with( 10, CampaignPostTypeConfig::META_TARGET_AMOUNT, true )
 			->andReturn( '0' );
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( 10, CampaignPostTypeConfig::META_TARGET_CURRENCY, true )
+			->andReturn( 'EUR' );
+
 		$result = $this->extractor->extract( $post, $this->request );
 
 		self::assertTrue( $result->is_active );
 		self::assertFalse( $result->is_open );
 		self::assertFalse( $result->has_target );
 		self::assertSame( 0, $result->target_amount );
+		self::assertSame( 'EUR', $result->target_currency );
 	}
 
 	#[Test]
@@ -263,11 +292,17 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( false );
+
 		Functions\expect( 'get_post_meta' )->never();
 
 		$result = $this->extractor->extract( $post, $this->request );
 
 		self::assertFalse( $result->is_active );
+		self::assertSame( CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY, $result->target_currency );
 	}
 
 	private function make_post( int $id, string $title, string $status = 'publish' ): WP_Post {

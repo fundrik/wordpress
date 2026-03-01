@@ -54,6 +54,10 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		$target_amount = TypeCaster::to_string(
 			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) ?? '0',
 		);
+		$target_currency = TypeCaster::to_string(
+			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+				?? CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY,
+		);
 
 		/** @var array<string, mixed> $meta */
 		$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
@@ -67,6 +71,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 			is_open: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $is_open ) ),
 			has_target: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $has_target ) ),
 			target_amount: TypeCaster::to_int( $target_amount ),
+			target_currency: $target_currency,
 		);
 	}
 	// phpcs:enable

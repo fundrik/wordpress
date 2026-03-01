@@ -135,5 +135,15 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 				'default' => 0,
 			],
 		);
+
+		$this->assert_class_constant_has_attribute(
+			class_name: CampaignPostTypeConfig::class,
+			constant_name: 'META_TARGET_CURRENCY',
+			attribute_class: PostTypeMetaField::class,
+			expected_values: [
+				'type' => MetaFieldType::String,
+				'default' => CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY,
+			],
+		);
 	}
 }

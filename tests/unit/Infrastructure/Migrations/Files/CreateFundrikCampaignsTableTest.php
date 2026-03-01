@@ -54,6 +54,7 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 					)
 						&& str_contains( $sql, $charset_collate )
 						&& str_contains( $sql, '`version` INT UNSIGNED NOT NULL DEFAULT 1' )
+						&& str_contains( $sql, '`target_currency` CHAR(3) NOT NULL' )
 						&& str_contains( $sql, 'PRIMARY KEY (`id`)' ),
 				),
 				$table_name,

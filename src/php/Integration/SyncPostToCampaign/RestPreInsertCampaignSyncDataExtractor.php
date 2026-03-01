@@ -61,6 +61,8 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 				is_open: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_IS_OPEN ) ?? true,
 				has_target: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? false,
 				target_amount: ArrayExtractor::extract_int_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT ) ?? 0,
+				target_currency: ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+					?? CampaignPostTypeConfig::DEFAULT_TARGET_CURRENCY,
 			);
 			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 

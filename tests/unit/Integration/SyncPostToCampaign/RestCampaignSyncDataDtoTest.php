@@ -28,6 +28,7 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 123,
+			target_currency: 'RUB',
 		);
 
 		self::assertSame( $id, $dto->id );
@@ -37,5 +38,6 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 		self::assertTrue( $dto->is_open );
 		self::assertFalse( $dto->has_target );
 		self::assertSame( 123, $dto->target_amount );
+		self::assertSame( 'RUB', $dto->target_currency );
 	}
 }

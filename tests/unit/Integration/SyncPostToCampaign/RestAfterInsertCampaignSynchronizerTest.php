@@ -54,9 +54,10 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'USD',
 		);
 
-		$persisted = $this->campaign_factory->create(
+		$persisted = $this->campaign_factory->create_from_primitives(
 			id: 10,
 			version: 5,
 			title: 'Persisted',
@@ -64,6 +65,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'USD',
 		);
 
 		$this->campaign_repository
@@ -79,13 +81,14 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->andReturnUsing(
 				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
-					self::assertSame( 10, $campaign->get_id() );
+					self::assertSame( 10, $campaign->get_id()->get_value() );
 					self::assertSame( 5, $campaign->get_version()->get_value() );
 					self::assertSame( 'Title', $campaign->get_title() );
 					self::assertFalse( $campaign->is_active() );
 					self::assertTrue( $campaign->is_open() );
 					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_amount() );
+					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
+					self::assertSame( 'USD', $campaign->get_target_money()->get_currency() );
 
 					return new CampaignRepositorySaveOutcome(
 						result: CampaignRepositorySaveResult::Updated,
@@ -108,6 +111,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'EUR',
 		);
 
 		$this->campaign_repository
@@ -122,13 +126,14 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->andReturnUsing(
 				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
-					self::assertSame( 10, $campaign->get_id() );
+					self::assertSame( 10, $campaign->get_id()->get_value() );
 					self::assertSame( 1, $campaign->get_version()->get_value() );
 					self::assertSame( 'Title', $campaign->get_title() );
 					self::assertTrue( $campaign->is_active() );
 					self::assertTrue( $campaign->is_open() );
 					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_amount() );
+					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
+					self::assertSame( 'EUR', $campaign->get_target_money()->get_currency() );
 
 					return new CampaignRepositorySaveOutcome(
 						result: CampaignRepositorySaveResult::Inserted,
@@ -151,6 +156,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			is_open: true,
 			has_target: false,
 			target_amount: 0,
+			target_currency: 'RUB',
 		);
 
 		$this->campaign_repository
@@ -165,13 +171,14 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->andReturnUsing(
 				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
-					self::assertSame( 10, $campaign->get_id() );
+					self::assertSame( 10, $campaign->get_id()->get_value() );
 					self::assertSame( 1, $campaign->get_version()->get_value() );
 					self::assertSame( 'Title', $campaign->get_title() );
 					self::assertTrue( $campaign->is_active() );
 					self::assertTrue( $campaign->is_open() );
 					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_amount() );
+					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
+					self::assertSame( 'RUB', $campaign->get_target_money()->get_currency() );
 
 					return new CampaignRepositorySaveOutcome(
 						result: CampaignRepositorySaveResult::Inserted,

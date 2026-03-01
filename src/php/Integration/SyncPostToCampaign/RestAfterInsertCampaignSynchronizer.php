@@ -44,14 +44,15 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 
 		$expected_version = $this->get_expected_version_or_initial( $data );
 
-		$campaign = $this->campaign_factory->create(
-			id: $data->id,
-			version: $expected_version,
+		$campaign = $this->campaign_factory->create_from_primitives(
+			id: $data->id->get_value(),
+			version: $expected_version->get_value(),
 			title: $data->title,
 			is_active: $data->is_active,
 			is_open: $data->is_open,
 			has_target: $data->has_target,
 			target_amount: $data->target_amount,
+			target_currency: $data->target_currency,
 		);
 
 		$this->campaign_repository->save( $campaign );

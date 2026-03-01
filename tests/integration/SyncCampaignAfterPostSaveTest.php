@@ -68,6 +68,7 @@ final class SyncCampaignAfterPostSaveTest extends TestCase {
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_IS_OPEN, true );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_HAS_TARGET, true );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_AMOUNT, 700 );
+		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_CURRENCY, 'RUB' );
 
 		$post = get_post( $post_id );
 		self::assertInstanceOf( WP_Post::class, $post );
@@ -84,6 +85,7 @@ final class SyncCampaignAfterPostSaveTest extends TestCase {
 		self::assertSame( 1, (int) $row['is_open'] );
 		self::assertSame( 1, (int) $row['has_target'] );
 		self::assertSame( 700, (int) $row['target_amount'] );
+		self::assertSame( 'RUB', (string) $row['target_currency'] );
 	}
 
 	#[Test]
@@ -113,6 +115,7 @@ final class SyncCampaignAfterPostSaveTest extends TestCase {
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_IS_OPEN, true );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_HAS_TARGET, false );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_AMOUNT, 0 );
+		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_CURRENCY, 'RUB' );
 
 		$initial_post = get_post( $post_id );
 		self::assertInstanceOf( WP_Post::class, $initial_post );
@@ -133,6 +136,7 @@ final class SyncCampaignAfterPostSaveTest extends TestCase {
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_IS_OPEN, false );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_HAS_TARGET, true );
 		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_AMOUNT, 1_500 );
+		update_post_meta( $post_id, CampaignPostTypeConfig::META_TARGET_CURRENCY, 'USD' );
 
 		$updated_post = get_post( $post_id );
 		self::assertInstanceOf( WP_Post::class, $updated_post );
@@ -149,6 +153,7 @@ final class SyncCampaignAfterPostSaveTest extends TestCase {
 		self::assertSame( 0, (int) $row['is_open'] );
 		self::assertSame( 1, (int) $row['has_target'] );
 		self::assertSame( 1_500, (int) $row['target_amount'] );
+		self::assertSame( 'USD', (string) $row['target_currency'] );
 	}
 
 	private function assert_table_exists( wpdb $wpdb, string $table_name ): void {

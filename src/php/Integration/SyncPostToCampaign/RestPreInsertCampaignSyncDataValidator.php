@@ -66,14 +66,15 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 
 		try {
 
-			$this->campaign_factory->create(
-				id: $data->id,
-				version: $data->version,
+			$this->campaign_factory->create_from_primitives(
+				id: $data->id->get_value(),
+				version: $data->version->get_value(),
 				title: $data->title,
 				is_active: $data->is_active,
 				is_open: $data->is_open,
 				has_target: $data->has_target,
 				target_amount: $data->target_amount,
+				target_currency: $data->target_currency,
 			);
 
 			return null;

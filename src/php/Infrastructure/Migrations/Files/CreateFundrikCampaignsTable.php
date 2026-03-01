@@ -42,6 +42,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 				`is_open` TINYINT(1) NOT NULL DEFAULT 0,
 				`has_target` TINYINT(1) NOT NULL DEFAULT 0,
 				`target_amount` INT UNSIGNED NOT NULL DEFAULT 0,
+				`target_currency` CHAR(3) NOT NULL,
 				PRIMARY KEY (`id`)
 			) ENGINE=InnoDB {$charset_collate};
 		";

@@ -138,7 +138,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function insert( Campaign $campaign ): Campaign {
 
-		$campaign_entity_id = $campaign->get_entity_id();
+		$campaign_entity_id = $campaign->get_id();
 		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
 
 		$data = $this->map_campaign_to_row( $campaign );
@@ -184,7 +184,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function update( Campaign $campaign ): Campaign {
 
-		$campaign_entity_id = $campaign->get_entity_id();
+		$campaign_entity_id = $campaign->get_id();
 		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
 
 		$expected_version = $campaign->get_version();
@@ -261,7 +261,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function save( Campaign $campaign ): CampaignRepositorySaveOutcome {
 
-		$entity_id = $campaign->get_entity_id();
+		$entity_id = $campaign->get_id();
 
 		if ( $this->exists_by_id( $entity_id ) ) {
 
@@ -332,6 +332,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		}
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Builds a Campaign entity from a persistence row.
 	 *
@@ -349,7 +350,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 
-			return $this->campaign_factory->create(
+			return $this->campaign_factory->create_from_primitives(
 				id: ArrayExtractor::extract_int_required( $row, 'id' ),
 				version: ArrayExtractor::extract_int_required( $row, 'version' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
@@ -357,6 +358,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
 				has_target: ArrayExtractor::extract_bool_required( $row, 'has_target' ),
 				target_amount: ArrayExtractor::extract_int_required( $row, 'target_amount' ),
+				target_currency: ArrayExtractor::extract_string_required( $row, 'target_currency' ),
 			);
 		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
 
@@ -371,6 +373,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			);
 		}
 	}
+	// phpcs:enable
 
 	/**
 	 * Converts a Campaign entity into a persistence row.
@@ -384,12 +387,13 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	private function map_campaign_to_row( Campaign $campaign ): array {
 
 		return [
-			'id' => $campaign->get_id(),
+			'id' => $campaign->get_id()->get_as_int(),
 			'title' => $campaign->get_title(),
 			'is_active' => $campaign->is_active(),
 			'is_open' => $campaign->is_open(),
 			'has_target' => $campaign->has_target(),
-			'target_amount' => $campaign->get_target_amount(),
+			'target_amount' => $campaign->get_target_money()->get_amount_minor(),
+			'target_currency' => $campaign->get_target_money()->get_currency(),
 		];
 	}
 }
