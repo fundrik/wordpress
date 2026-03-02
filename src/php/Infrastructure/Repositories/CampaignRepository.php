@@ -15,8 +15,8 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 
 /**
  * Persists and retrieves campaigns in the storage.
@@ -32,11 +32,11 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param DatabaseInterface $db Executes database queries.
+	 * @param DatabasePort $db Executes database queries.
 	 * @param CampaignFactory $campaign_factory Builds Campaign entities from persistence values.
 	 */
 	public function __construct(
-		private DatabaseInterface $db,
+		private DatabasePort $db,
 		private CampaignFactory $campaign_factory,
 	) {}
 
@@ -57,7 +57,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_int );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot fetch campaign: persistence error. Given: ID %d.', $id_int ),
@@ -87,7 +87,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			$rows = $this->db->get_all( self::TABLE_NAME );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException( 'Cannot fetch campaigns: persistence error.', previous: $e );
 		}
@@ -115,7 +115,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_int );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot check campaign existence: persistence error. Given: ID %d.', $id_int ),
@@ -146,7 +146,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			$this->db->insert( self::TABLE_NAME, $data );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign_id_int ),
@@ -204,7 +204,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				],
 			);
 
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot update campaign: persistence error. Given: ID %d.', $campaign_id_int ),
@@ -296,7 +296,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			$this->db->delete( self::TABLE_NAME, $id_int );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Cannot delete campaign: persistence error. Given: ID %d.', $id_int ),

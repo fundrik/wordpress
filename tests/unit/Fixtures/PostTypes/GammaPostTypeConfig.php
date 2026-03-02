@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Fixtures\PostTypes;
 
-use Fundrik\WordPress\Integration\MetaFieldType;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
 
 final class GammaPostTypeConfig implements PostTypeConfigInterface {
 
-	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Boolean, default: true )]
 	public const string META_IS_OPEN = 'gamma_is_open';
 
-	#[PostTypeMetaField( type: MetaFieldType::Integer, default: 0 )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Integer, default: 0 )]
 	public const string META_AMOUNT = 'gamma_amount';
 
 	public function get_id(): string {

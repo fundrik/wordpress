@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Kernel\Ports;
 
 /**
- * Provides methods for registering all hook dispatchers.
+ * Provides the outbound port for registering hook dispatchers.
  *
  * @since 1.0.0
  *

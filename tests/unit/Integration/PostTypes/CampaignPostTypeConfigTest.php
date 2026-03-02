@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 
-use Fundrik\WordPress\Integration\MetaFieldType;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -111,7 +111,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_IS_OPEN',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => MetaFieldType::Boolean,
+				'type' => PostTypeMetaFieldType::Boolean,
 				'default' => true,
 			],
 		);
@@ -121,7 +121,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_HAS_TARGET',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => MetaFieldType::Boolean,
+				'type' => PostTypeMetaFieldType::Boolean,
 				'default' => false,
 			],
 		);
@@ -131,7 +131,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_TARGET_AMOUNT',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => MetaFieldType::Integer,
+				'type' => PostTypeMetaFieldType::Integer,
 				'default' => 0,
 			],
 		);
@@ -141,7 +141,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_TARGET_CURRENCY',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => MetaFieldType::String,
+				'type' => PostTypeMetaFieldType::String,
 				'default' => 'RUB',
 			],
 		);

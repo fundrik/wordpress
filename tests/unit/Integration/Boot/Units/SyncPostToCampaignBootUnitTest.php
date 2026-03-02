@@ -8,6 +8,8 @@ use Brain\Monkey\Functions;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
@@ -73,6 +75,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
 	private CampaignRepositoryPort&MockInterface $validator_campaign_repository;
 	private CampaignRepositoryPort&MockInterface $synchronizer_campaign_repository;
+	private SaveCampaignUseCase&MockInterface $save_campaign_use_case;
+	private DeleteCampaignUseCase&MockInterface $delete_campaign_use_case;
 
 	private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor;
 	private RestPreInsertCampaignSyncDataValidator $pre_insert_validator;
@@ -116,6 +120,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->validator_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->synchronizer_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
+		$this->save_campaign_use_case = Mockery::mock( SaveCampaignUseCase::class );
+		$this->delete_campaign_use_case = Mockery::mock( DeleteCampaignUseCase::class );
 
 		$meta_field_reader = new PostTypeMetaFieldReader();
 		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $meta_field_reader );
@@ -127,6 +133,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer(
 			$this->campaign_factory,
 			$this->synchronizer_campaign_repository,
+			$this->save_campaign_use_case,
 		);
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
@@ -138,6 +145,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->delete_post_hook,
 			$this->enqueue_block_editor_assets_hook,
 			$this->campaign_repository,
+			$this->delete_campaign_use_case,
 			$this->pre_insert_extractor,
 			$this->pre_insert_validator,
 			$this->after_insert_extractor,
@@ -481,8 +489,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$post = $this->make_post( 31, 'Campaign title', CampaignPostTypeConfig::ID );
 
-		$this->campaign_repository
-			->shouldReceive( 'delete' )
+		$this->delete_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with(
 				Mockery::on(
@@ -518,7 +526,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$post = $this->make_post( 32, 'Regular post', 'post' );
 
-		$this->campaign_repository->shouldNotReceive( 'delete' );
+		$this->delete_campaign_use_case->shouldNotReceive( 'handle' );
 		$this->psr_logger->shouldNotReceive( 'info' );
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();
@@ -534,8 +542,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$exception = new FakeCampaignRepositoryException( 'DB delete failed.' );
 		$post = $this->make_post( 33, 'Campaign title', CampaignPostTypeConfig::ID );
 
-		$this->campaign_repository
-			->shouldReceive( 'delete' )
+		$this->delete_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with(
 				Mockery::on(
@@ -594,7 +602,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->expect_after_insert_meta_defaults( 21 );
 		$this->synchronizer_campaign_repository->shouldNotReceive( 'find_by_id' );
-		$this->synchronizer_campaign_repository->shouldNotReceive( 'save' );
+		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -641,7 +649,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andReturn( null );
 
-		$this->synchronizer_campaign_repository->shouldNotReceive( 'save' );
+		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -710,8 +718,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andReturn( null );
 
-		$this->synchronizer_campaign_repository
-			->shouldReceive( 'save' )
+		$this->save_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with( Mockery::type( Campaign::class ) )
 			->andReturnUsing(
@@ -765,8 +773,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andReturn( null );
 
-		$this->synchronizer_campaign_repository
-			->shouldReceive( 'save' )
+		$this->save_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with( Mockery::type( Campaign::class ) )
 			->andReturnUsing(

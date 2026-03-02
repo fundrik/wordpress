@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration;
 
-use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Infrastructure\StoragePort;
 
 /**
  * Provides access to WordPress options storage.
@@ -13,7 +13,7 @@ use Fundrik\WordPress\Infrastructure\StorageInterface;
  *
  * @internal
  */
-final readonly class WordPressOptionsStorage implements StorageInterface {
+final readonly class WordPressOptionsStorage implements StoragePort {
 
 	/**
 	 * Retrieves the stored value for the given key, or returns the default.

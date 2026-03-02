@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations\Files;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -21,13 +21,13 @@ use PHPUnit\Framework\Attributes\UsesClass;
 final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 
 	private CreateFundrikCampaignsTable $migration;
-	private DatabaseInterface&MockInterface $db;
+	private DatabasePort&MockInterface $db;
 
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->db = Mockery::mock( DatabaseInterface::class );
+		$this->db = Mockery::mock( DatabasePort::class );
 		$this->migration = new CreateFundrikCampaignsTable( $this->db );
 	}
 
@@ -77,7 +77,7 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'query_with_args' )
 			->once()
-			->andThrow( new DatabaseException( 'DB failed' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed' ) );
 
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Cannot create the "wp_fundrik_campaigns" table.' );

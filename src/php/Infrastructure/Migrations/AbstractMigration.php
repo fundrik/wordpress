@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 
 /**
  * Defines a base class for applying database migrations.
@@ -20,10 +20,10 @@ abstract readonly class AbstractMigration {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DatabaseInterface $database Executes SQL queries during the migration.
+	 * @param DatabasePort $database Executes SQL queries during the migration.
 	 */
 	public function __construct(
-		protected DatabaseInterface $database,
+		protected DatabasePort $database,
 	) {}
 
 	/**

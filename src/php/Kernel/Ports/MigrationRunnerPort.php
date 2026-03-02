@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Kernel\Ports;
 
 /**
- * Provides methods for running database migrations.
+ * Provides the outbound port for running migrations.
  *
  * @since 1.0.0
  *

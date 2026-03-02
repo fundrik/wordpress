@@ -6,7 +6,9 @@ namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusExceptionInterface;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 
 /**
@@ -24,11 +26,14 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 * @since 1.0.0
 	 *
 	 * @param CampaignFactory $campaign_factory Builds Campaign entities from primitives.
-	 * @param CampaignRepositoryPort $campaign_repository Saves campaigns to persistence.
+	 * @param CampaignRepositoryPort $campaign_repository Reads persisted campaigns to resolve
+	 *                                                    optimistic-locking versions.
+	 * @param SaveCampaignUseCase $save_campaign_use_case Saves campaigns and publishes application events.
 	 */
 	public function __construct(
 		private CampaignFactory $campaign_factory,
 		private CampaignRepositoryPort $campaign_repository,
+		private SaveCampaignUseCase $save_campaign_use_case,
 	) {}
 
 	/**
@@ -39,6 +44,9 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 * @since 1.0.0
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 *
+	 * @throws CampaignRepositoryExceptionInterface When saving the campaign fails.
+	 * @throws ApplicationEventBusExceptionInterface When publishing the campaign created/updated event fails.
 	 */
 	public function sync( RestCampaignSyncDataDto $data ): void {
 
@@ -55,7 +63,7 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 			target_currency: $data->target_currency,
 		);
 
-		$this->campaign_repository->save( $campaign );
+		$this->save_campaign_use_case->handle( $campaign );
 	}
 
 	/**

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
-use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**
@@ -28,16 +28,16 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DatabaseInterface $database Provides access to the database.
-	 * @param StorageInterface $storage Stores and retrieves the current schema version.
+	 * @param DatabasePort $database Provides access to the database.
+	 * @param StoragePort $storage Stores and retrieves the current schema version.
 	 * @param MigrationVersionReader $version_reader Reads migration versions from classes.
 	 * @param MigrationRegistry $registry Provides the list of available migrations and the target version.
 	 * @param MigrationRunnerLogger $logger Logs the migration steps for debugging and traceability.
 	 * @param MigrationFactory $migration_factory Creates migration instances.
 	 */
 	public function __construct(
-		private DatabaseInterface $database,
-		private StorageInterface $storage,
+		private DatabasePort $database,
+		private StoragePort $storage,
 		private MigrationVersionReader $version_reader,
 		private MigrationRegistry $registry,
 		private MigrationRunnerLogger $logger,
@@ -211,7 +211,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 
 		try {
 			return $this->database->get_charset_collate();
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 			$this->logger->log_charset_collate_failed( $e );
 			throw new MigrationException( 'Cannot determine database charset and collation.', previous: $e );
 		}

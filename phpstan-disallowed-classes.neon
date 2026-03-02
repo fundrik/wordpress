@@ -10,13 +10,13 @@ parameters:
 
 		-
 			class: Fundrik\WordPress\Integration\WpdbDatabase
-			message: 'Use Fundrik\WordPress\Infrastructure\Database\DatabaseInterface instead.'
+			message: 'Use Fundrik\WordPress\Infrastructure\DatabasePort instead.'
 			allowIn:
 				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 
 		-
 			class: Fundrik\WordPress\Integration\WordPressOptionsStorage
-			message: 'Use Fundrik\WordPress\Infrastructure\StorageInterface instead.'
+			message: 'Use Fundrik\WordPress\Infrastructure\StoragePort instead.'
 			allowIn:
 				- src/php/Kernel/Container/ContainerBindingsRegistry.php
 

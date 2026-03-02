@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations\Files;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
@@ -49,7 +49,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 
 		try {
 			$this->database->query_with_args( $sql, $table_name );
-		} catch ( DatabaseException $e ) {
+		} catch ( DatabaseExceptionInterface $e ) {
 			throw new MigrationException(
 				sprintf( 'Cannot create the "%s" table.', $table_name ),
 				previous: $e,

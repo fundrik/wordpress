@@ -6,7 +6,9 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
+use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusExceptionInterface;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\TypeCaster;
@@ -59,6 +61,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 * @param DeletePostActionHookDispatcher $delete_post_hook The post deletion action hook.
 	 * @param EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook The block editor assets action hook.
 	 * @param CampaignRepositoryPort $campaign_repository The campaign repository for reading the persisted version.
+	 * @param DeleteCampaignUseCase $delete_campaign_use_case Deletes campaigns and publishes application events.
 	 * @param RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor The extractor for pre-insert synchronization data.
 	 * @param RestPreInsertCampaignSyncDataValidator $pre_insert_validator The validator for pre-insert synchronization data.
 	 * @param RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor The extractor for after-insert synchronization data.
@@ -72,6 +75,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		private DeletePostActionHookDispatcher $delete_post_hook,
 		private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook,
 		private CampaignRepositoryPort $campaign_repository,
+		private DeleteCampaignUseCase $delete_campaign_use_case,
 		private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor,
 		private RestPreInsertCampaignSyncDataValidator $pre_insert_validator,
 		private RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor,
@@ -254,7 +258,11 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 			$this->after_insert_synchronizer->sync( $data );
 
-		} catch ( CampaignFactoryException | CampaignRepositoryExceptionInterface $e ) {
+		} catch (
+			CampaignFactoryException |
+			CampaignRepositoryExceptionInterface |
+			ApplicationEventBusExceptionInterface $e
+		) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after REST save failed.',
@@ -300,8 +308,8 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		$entity_id = EntityId::create( $post_id );
 
 		try {
-			$this->campaign_repository->delete( $entity_id );
-		} catch ( CampaignRepositoryExceptionInterface $e ) {
+			$this->delete_campaign_use_case->handle( $entity_id );
+		} catch ( CampaignRepositoryExceptionInterface | ApplicationEventBusExceptionInterface $e ) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after post delete failed.',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationFactory;
@@ -22,14 +22,14 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( AbstractMigration::class )]
 final class MigrationFactoryTest extends MockeryTestCase {
 
-	private DatabaseInterface&MockInterface $database;
+	private DatabasePort&MockInterface $database;
 	private MigrationFactory $factory;
 
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->database = Mockery::mock( DatabaseInterface::class );
+		$this->database = Mockery::mock( DatabasePort::class );
 		$this->factory = new MigrationFactory( $this->database );
 	}
 

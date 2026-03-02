@@ -5,13 +5,21 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Kernel\Container;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
+use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
-use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Infrastructure\StoragePort;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
+use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
@@ -62,9 +70,13 @@ class ContainerBindingsRegistry {
 
 			MigrationRunnerPort::class => MigrationRunner::class,
 
-			DatabaseInterface::class => WpdbDatabase::class,
-			StorageInterface::class => WordPressOptionsStorage::class,
+			DatabasePort::class => WpdbDatabase::class,
+			StoragePort::class => WordPressOptionsStorage::class,
 			CampaignRepositoryPort::class => CampaignRepository::class,
+			ApplicationEventBusPort::class => ApplicationEventBus::class,
+			ApplicationEventPublisherPort::class => WordPressActionApplicationEventPublisher::class,
+			SaveCampaignUseCase::class => SaveCampaignHandler::class,
+			DeleteCampaignUseCase::class => DeleteCampaignHandler::class,
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			BootUnitRunnerPort::class => BootUnitRunner::class,

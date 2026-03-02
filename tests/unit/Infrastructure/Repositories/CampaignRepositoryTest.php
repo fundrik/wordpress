@@ -8,10 +8,10 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepositoryException;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -23,7 +23,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 	private const TABLE_NAME = 'fundrik_campaigns';
 
-	private DatabaseInterface&MockInterface $db;
+	private DatabasePort&MockInterface $db;
 
 	private CampaignFactory $campaign_factory;
 
@@ -33,7 +33,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		$this->db = Mockery::mock( DatabaseInterface::class );
+		$this->db = Mockery::mock( DatabasePort::class );
 		$this->campaign_factory = new CampaignFactory();
 
 		$this->repository = new CampaignRepository( $this->db, $this->campaign_factory );
@@ -112,7 +112,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot fetch campaign: persistence error. Given: ID 7.' );
@@ -222,7 +222,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_all' )
 			->once()
 			->with( self::TABLE_NAME )
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot fetch campaigns: persistence error.' );
@@ -314,7 +314,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot check campaign existence: persistence error. Given: ID 7.' );
@@ -436,7 +436,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'version' => 3,
 				],
 			)
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'get_by_id' );
 
@@ -613,7 +613,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					'version' => 3,
 				],
 			)
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'exists_by_id' );
 		$this->db->shouldNotReceive( 'get_by_id' );
@@ -910,7 +910,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'insert' );
 		$this->db->shouldNotReceive( 'update' );
@@ -945,7 +945,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'insert' )
 			->once()
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'get_by_id' );
 
@@ -978,7 +978,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db
 			->shouldReceive( 'update' )
 			->once()
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->db->shouldNotReceive( 'get_by_id' );
 
@@ -1027,7 +1027,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new DatabaseException( 'DB failed.' ) );
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot delete campaign: persistence error. Given: ID 7.' );

@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
@@ -27,6 +28,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
+	private SaveCampaignUseCase&MockInterface $save_campaign_use_case;
 
 	private RestAfterInsertCampaignSynchronizer $synchronizer;
 
@@ -36,10 +38,12 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->campaign_factory = new CampaignFactory();
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
+		$this->save_campaign_use_case = Mockery::mock( SaveCampaignUseCase::class );
 
 		$this->synchronizer = new RestAfterInsertCampaignSynchronizer(
 			$this->campaign_factory,
 			$this->campaign_repository,
+			$this->save_campaign_use_case,
 		);
 	}
 
@@ -74,8 +78,8 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andReturn( $persisted );
 
-		$this->campaign_repository
-			->shouldReceive( 'save' )
+		$this->save_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with( Mockery::type( Campaign::class ) )
 			->andReturnUsing(
@@ -119,8 +123,8 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->once()
 			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
 
-		$this->campaign_repository
-			->shouldReceive( 'save' )
+		$this->save_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with( Mockery::type( Campaign::class ) )
 			->andReturnUsing(
@@ -164,8 +168,8 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->once()
 			->andReturn( null );
 
-		$this->campaign_repository
-			->shouldReceive( 'save' )
+		$this->save_campaign_use_case
+			->shouldReceive( 'handle' )
 			->once()
 			->with( Mockery::type( Campaign::class ) )
 			->andReturnUsing(

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure;
 
 /**
- * Provides methods for accessing persistent key-value storage.
+ * Provides the outbound port for key-value storage access.
  *
  * @since 1.0.0
  *
  * @internal
  */
-interface StorageInterface {
+interface StoragePort {
 
 	/**
 	 * Retrieves the stored value for the given key, or returns the default.

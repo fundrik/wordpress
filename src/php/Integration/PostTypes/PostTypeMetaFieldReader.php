@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\PostTypes;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\MetaFieldType;
 use InvalidArgumentException;
 use ReflectionClass;
 
@@ -190,9 +189,9 @@ final readonly class PostTypeMetaFieldReader {
 		}
 
 		$is_valid = match ( $type ) {
-			MetaFieldType::Boolean->value => is_bool( $default ),
-			MetaFieldType::Integer->value => is_int( $default ),
-			MetaFieldType::String->value => is_string( $default ),
+			PostTypeMetaFieldType::Boolean->value => is_bool( $default ),
+			PostTypeMetaFieldType::Integer->value => is_int( $default ),
+			PostTypeMetaFieldType::String->value => is_string( $default ),
 			default => false,
 		};
 

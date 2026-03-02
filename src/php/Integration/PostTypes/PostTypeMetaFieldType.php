@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration;
+namespace Fundrik\WordPress\Integration\PostTypes;
 
 /**
  * Defines the allowed data types for WordPress meta fields.
@@ -11,7 +11,7 @@ namespace Fundrik\WordPress\Integration;
  *
  * @internal
  */
-enum MetaFieldType: string {
+enum PostTypeMetaFieldType: string {
 
 	case String = 'string';
 	case Boolean = 'boolean';

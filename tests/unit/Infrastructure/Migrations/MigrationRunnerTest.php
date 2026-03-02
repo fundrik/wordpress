@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationFactory;
@@ -14,8 +13,9 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersionReader;
-use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Infrastructure\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\DuplicateVersionMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\FailingMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\NewMigration1;
@@ -38,8 +38,8 @@ use Psr\Log\LoggerInterface;
 #[UsesClass( MigrationVersionReader::class )]
 final class MigrationRunnerTest extends MockeryTestCase {
 
-	private DatabaseInterface&MockInterface $database;
-	private StorageInterface&MockInterface $storage;
+	private DatabasePort&MockInterface $database;
+	private StoragePort&MockInterface $storage;
 	private MigrationRegistry&MockInterface $registry;
 
 	private LoggerInterface&MockInterface $psr_logger;
@@ -54,8 +54,8 @@ final class MigrationRunnerTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		$this->database = Mockery::mock( DatabaseInterface::class );
-		$this->storage = Mockery::mock( StorageInterface::class );
+		$this->database = Mockery::mock( DatabasePort::class );
+		$this->storage = Mockery::mock( StoragePort::class );
 		$this->registry = Mockery::mock( MigrationRegistry::class );
 
 		$this->psr_logger = Mockery::mock( LoggerInterface::class );
@@ -237,7 +237,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	#[Test]
 	public function it_throws_when_charset_collate_cannot_be_determined(): void {
 
-		$e = new DatabaseException( 'No charset' );
+		$e = new FakeDatabaseException( 'No charset' );
 
 		$this->registry
 			->shouldReceive( 'get_target_db_version' )

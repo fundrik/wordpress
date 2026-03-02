@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Infrastructure\StorageInterface;
+use Fundrik\WordPress\Infrastructure\StoragePort;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,7 +26,7 @@ final class WordPressOptionsStorageTest extends MockeryTestCase {
 	#[Test]
 	public function it_implements_storage_interface(): void {
 
-		self::assertInstanceOf( StorageInterface::class, $this->storage );
+		self::assertInstanceOf( StoragePort::class, $this->storage );
 	}
 
 	#[Test]

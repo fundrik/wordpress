@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
+use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Psr\Log\LoggerInterface;
 
@@ -33,9 +33,9 @@ final readonly class MigrationRunnerLogger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DatabaseException $e The database exception thrown during charset/collation lookup.
+	 * @param DatabaseExceptionInterface $e The database exception thrown during charset/collation lookup.
 	 */
-	public function log_charset_collate_failed( DatabaseException $e ): void {
+	public function log_charset_collate_failed( DatabaseExceptionInterface $e ): void {
 
 		$this->logger->error(
 			'Fetching database charset/collation failed.',

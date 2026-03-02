@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Kernel\Ports;
 
 /**
- * Provides methods for running all boot units.
+ * Provides the outbound port for running boot units.
  *
  * @since 1.0.0
  *

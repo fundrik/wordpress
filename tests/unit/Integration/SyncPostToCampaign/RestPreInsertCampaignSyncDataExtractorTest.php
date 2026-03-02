@@ -143,5 +143,4 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( 123, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
-
 }

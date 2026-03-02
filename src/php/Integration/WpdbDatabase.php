@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 use wpdb;
 
 /**
@@ -15,7 +14,7 @@ use wpdb;
  *
  * @internal
  */
-final readonly class WpdbDatabase implements DatabaseInterface {
+final readonly class WpdbDatabase implements DatabasePort {
 
 	/**
 	 * Provides access to the global WordPress database connection.
@@ -36,7 +35,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( ! $wpdb instanceof wpdb ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				'Cannot initialize database adapter: global $wpdb is not available or has invalid type.',
 			);
 		}
@@ -54,7 +53,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return array<string, int|float|string|bool|null>|null The result row, or null if not found.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws WpdbDatabaseException When the query fails.
 	 */
 	public function get_by_id( string $table, int|string $id ): ?array {
 
@@ -71,7 +70,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot fetch row by ID: database query failed for table "%s", error: %s. Given: %s.',
 					$table,
@@ -100,7 +99,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @phpstan-return list<array<string, int|float|string|bool|null>>
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws WpdbDatabaseException When the query fails.
 	 */
 	public function get_all( string $table ): array {
 
@@ -115,7 +114,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot fetch rows: database query failed for table "%s". Error: %s.',
 					$table,
@@ -149,7 +148,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return bool True if a matching row exists.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws WpdbDatabaseException When the query fails.
 	 */
 	public function exists_by_id( string $table, int|string $id ): bool {
 
@@ -165,7 +164,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot check row existence: database query failed for table "%s". Error: %s. Given: %s.',
 					$table,
@@ -189,7 +188,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return bool True if a matching row exists.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws WpdbDatabaseException When the query fails.
 	 */
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool {
 
@@ -205,7 +204,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
 					'Cannot check row existence: database query failed for table "%s", column "%s". Error: %s. Given: %s.',
@@ -228,7 +227,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to insert.
 	 *
-	 * @throws DatabaseException When the insert fails.
+	 * @throws WpdbDatabaseException When the insert fails.
 	 */
 	public function insert( string $table, array $data ): void {
 
@@ -237,7 +236,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot insert row: database operation failed for table "%s". Error: %s.',
 					$table,
@@ -258,7 +257,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return int The number of affected rows.
 	 *
-	 * @throws DatabaseException When the update fails.
+	 * @throws WpdbDatabaseException When the update fails.
 	 */
 	public function update( string $table, array $data, array $where ): int {
 
@@ -267,7 +266,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot update row(s): database operation failed for table "%s". Error: %s.',
 					$table,
@@ -287,7 +286,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param int|string $id The row ID to delete.
 	 *
-	 * @throws DatabaseException When the delete fails.
+	 * @throws WpdbDatabaseException When the delete fails.
 	 */
 	public function delete( string $table, int|string $id ): void {
 
@@ -299,7 +298,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot delete row: database operation failed for table "%s". Error: %s. Given: %s.',
 					$table,
@@ -317,7 +316,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @param string $sql The SQL query to execute.
 	 *
-	 * @throws DatabaseException When execution fails.
+	 * @throws WpdbDatabaseException When execution fails.
 	 */
 	public function query( string $sql ): void {
 
@@ -326,7 +325,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot execute query: database operation failed. Error: %s.',
 					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
@@ -343,7 +342,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 * @param string $sql The SQL query template with placeholders.
 	 * @param int|float|string|bool|null ...$args The values to bind to placeholders.
 	 *
-	 * @throws DatabaseException When preparing or executing fails.
+	 * @throws WpdbDatabaseException When preparing or executing fails.
 	 */
 	public function query_with_args( string $sql, int|float|string|bool|null ...$args ): void {
 
@@ -352,7 +351,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( ! is_string( $query ) ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot prepare query: wpdb->prepare() must return a non-empty string. Given: %s.',
 					get_debug_type( $query ),
@@ -370,7 +369,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return string The charset and collation string, e.g. "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci".
 	 *
-	 * @throws DatabaseException When the information cannot be determined.
+	 * @throws WpdbDatabaseException When the information cannot be determined.
 	 */
 	public function get_charset_collate(): string {
 
@@ -378,7 +377,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( $charset_collate === '' ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				'Cannot determine database charset and collate: wpdb returned an empty collation string.',
 			);
 		}
@@ -395,7 +394,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return string The table name with prefix applied.
 	 *
-	 * @throws DatabaseException When the prefix cannot be determined.
+	 * @throws WpdbDatabaseException When the prefix cannot be determined.
 	 */
 	public function qualify_table_name( string $table ): string {
 
@@ -403,7 +402,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 		if ( ! is_string( $prefix ) ) {
 
-			throw new DatabaseException(
+			throw new WpdbDatabaseException(
 				sprintf(
 					'Cannot determine database table prefix: wpdb returned invalid type %s.',
 					get_debug_type( $prefix ),
@@ -427,7 +426,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 	 *
 	 * @return array<string, int|float|string|bool|null> The validated database row.
 	 *
-	 * @throws DatabaseException When a non-scalar value is encountered.
+	 * @throws WpdbDatabaseException When a non-scalar value is encountered.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -439,7 +438,7 @@ final readonly class WpdbDatabase implements DatabaseInterface {
 
 			if ( $value !== null && ! is_scalar( $value ) ) {
 
-				throw new DatabaseException(
+				throw new WpdbDatabaseException(
 					sprintf(
 						'DB value must be scalar or null. Key: "%s". Given: %s.',
 						$key,

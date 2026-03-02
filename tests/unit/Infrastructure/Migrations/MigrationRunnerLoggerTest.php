@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -32,7 +32,7 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 	#[Test]
 	public function it_logs_charset_collate_failed_as_error(): void {
 
-		$e = new DatabaseException( 'No charset' );
+		$e = new FakeDatabaseException( 'No charset' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )

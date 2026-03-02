@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabaseInterface;
+use Fundrik\WordPress\Infrastructure\DatabasePort;
 
 /**
  * Creates migration instances.
@@ -20,10 +20,10 @@ final readonly class MigrationFactory {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DatabaseInterface $database Executes SQL queries during the migration.
+	 * @param DatabasePort $database Executes SQL queries during the migration.
 	 */
 	public function __construct(
-		private DatabaseInterface $database,
+		private DatabasePort $database,
 	) {}
 
 	/**

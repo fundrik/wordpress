@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure;
 
 /**
- * Provides methods for accessing database queries and schema metadata.
+ * Provides the outbound port for database access.
  *
  * @since 1.0.0
  *
  * @internal
  */
-interface DatabaseInterface {
+interface DatabasePort {
 
 	/**
 	 * Fetches the row by the given ID.
@@ -23,7 +23,7 @@ interface DatabaseInterface {
 	 *
 	 * @return array<string, int|float|string|bool|null>|null The row data if found, null otherwise.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
 	public function get_by_id( string $table, int|string $id ): ?array;
 
@@ -38,7 +38,7 @@ interface DatabaseInterface {
 	 *
 	 * @phpstan-return list<array<string, int|float|string|bool|null>>
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
 	public function get_all( string $table ): array;
 
@@ -52,7 +52,7 @@ interface DatabaseInterface {
 	 *
 	 * @return bool True if a matching row exists.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
 	public function exists_by_id( string $table, int|string $id ): bool;
 
@@ -67,7 +67,7 @@ interface DatabaseInterface {
 	 *
 	 * @return bool True if a matching row exists.
 	 *
-	 * @throws DatabaseException When the query fails.
+	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool;
 
@@ -79,7 +79,7 @@ interface DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to insert.
 	 *
-	 * @throws DatabaseException When the insert fails.
+	 * @throws DatabaseExceptionInterface When the insert fails.
 	 */
 	public function insert( string $table, array $data ): void;
 
@@ -94,7 +94,7 @@ interface DatabaseInterface {
 	 *
 	 * @return int The number of affected rows.
 	 *
-	 * @throws DatabaseException When the update fails.
+	 * @throws DatabaseExceptionInterface When the update fails.
 	 */
 	public function update( string $table, array $data, array $where ): int;
 
@@ -106,7 +106,7 @@ interface DatabaseInterface {
 	 * @param string $table The table name.
 	 * @param int|string $id The row ID to delete.
 	 *
-	 * @throws DatabaseException When the delete fails.
+	 * @throws DatabaseExceptionInterface When the delete fails.
 	 */
 	public function delete( string $table, int|string $id ): void;
 
@@ -117,7 +117,7 @@ interface DatabaseInterface {
 	 *
 	 * @param string $sql The SQL to execute.
 	 *
-	 * @throws DatabaseException When execution fails.
+	 * @throws DatabaseExceptionInterface When execution fails.
 	 */
 	public function query( string $sql ): void;
 
@@ -129,9 +129,9 @@ interface DatabaseInterface {
 	 * @param string $sql The SQL query template with placeholders.
 	 * @param int|float|string|bool|null ...$args The values to bind to placeholders.
 	 *
-	 * @throws DatabaseException When preparing or executing fails.
+	 * @throws DatabaseExceptionInterface When preparing or executing fails.
 	 */
-	public function query_with_args( string $sql, int|float|string|bool|null ... $args ): void;
+	public function query_with_args( string $sql, int|float|string|bool|null ...$args ): void;
 
 	/**
 	 * Resolves table name using the configured table prefix.
@@ -142,7 +142,7 @@ interface DatabaseInterface {
 	 *
 	 * @return string The table name with prefix applied.
 	 *
-	 * @throws DatabaseException When the prefix cannot be determined.
+	 * @throws DatabaseExceptionInterface When the prefix cannot be determined.
 	 */
 	public function qualify_table_name( string $table ): string;
 
@@ -153,7 +153,7 @@ interface DatabaseInterface {
 	 *
 	 * @return string The charset and collation string, e.g. "DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci".
 	 *
-	 * @throws DatabaseException When the information cannot be determined.
+	 * @throws DatabaseExceptionInterface When the information cannot be determined.
 	 */
 	public function get_charset_collate(): string;
 }

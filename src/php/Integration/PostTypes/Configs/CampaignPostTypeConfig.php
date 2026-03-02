@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes\Configs;
 
-use Fundrik\WordPress\Integration\MetaFieldType;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
 
 /**
  * Provides configuration for the campaign post type.
@@ -24,25 +24,25 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	/**
 	 * Stores whether the campaign is open for donations.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: true )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Boolean, default: true )]
 	public const string META_IS_OPEN = 'fundrik_campaign_is_open';
 
 	/**
 	 * Stores whether the campaign has a fundraising target.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Boolean, default: false )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Boolean, default: false )]
 	public const string META_HAS_TARGET = 'fundrik_campaign_has_target';
 
 	/**
 	 * Stores the fundraising target amount in minor units.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::Integer, default: 0 )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Integer, default: 0 )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
 
 	/**
 	 * Stores the fundraising target currency as an ISO 4217 code.
 	 */
-	#[PostTypeMetaField( type: MetaFieldType::String, default: 'RUB' )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::String, default: 'RUB' )]
 	public const string META_TARGET_CURRENCY = 'fundrik_campaign_target_currency';
 
 	/**
