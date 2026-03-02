@@ -91,15 +91,6 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 
 			throw $e;
 		}
-
-		$this->logger->log_info(
-			'Registering post types completed.',
-			[
-				'registered_count' => count( $registered_post_type_ids ),
-				'total_count' => count( $classes ),
-				'registered_post_type_ids' => $registered_post_type_ids,
-			],
-		);
 	}
 	// phpcs:enable
 }

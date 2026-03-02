@@ -96,10 +96,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->registry->shouldNotReceive( 'get_migration_classes' );
 		$this->storage->shouldNotReceive( 'set' );
 
-		$this->psr_logger->shouldNotReceive( 'info' );
-		$this->psr_logger->shouldNotReceive( 'debug' );
-		$this->psr_logger->shouldNotReceive( 'error' );
-
 		$this->runner->migrate();
 	}
 
@@ -120,10 +116,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->database->shouldNotReceive( 'get_charset_collate' );
 		$this->registry->shouldNotReceive( 'get_migration_classes' );
 		$this->storage->shouldNotReceive( 'set' );
-
-		$this->psr_logger->shouldNotReceive( 'info' );
-		$this->psr_logger->shouldNotReceive( 'debug' );
-		$this->psr_logger->shouldNotReceive( 'error' );
 
 		$this->runner->migrate();
 	}
@@ -274,8 +266,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 				),
 			);
 
-		$this->psr_logger->shouldNotReceive( 'info' );
-
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Cannot determine database charset and collation.' );
 
@@ -326,8 +316,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 					],
 				),
 			);
-
-		$this->psr_logger->shouldNotReceive( 'info' );
 
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Test migration failed.' );
@@ -386,10 +374,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 				),
 			);
 
-		// migration_applied is logged only after successful version update.
-		$this->psr_logger->shouldNotReceive( 'debug' );
-		$this->psr_logger->shouldNotReceive( 'info' );
-
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage(
 			'Cannot complete migration: the stored DB version must be updated after applying.',
@@ -430,10 +414,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			);
 
 		$this->storage->shouldNotReceive( 'set' );
-		$this->psr_logger->shouldNotReceive( 'info' );
-		$this->psr_logger->shouldNotReceive( 'debug' );
-		$this->psr_logger->shouldNotReceive( 'error' );
-
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage( 'Migration version must be unique.' );
 		$this->expectExceptionMessage( 'Given: 2400_01_12_00.' );

@@ -77,7 +77,7 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function boot_attaches_callback_that_registers_all_post_types_and_logs_info(): void {
+	public function boot_attaches_callback_that_registers_all_post_types(): void {
 
 		$this->post_type_config_registry
 			->shouldReceive( 'get_post_type_config_classes' )
@@ -162,22 +162,6 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 				Mockery::type( 'array' ),
 			)
 			->andReturnTrue();
-
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Registering post types completed.',
-				Mockery::subset(
-					[
-						'service_class' => RegisterPostTypesBootUnit::class,
-						'component' => 'boot_units',
-						'registered_count' => 3,
-						'total_count' => 3,
-						'registered_post_type_ids' => [ 'alpha', 'beta', 'gamma' ],
-					],
-				),
-			);
 
 		$this->boot_unit->boot();
 

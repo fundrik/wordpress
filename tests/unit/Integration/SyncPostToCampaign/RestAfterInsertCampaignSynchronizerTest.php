@@ -105,7 +105,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function sync_uses_initial_version_when_repository_lookup_throws(): void {
+	public function sync_rethrows_when_repository_lookup_throws(): void {
 
 		$data = new RestCampaignSyncDataDto(
 			id: EntityId::create( 10 ),
@@ -123,28 +123,10 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->once()
 			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
 
-		$this->save_campaign_use_case
-			->shouldReceive( 'handle' )
-			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturnUsing(
-				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
+		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
 
-					self::assertSame( 10, $campaign->get_id()->get_value() );
-					self::assertSame( 1, $campaign->get_version()->get_value() );
-					self::assertSame( 'Title', $campaign->get_title() );
-					self::assertTrue( $campaign->is_active() );
-					self::assertTrue( $campaign->is_open() );
-					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
-					self::assertSame( 'EUR', $campaign->get_target_money()->get_currency() );
-
-					return new CampaignRepositorySaveOutcome(
-						result: CampaignRepositorySaveResult::Inserted,
-						campaign: $campaign,
-					);
-				},
-			);
+		$this->expectException( FakeCampaignRepositoryException::class );
+		$this->expectExceptionMessage( 'DB failed.' );
 
 		$this->synchronizer->sync( $data );
 	}

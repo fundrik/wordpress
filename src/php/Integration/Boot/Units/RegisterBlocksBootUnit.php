@@ -56,12 +56,5 @@ final readonly class RegisterBlocksBootUnit implements BootUnitInterface {
 
 		wp_register_block_types_from_metadata_collection( $blocks_path, $manifest_path );
 
-		$this->logger->log_info(
-			'Registering block types completed.',
-			[
-				'blocks_path' => $blocks_path,
-				'manifest_path' => $manifest_path,
-			],
-		);
 	}
 }

@@ -45,7 +45,7 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When saving the campaign fails.
+	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign or saving fails.
 	 * @throws ApplicationEventBusExceptionInterface When publishing the campaign created/updated event fails.
 	 */
 	public function sync( RestCampaignSyncDataDto $data ): void {
@@ -74,14 +74,12 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
 	 *
 	 * @return EntityVersion The expected entity version.
+	 *
+	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign fails.
 	 */
 	private function get_expected_version_or_initial( RestCampaignSyncDataDto $data ): EntityVersion {
 
-		try {
-			$persisted = $this->campaign_repository->find_by_id( $data->id );
-		} catch ( CampaignRepositoryExceptionInterface ) {
-			return EntityVersion::initial();
-		}
+		$persisted = $this->campaign_repository->find_by_id( $data->id );
 
 		return $persisted?->get_version() ?? EntityVersion::initial();
 	}

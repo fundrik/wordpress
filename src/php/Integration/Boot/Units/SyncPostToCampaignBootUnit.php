@@ -277,16 +277,6 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 			throw $e;
 		}
-
-		$this->logger->log_info(
-			'Campaign synchronization after REST save completed.',
-			[
-				'post_id' => $post_id,
-				'entity_id' => $data->id->get_value(),
-				'version' => $data->version->get_value(),
-				'creating' => $creating,
-			],
-		);
 	}
 	// phpcs:enable
 
@@ -323,15 +313,6 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 			throw $e;
 		}
-
-		$this->logger->log_info(
-			'Campaign synchronization after post delete completed.',
-			[
-				'post_id' => $post_id,
-				'entity_id' => $entity_id->get_value(),
-				'post_type' => $post->post_type,
-			],
-		);
 	}
 	// phpcs:enable
 }

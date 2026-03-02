@@ -106,6 +106,7 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 
 		} catch ( Throwable $e ) {
 
+			// Listener exceptions must be logged in listener/BootUnit to avoid duplicate logs here.
 			fundrik_set_failure_message( $e->getMessage() );
 			return $prepared_post;
 		}

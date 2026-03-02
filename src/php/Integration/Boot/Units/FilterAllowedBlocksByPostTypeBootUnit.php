@@ -115,22 +115,6 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 
 		$filtered = array_values( $filtered );
 
-		$fundrik_blocks_count = count(
-			array_filter(
-				$filtered,
-				static fn ( string $block_name ): bool => str_starts_with( $block_name, 'fundrik/' ),
-			),
-		);
-
-		$this->logger->log_info(
-			'Filtering allowed blocks by post type completed.',
-			[
-				'post_type' => $current_post_type,
-				'allowed_blocks_count' => count( $filtered ),
-				'allowed_fundrik_blocks_count' => $fundrik_blocks_count,
-			],
-		);
-
 		return $filtered;
 	}
 	// phpcs:enable

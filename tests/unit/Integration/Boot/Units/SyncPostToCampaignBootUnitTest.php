@@ -498,22 +498,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 				),
 			);
 
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Campaign synchronization after post delete completed.',
-				Mockery::subset(
-					[
-						'service_class' => SyncPostToCampaignBootUnit::class,
-						'component' => 'boot_units',
-						'post_id' => 31,
-						'entity_id' => 31,
-						'post_type' => CampaignPostTypeConfig::ID,
-					],
-				),
-			);
-
 		Functions\expect( 'fundrik_set_failure_message' )->never();
 
 		$this->boot_unit->boot();
@@ -527,7 +511,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$post = $this->make_post( 32, 'Regular post', 'post' );
 
 		$this->delete_campaign_use_case->shouldNotReceive( 'handle' );
-		$this->psr_logger->shouldNotReceive( 'info' );
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();
 
@@ -699,7 +682,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function boot_logs_info_when_after_insert_synchronization_completes(): void {
+	public function boot_synchronizes_after_insert_when_payload_is_valid(): void {
 
 		$post = $this->make_post( 23, 'Campaign title' );
 		$request = $this->make_request(
@@ -726,23 +709,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 				static fn ( Campaign $campaign ): CampaignRepositorySaveOutcome => new CampaignRepositorySaveOutcome(
 					result: CampaignRepositorySaveResult::Inserted,
 					campaign: $campaign,
-				),
-			);
-
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Campaign synchronization after REST save completed.',
-				Mockery::subset(
-					[
-						'service_class' => SyncPostToCampaignBootUnit::class,
-						'component' => 'boot_units',
-						'post_id' => 23,
-						'entity_id' => 23,
-						'version' => 4,
-						'creating' => true,
-					],
 				),
 			);
 
@@ -787,23 +753,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 						campaign: $campaign,
 					);
 				},
-			);
-
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Campaign synchronization after REST save completed.',
-				Mockery::subset(
-					[
-						'service_class' => SyncPostToCampaignBootUnit::class,
-						'component' => 'boot_units',
-						'post_id' => 24,
-						'entity_id' => 24,
-						'version' => 4,
-						'creating' => true,
-					],
-				),
 			);
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();

@@ -80,25 +80,6 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	#[Test]
 	public function boot_attaches_filter_callback(): void {
 
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Filtering allowed blocks by post type completed.',
-				Mockery::subset(
-					[
-						'service_class' => FilterAllowedBlocksByPostTypeBootUnit::class,
-						'logger_class' => BootUnitLogger::class,
-						'component' => 'boot_units',
-						'layer' => 'integration',
-						'system' => 'wordpress',
-						'post_type' => 'post',
-						'allowed_blocks_count' => 2,
-						'allowed_fundrik_blocks_count' => 1,
-					],
-				),
-			);
-
 		$this->boot_unit->boot();
 
 		$post = new stdClass();
@@ -172,7 +153,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	}
 
 	#[Test]
-	public function filter_expands_true_and_filters_restricted_blocks_and_logs_info(): void {
+	public function filter_expands_true_and_filters_restricted_blocks(): void {
 
 		$this->wp_context
 			->shouldReceive( 'get_registered_block_types' )
@@ -183,25 +164,6 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 					'gamma/block' => new stdClass(), // restricted to 'gamma'
 					'fundrik/free' => new stdClass(), // unrestricted
 				],
-			);
-
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Filtering allowed blocks by post type completed.',
-				Mockery::subset(
-					[
-						'service_class' => FilterAllowedBlocksByPostTypeBootUnit::class,
-						'logger_class' => BootUnitLogger::class,
-						'component' => 'boot_units',
-						'layer' => 'integration',
-						'system' => 'wordpress',
-						'post_type' => 'post',
-						'allowed_blocks_count' => 2,
-						'allowed_fundrik_blocks_count' => 1,
-					],
-				),
 			);
 
 		$this->boot_unit->boot();

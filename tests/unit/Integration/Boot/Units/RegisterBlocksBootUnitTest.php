@@ -47,7 +47,7 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function boot_attaches_callback_that_registers_blocks_and_logs_info(): void {
+	public function boot_attaches_callback_that_registers_blocks(): void {
 
 		$this->boot_unit->boot();
 
@@ -57,21 +57,6 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'wp_register_block_types_from_metadata_collection' )
 			->once()
 			->with( $blocks_path, $manifest_path );
-
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Registering block types completed.',
-				Mockery::subset(
-					[
-						'service_class' => RegisterBlocksBootUnit::class,
-						'component' => 'boot_units',
-						'blocks_path' => $blocks_path,
-						'manifest_path' => $manifest_path,
-					],
-				),
-			);
 
 		$this->init_hook->handle();
 	}
