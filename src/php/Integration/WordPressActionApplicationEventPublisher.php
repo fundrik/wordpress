@@ -6,9 +6,10 @@ namespace Fundrik\WordPress\Integration;
 
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignCreatedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDeletedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignApplicationEventInterface;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignUpdatedEvent;
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
-use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
 use Psr\Log\LoggerInterface;
 
@@ -44,26 +45,29 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 */
 	public function publish( ApplicationEventInterface $event ): void {
 
-		$campaign_id = $this->get_campaign_id_or_null( $event );
-
-		if ( $campaign_id === null ) {
+		if ( ! $event instanceof CampaignApplicationEventInterface ) {
 			return;
 		}
 
-		if ( $event instanceof CampaignCreatedEvent ) {
-			$this->publish_campaign_created( $campaign_id );
+		$publisher = match ( true ) {
+			$event instanceof CampaignCreatedEvent => $this->publish_campaign_created( ... ),
+			$event instanceof CampaignUpdatedEvent => $this->publish_campaign_updated( ... ),
+			$event instanceof CampaignDeletedEvent => $this->publish_campaign_deleted( ... ),
+			default => null,
+		};
+
+		if ( $publisher === null ) {
 			return;
 		}
 
-		if ( $event instanceof CampaignUpdatedEvent ) {
-			$this->publish_campaign_updated( $campaign_id );
+		try {
+			$campaign_id = $event->get_campaign_id()->get_as_int();
+		} catch ( InvalidEntityIdException ) {
+			$this->log_invalid_campaign_id( $event, 'campaign_id_not_int' );
 			return;
 		}
 
-		if ( $event instanceof CampaignDeletedEvent ) {
-			$this->publish_campaign_deleted( $campaign_id );
-			return;
-		}
+		$publisher( $campaign_id );
 	}
 	// phpcs:enable
 
@@ -122,39 +126,6 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 * @param int $campaign_id The campaign ID.
 		 */
 		do_action( 'fundrik_campaign_deleted', $campaign_id );
-	}
-
-	/**
-	 * Resolves campaign ID from an event object.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param ApplicationEventInterface $event The application event.
-	 *
-	 * @return int|null The campaign ID when available and int-compatible, otherwise null.
-	 */
-	private function get_campaign_id_or_null( ApplicationEventInterface $event ): ?int {
-
-		if ( ! property_exists( $event, 'campaign_id' ) ) {
-			$this->log_invalid_campaign_id( $event, 'missing_campaign_id_property' );
-			return null;
-		}
-
-		$campaign_id = $event->campaign_id;
-
-		if ( ! $campaign_id instanceof EntityId ) {
-			$this->log_invalid_campaign_id( $event, 'campaign_id_not_entity_id' );
-			return null;
-		}
-
-		$value = $campaign_id->get_value();
-
-		if ( ! is_int( $value ) ) {
-			$this->log_invalid_campaign_id( $event, 'campaign_id_not_int' );
-			return null;
-		}
-
-		return $value;
 	}
 
 	/**

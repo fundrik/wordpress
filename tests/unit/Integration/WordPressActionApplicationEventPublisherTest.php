@@ -72,7 +72,9 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 	#[Test]
 	public function publish_logs_warning_when_campaign_id_cannot_be_resolved(): void {
 
-		$event = new DummyApplicationEvent();
+		$event = new CampaignCreatedEvent(
+			EntityId::create( '2be078f7-7d75-4450-90d0-e7fd204f072e' ),
+		);
 
 		$this->logger
 			->shouldReceive( 'warning' )
@@ -88,8 +90,8 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 						'system' => 'wordpress',
 						'operation' => 'publish',
 						'outcome' => 'invalid',
-						'event_class' => DummyApplicationEvent::class,
-						'reason' => 'missing_campaign_id_property',
+						'event_class' => CampaignCreatedEvent::class,
+						'reason' => 'campaign_id_not_int',
 					],
 				),
 			);
@@ -102,7 +104,19 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 	}
 
 	#[Test]
-	public function publish_ignores_unsupported_event(): void {
+	public function publish_ignores_non_campaign_event(): void {
+
+		$event = new DummyApplicationEvent();
+
+		Actions\expectDone( 'fundrik_campaign_created' )->never();
+		Actions\expectDone( 'fundrik_campaign_updated' )->never();
+		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_ignores_unsupported_campaign_event(): void {
 
 		$event = new DummyCampaignApplicationEvent( EntityId::create( 17 ) );
 

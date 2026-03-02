@@ -72,12 +72,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/fundrik/core.git",
-                "reference": "d3e09fcc93f477da0ca9e4422f1ee6be2b33d5b3"
+                "reference": "cfe8d0543a4af32c941dde02b916373a60689889"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fundrik/core/zipball/d3e09fcc93f477da0ca9e4422f1ee6be2b33d5b3",
-                "reference": "d3e09fcc93f477da0ca9e4422f1ee6be2b33d5b3",
+                "url": "https://api.github.com/repos/fundrik/core/zipball/cfe8d0543a4af32c941dde02b916373a60689889",
+                "reference": "cfe8d0543a4af32c941dde02b916373a60689889",
                 "shasum": ""
             },
             "require": {
@@ -135,7 +135,7 @@
                 "issues": "https://github.com/fundrik/core/issues",
                 "source": "https://github.com/fundrik/core"
             },
-            "time": "2026-02-28T22:02:09+00:00"
+            "time": "2026-03-02T19:04:45+00:00"
         },
         {
             "name": "fundrik/toolbox",
