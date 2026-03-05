@@ -347,6 +347,174 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	// exists_by_id()
 	// ---------------------------------------------------------------------
 
+	// ---------------------------------------------------------------------
+	// get_all_by_column()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function get_all_by_column_returns_rows_as_list_and_sanitizes_each_row(): void {
+
+		$table = 'wp_table';
+		$column = 'campaign_id';
+		$value = 77;
+
+		$sql = 'SELECT * FROM %i WHERE %i = %d';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 2,
+				'campaign_id' => 77,
+			],
+			[
+				'id' => 1,
+				'campaign_id' => 77,
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame( $results, $this->db->get_all_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function get_all_by_column_uses_string_placeholder_when_value_is_string(): void {
+
+		$table = 'wp_table';
+		$column = 'email';
+		$value = 'a@b.com';
+
+		$sql = 'SELECT * FROM %i WHERE %i = %s';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 1,
+				'email' => 'a@b.com',
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame( $results, $this->db->get_all_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function get_all_by_column_returns_empty_array_when_results_is_not_array(): void {
+
+		$table = 'wp_table';
+		$column = 'campaign_id';
+		$value = 77;
+
+		$sql = 'SELECT * FROM %i WHERE %i = %d';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( null );
+
+		self::assertSame( [], $this->db->get_all_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function get_all_by_column_throws_when_query_fails(): void {
+
+		$table = 'wp_table';
+		$column = 'campaign_id';
+		$value = 77;
+
+		$sql = 'SELECT * FROM %i WHERE %i = %d';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( [] );
+
+		$this->wpdb->last_error = 'Boom';
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage(
+			'Cannot fetch rows by column: database query failed for table "wp_table", column "campaign_id". Error: Boom. Given: 77.',
+		);
+
+		$this->db->get_all_by_column( $table, $column, $value );
+	}
+
+	#[Test]
+	public function get_all_by_column_throws_when_any_row_contains_non_scalar_value(): void {
+
+		$table = 'wp_table';
+		$column = 'campaign_id';
+		$value = 77;
+
+		$sql = 'SELECT * FROM %i WHERE %i = %d';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 1,
+				'campaign_id' => 77,
+			],
+			[
+				'id' => 2,
+				'bad' => [ 'nope' ],
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'DB value must be scalar or null. Key: "bad". Given: array.' );
+
+		$this->db->get_all_by_column( $table, $column, $value );
+	}
+
 	#[Test]
 	public function exists_by_id_returns_true_when_row_exists_and_false_when_not(): void {
 

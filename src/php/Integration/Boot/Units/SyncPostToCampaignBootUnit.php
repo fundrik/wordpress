@@ -6,9 +6,10 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignException;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
-use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusExceptionInterface;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\TypeCaster;
@@ -261,7 +262,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		} catch (
 			CampaignFactoryException |
 			CampaignRepositoryExceptionInterface |
-			ApplicationEventBusExceptionInterface $e
+			SaveCampaignException $e
 		) {
 
 			$this->logger->log_error(
@@ -299,7 +300,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 		try {
 			$this->delete_campaign_use_case->handle( $entity_id );
-		} catch ( CampaignRepositoryExceptionInterface | ApplicationEventBusExceptionInterface $e ) {
+		} catch ( DeleteCampaignException $e ) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after post delete failed.',

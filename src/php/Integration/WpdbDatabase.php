@@ -127,14 +127,58 @@ final readonly class WpdbDatabase implements DatabasePort {
 			return [];
 		}
 
-		$casted_results = [];
+		return $this->sanitize_db_results( $results );
+	}
+	// phpcs:enable
 
-		foreach ( $results as $row ) {
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Retrieves all rows from the given table filtered by a column value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param string $column The column to filter by.
+	 * @param int|float|string|bool|null $value The value to match.
+	 *
+	 * @return array<array<string, int|float|string|bool|null>> The list of matching rows.
+	 *
+	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 *
+	 * @throws WpdbDatabaseException When the query fails.
+	 */
+	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array {
 
-			$casted_results[] = $this->sanitize_db_row( $row );
+		$table = $this->qualify_table_name( $table );
+		$placeholder = is_int( $value ) ? '%d' : '%s';
+
+		$sql = "SELECT * FROM %i WHERE %i = {$placeholder}";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$query = $this->wpdb->prepare( $sql, $table, $column, $value );
+
+		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+		/** @var list<array<string, mixed>>|null $results */
+		$results = $this->wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new WpdbDatabaseException(
+				sprintf(
+					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
+					'Cannot fetch rows by column: database query failed for table "%s", column "%s". Error: %s. Given: %s.',
+					$table,
+					$column,
+					$this->wpdb->last_error,
+					$value === null ? 'NULL' : (string) $value,
+				),
+			);
 		}
 
-		return $casted_results;
+		if ( ! is_array( $results ) ) {
+			return [];
+		}
+
+		return $this->sanitize_db_results( $results );
 	}
 	// phpcs:enable
 
@@ -415,6 +459,31 @@ final readonly class WpdbDatabase implements DatabasePort {
 		}
 
 		return $prefix . $table;
+	}
+
+	/**
+	 * Validates and normalizes a list of database rows.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param list<array<string, mixed>> $results Raw rows returned by wpdb.
+	 *
+	 * @return list<array<string, int|float|string|bool|null>> The validated database rows.
+	 *
+	 * @throws WpdbDatabaseException When any row contains a non-scalar value.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function sanitize_db_results( array $results ): array {
+
+		$sanitized_results = [];
+
+		foreach ( $results as $row ) {
+
+			$sanitized_results[] = $this->sanitize_db_row( $row );
+		}
+
+		return $sanitized_results;
 	}
 
 	/**

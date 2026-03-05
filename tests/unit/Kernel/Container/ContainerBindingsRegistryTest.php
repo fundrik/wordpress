@@ -9,12 +9,14 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\Delete
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
 use Fundrik\WordPress\Infrastructure\StoragePort;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
@@ -78,6 +80,7 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 			DatabasePort::class => WpdbDatabase::class,
 			StoragePort::class => WordPressOptionsStorage::class,
 			CampaignRepositoryPort::class => CampaignRepository::class,
+			DonationRepositoryPort::class => DonationRepository::class,
 			ApplicationEventBusPort::class => ApplicationEventBus::class,
 			ApplicationEventPublisherPort::class => WordPressActionApplicationEventPublisher::class,
 			SaveCampaignUseCase::class => SaveCampaignHandler::class,

@@ -53,7 +53,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function find_by_id( EntityId $id ): ?Campaign {
 
-		$id_int = $this->get_entity_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_int );
@@ -111,7 +111,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function exists_by_id( EntityId $id ): bool {
 
-		$id_int = $this->get_entity_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
 
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_int );
@@ -139,7 +139,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	public function insert( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
-		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
+		$campaign_id_int = $this->get_campaign_id_as_int_or_fail( $campaign_entity_id );
 
 		$data = $this->map_campaign_to_row( $campaign );
 		$data['version'] = $campaign->get_version()->get_value();
@@ -185,7 +185,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	public function update( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
-		$campaign_id_int = $this->get_entity_id_as_int_or_fail( $campaign_entity_id );
+		$campaign_id_int = $this->get_campaign_id_as_int_or_fail( $campaign_entity_id );
 
 		$expected_version = $campaign->get_version();
 		$new_version = $expected_version->next();
@@ -292,7 +292,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	public function delete( EntityId $id ): void {
 
-		$id_int = $this->get_entity_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
 
 		try {
 			$this->db->delete( self::TABLE_NAME, $id_int );
@@ -306,17 +306,17 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	}
 
 	/**
-	 * Converts an entity ID to int.
+	 * Converts a campaign ID to int.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param EntityId $id The entity ID to convert.
+	 * @param EntityId $id The campaign ID to convert.
 	 *
 	 * @return int The integer ID value.
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the ID cannot be represented as int.
 	 */
-	private function get_entity_id_as_int_or_fail( EntityId $id ): int {
+	private function get_campaign_id_as_int_or_fail( EntityId $id ): int {
 
 		try {
 			return $id->get_as_int();
@@ -362,12 +362,13 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			);
 		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
 
-			$id = is_string( $row['id'] ?? null ) ? $row['id'] : '-1';
+			$id = $row['id'] ?? null;
+			$id_for_error = is_int( $id ) || is_string( $id ) ? (string) $id : '<unavailable>';
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot map campaign row to entity. Given: ID %s.',
-					$id,
+					'Failed to map campaign row. Given: ID %s.',
+					$id_for_error,
 				),
 				previous: $e,
 			);

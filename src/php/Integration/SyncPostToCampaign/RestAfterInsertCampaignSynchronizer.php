@@ -6,9 +6,10 @@ namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
-use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusExceptionInterface;
+use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 
 /**
@@ -45,8 +46,9 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign or saving fails.
-	 * @throws ApplicationEventBusExceptionInterface When publishing the campaign created/updated event fails.
+	 * @throws CampaignFactoryException When campaign payload cannot be mapped to the domain model.
+	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign fails.
+	 * @throws SaveCampaignException When saving the campaign fails.
 	 */
 	public function sync( RestCampaignSyncDataDto $data ): void {
 

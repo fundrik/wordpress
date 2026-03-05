@@ -143,7 +143,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( $row );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot map campaign row to entity. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
 
 		$this->repository->find_by_id( $id );
 	}
@@ -253,7 +253,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( $rows );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot map campaign row to entity. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
 
 		$this->repository->find_all();
 	}
@@ -758,7 +758,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			);
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot map campaign row to entity. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
 
 		$this->repository->update( $campaign );
 	}

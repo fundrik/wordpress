@@ -8,10 +8,12 @@ use Brain\Monkey\Functions;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Shared\Application\Exceptions\UseCaseFailureStage;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
@@ -522,7 +524,10 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	#[Test]
 	public function boot_logs_error_and_sets_failure_message_when_campaign_delete_fails(): void {
 
-		$exception = new FakeCampaignRepositoryException( 'DB delete failed.' );
+		$exception = new DeleteCampaignException(
+			stage: UseCaseFailureStage::Persistence,
+			message: 'Failed to delete campaign "33".',
+		);
 		$post = $this->make_post( 33, 'Campaign title', CampaignPostTypeConfig::ID );
 
 		$this->delete_campaign_use_case

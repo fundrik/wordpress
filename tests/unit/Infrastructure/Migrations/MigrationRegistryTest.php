@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
+use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikDonationsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -25,7 +26,7 @@ final class MigrationRegistryTest extends FundrikTestCase {
 	#[Test]
 	public function it_returns_the_expected_target_db_version(): void {
 
-		$this->assertSame( '2025_06_15_00', $this->registry->get_target_db_version() );
+		$this->assertSame( '2026_03_04_00', $this->registry->get_target_db_version() );
 	}
 
 	#[Test]
@@ -34,6 +35,7 @@ final class MigrationRegistryTest extends FundrikTestCase {
 		$this->assertSame(
 			[
 				CreateFundrikCampaignsTable::class,
+				CreateFundrikDonationsTable::class,
 			],
 			$this->registry->get_migration_classes(),
 		);

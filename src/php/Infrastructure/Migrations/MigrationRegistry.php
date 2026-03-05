@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
+use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikDonationsTable;
 
 /**
  * Provides the list of available migration classes and the target schema version.
@@ -15,7 +16,7 @@ use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTabl
  */
 class MigrationRegistry {
 
-	private const string TARGET_VERSION = '2025_06_15_00';
+	private const string TARGET_VERSION = '2026_03_04_00';
 
 	/**
 	 * Returns all migration class names.
@@ -30,6 +31,7 @@ class MigrationRegistry {
 
 		return [
 			CreateFundrikCampaignsTable::class,
+			CreateFundrikDonationsTable::class,
 		];
 	}
 

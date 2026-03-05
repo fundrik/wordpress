@@ -43,6 +43,23 @@ interface DatabasePort {
 	public function get_all( string $table ): array;
 
 	/**
+	 * Retrieves all rows from the given table filtered by a column value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param string $column The column to filter by.
+	 * @param int|float|string|bool|null $value The value to match.
+	 *
+	 * @return array<array<string, int|float|string|bool|null>> The list of matching rows.
+	 *
+	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 *
+	 * @throws DatabaseExceptionInterface When the query fails.
+	 */
+	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array;
+
+	/**
 	 * Determines whether the table contains a row with the given ID.
 	 *
 	 * @since 1.0.0
