@@ -72,12 +72,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/fundrik/core.git",
-                "reference": "cfe8d0543a4af32c941dde02b916373a60689889"
+                "reference": "0b2decbb7e1c7ebe2691e7e03e9e769f87db33b0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fundrik/core/zipball/cfe8d0543a4af32c941dde02b916373a60689889",
-                "reference": "cfe8d0543a4af32c941dde02b916373a60689889",
+                "url": "https://api.github.com/repos/fundrik/core/zipball/0b2decbb7e1c7ebe2691e7e03e9e769f87db33b0",
+                "reference": "0b2decbb7e1c7ebe2691e7e03e9e769f87db33b0",
                 "shasum": ""
             },
             "require": {
@@ -135,7 +135,7 @@
                 "issues": "https://github.com/fundrik/core/issues",
                 "source": "https://github.com/fundrik/core"
             },
-            "time": "2026-03-02T19:04:45+00:00"
+            "time": "2026-03-03T22:21:18+00:00"
         },
         {
             "name": "fundrik/toolbox",
@@ -143,12 +143,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/fundrik/toolbox.git",
-                "reference": "a821bd4822eb986e8aff40b6525590561d81181f"
+                "reference": "1219af31c8e71886419607557ee2bae7439af3e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fundrik/toolbox/zipball/a821bd4822eb986e8aff40b6525590561d81181f",
-                "reference": "a821bd4822eb986e8aff40b6525590561d81181f",
+                "url": "https://api.github.com/repos/fundrik/toolbox/zipball/1219af31c8e71886419607557ee2bae7439af3e8",
+                "reference": "1219af31c8e71886419607557ee2bae7439af3e8",
                 "shasum": ""
             },
             "require": {
@@ -199,7 +199,7 @@
                 "issues": "https://github.com/fundrik/toolbox/issues",
                 "source": "https://github.com/fundrik/toolbox"
             },
-            "time": "2025-12-20T03:16:00+00:00"
+            "time": "2026-03-04T08:31:28+00:00"
         },
         {
             "name": "illuminate/collections",
