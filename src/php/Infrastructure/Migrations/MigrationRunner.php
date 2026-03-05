@@ -142,7 +142,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 			$this->logger->log_db_version_update_failed( $class_name, $version );
 			throw new MigrationException(
 				sprintf(
-					'Cannot complete migration: the stored DB version must be updated after applying. Given: %s.',
+					'Migration "%s" was applied, but updating stored DB version failed.',
 					$version,
 				),
 			);
@@ -213,7 +213,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 			return $this->database->get_charset_collate();
 		} catch ( DatabaseExceptionInterface $e ) {
 			$this->logger->log_charset_collate_failed( $e );
-			throw new MigrationException( 'Cannot determine database charset and collation.', previous: $e );
+			throw new MigrationException( 'Failed to fetch database charset and collation.', previous: $e );
 		}
 	}
 

@@ -97,7 +97,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in persistence: ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->find_by_id( $id );
@@ -115,7 +115,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot fetch campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to fetch campaign "7".' );
 
 		$this->repository->find_by_id( $id );
 	}
@@ -143,7 +143,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( $row );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row "7".' );
 
 		$this->repository->find_by_id( $id );
 	}
@@ -225,7 +225,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot fetch campaigns: persistence error.' );
+		$this->expectExceptionMessage( 'Failed to fetch campaigns.' );
 
 		$this->repository->find_all();
 	}
@@ -253,7 +253,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( $rows );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row "7".' );
 
 		$this->repository->find_all();
 	}
@@ -299,7 +299,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in persistence: ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->exists_by_id( $id );
@@ -317,7 +317,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot check campaign existence: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to check campaign "7" existence.' );
 
 		$this->repository->exists_by_id( $id );
 	}
@@ -400,7 +400,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in persistence: ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->insert( $campaign );
@@ -441,7 +441,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot insert campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to insert campaign "7".' );
 
 		$this->repository->insert( $campaign );
 	}
@@ -484,7 +484,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( null );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot fetch campaign after insert: persisted record not found. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Campaign "7" was inserted, but fetching persisted snapshot failed.' );
 
 		$this->repository->insert( $campaign );
 	}
@@ -573,7 +573,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in persistence: ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->update( $campaign );
@@ -619,7 +619,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot update campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to update campaign "7".' );
 
 		$this->repository->update( $campaign );
 	}
@@ -652,7 +652,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot update campaign: persisted record not found. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Cannot update campaign "7": persisted record not found.' );
 
 		$this->repository->update( $campaign );
 	}
@@ -685,7 +685,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot update campaign: version mismatch. Given: ID 7, expected version 3.' );
+		$this->expectExceptionMessage( 'Cannot update campaign "7": version mismatch (expected version 3).' );
 
 		$this->repository->update( $campaign );
 	}
@@ -716,7 +716,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andReturn( null );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot fetch campaign after update: persisted record not found. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Campaign "7" was updated, but fetching persisted snapshot failed.' );
 
 		$this->repository->update( $campaign );
 	}
@@ -758,7 +758,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			);
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to map campaign row. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to map campaign row "7".' );
 
 		$this->repository->update( $campaign );
 	}
@@ -917,7 +917,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot check campaign existence: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to check campaign "7" existence.' );
 
 		$this->repository->save( $campaign );
 	}
@@ -950,7 +950,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot insert campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to insert campaign "7".' );
 
 		$this->repository->save( $campaign );
 	}
@@ -983,7 +983,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot update campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to update campaign "7".' );
 
 		$this->repository->save( $campaign );
 	}
@@ -1012,7 +1012,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in persistence: ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->delete( $id );
@@ -1030,7 +1030,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot delete campaign: persistence error. Given: ID 7.' );
+		$this->expectExceptionMessage( 'Failed to delete campaign "7".' );
 
 		$this->repository->delete( $id );
 	}

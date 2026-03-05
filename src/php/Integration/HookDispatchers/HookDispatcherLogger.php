@@ -124,8 +124,7 @@ final class HookDispatcherLogger {
 		if ( ! isset( $this->hook_name, $this->hook_dispatcher_class ) ) {
 
 			throw new LogicException(
-				// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-				'HookDispatcherLogger context is not set. Call set_hook_name() and set_hook_dispatcher_class() before logging.',
+				'Hook dispatcher logger context must be set before logging. Given: unset.',
 			);
 		}
 	}

@@ -42,7 +42,7 @@ final readonly class MigrationFactory {
 		if ( ! class_exists( $class_name ) ) {
 
 			throw new MigrationException(
-				sprintf( 'Cannot create the migration: the class must exist. Given: %s.', $class_name ),
+				sprintf( 'Migration class must exist. Given: %s.', $class_name ),
 			);
 		}
 
@@ -50,7 +50,7 @@ final readonly class MigrationFactory {
 
 			throw new MigrationException(
 				sprintf(
-					'Cannot create the migration: the class must extend %s. Given: %s.',
+					'Migration class must extend %s. Given: %s.',
 					AbstractMigration::class,
 					$class_name,
 				),

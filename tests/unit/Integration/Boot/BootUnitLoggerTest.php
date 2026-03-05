@@ -32,7 +32,7 @@ final class BootUnitLoggerTest extends MockeryTestCase {
 
 		$this->expectException( LogicException::class );
 		$this->expectExceptionMessage(
-			'BootUnitLogger class name is not set. Call set_boot_unit_class() before logging.',
+			'Boot unit class must be set before logging. Given: unset.',
 		);
 
 		$this->logger->log_info( 'Info entry.' );

@@ -36,7 +36,10 @@ final readonly class WpdbDatabase implements DatabasePort {
 		if ( ! $wpdb instanceof wpdb ) {
 
 			throw new WpdbDatabaseException(
-				'Cannot initialize database adapter: global $wpdb is not available or has invalid type.',
+				sprintf(
+					'Global $wpdb must be an instance of wpdb. Given: %s.',
+					get_debug_type( $wpdb ),
+				),
 			);
 		}
 
@@ -72,10 +75,9 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot fetch row by ID: database query failed for table "%s", error: %s. Given: %s.',
-					$table,
-					$this->wpdb->last_error,
+					'Failed to fetch row "%s" from table "%s".',
 					(string) $id,
+					$table,
 				),
 			);
 		}
@@ -116,9 +118,8 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot fetch rows: database query failed for table "%s". Error: %s.',
+					'Failed to fetch rows from table "%s".',
 					$table,
-					$this->wpdb->last_error,
 				),
 			);
 		}
@@ -164,11 +165,9 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-					'Cannot fetch rows by column: database query failed for table "%s", column "%s". Error: %s. Given: %s.',
+					'Failed to fetch rows from table "%s" by column "%s" and value "%s".',
 					$table,
 					$column,
-					$this->wpdb->last_error,
 					$value === null ? 'NULL' : (string) $value,
 				),
 			);
@@ -210,9 +209,8 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot check row existence: database query failed for table "%s". Error: %s. Given: %s.',
+					'Failed to check row existence for table "%s" and ID "%s".',
 					$table,
-					$this->wpdb->last_error,
 					(string) $id,
 				),
 			);
@@ -250,11 +248,9 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-					'Cannot check row existence: database query failed for table "%s", column "%s". Error: %s. Given: %s.',
+					'Failed to check row existence for table "%s", column "%s", value "%s".',
 					$table,
 					$column,
-					$this->wpdb->last_error,
 					$value === null ? 'NULL' : (string) $value,
 				),
 			);
@@ -282,9 +278,8 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot insert row: database operation failed for table "%s". Error: %s.',
+					'Failed to insert row into table "%s".',
 					$table,
-					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
 				),
 			);
 		}
@@ -312,9 +307,8 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot update row(s): database operation failed for table "%s". Error: %s.',
+					'Failed to update rows in table "%s".',
 					$table,
-					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
 				),
 			);
 		}
@@ -344,10 +338,9 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot delete row: database operation failed for table "%s". Error: %s. Given: %s.',
-					$table,
-					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
+					'Failed to delete row "%s" from table "%s".',
 					(string) $id,
+					$table,
 				),
 			);
 		}
@@ -370,10 +363,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
 			throw new WpdbDatabaseException(
-				sprintf(
-					'Cannot execute query: database operation failed. Error: %s.',
-					$this->wpdb->last_error !== '' ? $this->wpdb->last_error : 'Unknown error',
-				),
+				'Failed to execute database query.',
 			);
 		}
 	}
@@ -397,7 +387,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot prepare query: wpdb->prepare() must return a non-empty string. Given: %s.',
+					'Prepared query must be a string. Given: %s.',
 					get_debug_type( $query ),
 				),
 			);
@@ -422,7 +412,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		if ( $charset_collate === '' ) {
 
 			throw new WpdbDatabaseException(
-				'Cannot determine database charset and collate: wpdb returned an empty collation string.',
+				'Database charset and collation must be non-empty. Given: empty string.',
 			);
 		}
 
@@ -448,7 +438,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 			throw new WpdbDatabaseException(
 				sprintf(
-					'Cannot determine database table prefix: wpdb returned invalid type %s.',
+					'Database table prefix must be a string. Given: %s.',
 					get_debug_type( $prefix ),
 				),
 			);

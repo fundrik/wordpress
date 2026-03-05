@@ -34,7 +34,7 @@ final class BootUnitResolverTest extends MockeryTestCase {
 	public function it_throws_when_class_does_not_exist(): void {
 
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'Cannot resolve the boot unit: the class must exist. Given: NotARealBootUnit.' );
+		$this->expectExceptionMessage( 'Boot unit class must exist. Given: NotARealBootUnit.' );
 
 		$this->resolver->resolve( 'NotARealBootUnit' );
 	}
@@ -45,7 +45,7 @@ final class BootUnitResolverTest extends MockeryTestCase {
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage(
 			sprintf(
-				'Cannot resolve the boot unit: the class must implement %s. Given: %s.',
+				'Boot unit class must implement %s. Given: %s.',
 				BootUnitInterface::class,
 				stdClass::class,
 			),

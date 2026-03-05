@@ -114,7 +114,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Cannot resolve default for campaign post meta key. Given: %s.', $meta_key ),
+			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
 		);
 	}
 
@@ -139,7 +139,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Cannot resolve default for campaign post meta key. Given: %s.', $meta_key ),
+			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
 		);
 	}
 
@@ -164,7 +164,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Cannot resolve default for campaign post meta key. Given: %s.', $meta_key ),
+			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
 		);
 	}
 	// phpcs:enable

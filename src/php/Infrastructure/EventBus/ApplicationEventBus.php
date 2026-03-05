@@ -45,7 +45,7 @@ final readonly class ApplicationEventBus implements ApplicationEventBusPort {
 
 			throw new ApplicationEventBusException(
 				sprintf(
-					'Cannot publish application event. Given: %s.',
+					'Failed to publish application event "%s".',
 					$event::class,
 				),
 				previous: $e,

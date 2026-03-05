@@ -43,7 +43,7 @@ final readonly class MigrationVersionReader {
 
 			throw new MigrationException(
 				sprintf(
-					'Cannot read migration version: the class "%s" must declare exactly one #[MigrationVersion].',
+					'Migration class must declare exactly one #[MigrationVersion]. Given: %s.',
 					$class_name,
 				),
 			);
@@ -55,9 +55,7 @@ final readonly class MigrationVersionReader {
 
 			throw new MigrationException(
 				sprintf(
-					// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-					'Cannot read migration version: the value must follow "YYYY_MM_DD_XX" for the class "%s". Given: %s.',
-					$class_name,
+					'Migration version must follow "YYYY_MM_DD_XX". Given: %s.',
 					$value,
 				),
 			);

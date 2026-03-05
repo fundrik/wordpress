@@ -57,7 +57,7 @@ final readonly class Container implements ContainerInterface {
 		} catch ( BindingResolutionException $e ) {
 
 			throw new ContainerException(
-				sprintf( 'Cannot resolve dependency: %s.', $id ),
+				sprintf( 'Failed to resolve dependency "%s".', $id ),
 				previous: $e,
 			);
 		}
@@ -66,7 +66,7 @@ final readonly class Container implements ContainerInterface {
 
 			throw new ContainerException(
 				sprintf(
-					'The resolved service must be an instance of %s. Given: %s.',
+					'Resolved service must be an instance of %s. Given: %s.',
 					$id,
 					get_debug_type( $instance ),
 				),
@@ -157,7 +157,7 @@ final readonly class Container implements ContainerInterface {
 
 			throw new ContainerException(
 				sprintf(
-					'The registered instance must be an instance of %s. Given: %s.',
+					'Registered instance must be an instance of %s. Given: %s.',
 					$abstract,
 					get_debug_type( $instance ),
 				),

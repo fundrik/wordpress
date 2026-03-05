@@ -286,7 +286,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			$id_for_error = is_string( $id ) ? $id : '<unavailable>';
 
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to map donation row. Given: ID %s.', $id_for_error ),
+				sprintf( 'Failed to map donation row "%s".', $id_for_error ),
 				previous: $e,
 			);
 		}
@@ -336,7 +336,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 
 			throw new DonationRepositoryException(
 				sprintf(
-					'Cannot use donation ID in persistence: ID must be UUID-compatible. Given: %s.',
+					'Donation ID must be UUID-compatible. Given: %s.',
 					(string) $id->get_value(),
 				),
 				previous: $e,
@@ -363,7 +363,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 
 			throw new DonationRepositoryException(
 				sprintf(
-					'Cannot use campaign ID in donation persistence: ID must be int-compatible. Given: %s.',
+					'Campaign ID must be int-compatible. Given: %s.',
 					(string) $id->get_value(),
 				),
 				previous: $e,

@@ -101,7 +101,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( DonationRepositoryException::class );
-		$this->expectExceptionMessage( 'Cannot use donation ID in persistence: ID must be UUID-compatible. Given: 7.' );
+		$this->expectExceptionMessage( 'Donation ID must be UUID-compatible. Given: 7.' );
 
 		$this->repository->find_by_id( $id );
 	}
@@ -122,7 +122,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( DonationRepositoryException::class );
 		$this->expectExceptionMessage(
-			sprintf( 'Failed to map donation row. Given: ID %s.', self::DONATION_ID ),
+			sprintf( 'Failed to map donation row "%s".', self::DONATION_ID ),
 		);
 
 		$this->repository->find_by_id( $id );
@@ -218,7 +218,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( DonationRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Cannot use campaign ID in donation persistence: ID must be int-compatible. Given: 01956b66-c80b-7f0e-b8d4-4c4f9f7d5599.',
+			'Campaign ID must be int-compatible. Given: 01956b66-c80b-7f0e-b8d4-4c4f9f7d5599.',
 		);
 
 		$this->repository->find_all_by_campaign_id( $campaign_id );

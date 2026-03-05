@@ -125,7 +125,7 @@ final class PostTypeRegistrarTest extends MockeryTestCase {
 
 		$this->expectException( PostTypeRegistrationException::class );
 		$this->expectExceptionMessage(
-			'Cannot register the post type `gamma`. The registration failed in WordPress: Boom.',
+			'Cannot register post type "gamma": WordPress returned "Boom".',
 		);
 
 		$this->registrar->register( $config );
@@ -168,7 +168,7 @@ final class PostTypeRegistrarTest extends MockeryTestCase {
 
 		$this->expectException( PostMetaRegistrationException::class );
 		$this->expectExceptionMessage(
-			'Cannot register the post meta field `gamma_is_open` for the post type `gamma`. The registration failed in WordPress.',
+			'Cannot register post meta "gamma_is_open" for post type "gamma": WordPress returned false.',
 		);
 
 		$this->registrar->register( $config );

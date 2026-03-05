@@ -50,7 +50,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot initialize database adapter: global $wpdb is not available or has invalid type.',
+			'Global $wpdb must be an instance of wpdb.',
 		);
 
 		new WpdbDatabase();
@@ -64,7 +64,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot initialize database adapter: global $wpdb is not available or has invalid type.',
+			'Global $wpdb must be an instance of wpdb.',
 		);
 
 		new WpdbDatabase();
@@ -179,7 +179,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot fetch row by ID: database query failed for table "wp_table", error: Boom. Given: 7.',
+			'Failed to fetch row "7" from table "wp_table".',
 		);
 
 		$this->db->get_by_id( $table, $id );
@@ -301,7 +301,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Boom';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage( 'Cannot fetch rows: database query failed for table "wp_table". Error: Boom.' );
+		$this->expectExceptionMessage( 'Failed to fetch rows from table "wp_table".' );
 
 		$this->db->get_all( $table );
 	}
@@ -470,7 +470,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot fetch rows by column: database query failed for table "wp_table", column "campaign_id". Error: Boom. Given: 77.',
+			'Failed to fetch rows from table "wp_table" by column "campaign_id" and value "77".',
 		);
 
 		$this->db->get_all_by_column( $table, $column, $value );
@@ -596,7 +596,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot check row existence: database query failed for table "wp_table". Error: Boom. Given: 7.',
+			'Failed to check row existence for table "wp_table" and ID "7".',
 		);
 
 		$this->db->exists_by_id( $table, $id );
@@ -690,7 +690,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot check row existence: database query failed for table "wp_table", column "email". Error: Boom. Given: a@b.com.',
+			'Failed to check row existence for table "wp_table", column "email", value "a@b.com".',
 		);
 
 		$this->db->exists_by_column( $table, $column, $value );
@@ -731,7 +731,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot insert row: database operation failed for table "wp_table". Error: Unknown error.',
+			'Failed to insert row into table "wp_table".',
 		);
 
 		$this->db->insert( $table, $data );
@@ -753,7 +753,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot insert row: database operation failed for table "wp_table". Error: Insert failed.',
+			'Failed to insert row into table "wp_table".',
 		);
 
 		$this->db->insert( $table, $data );
@@ -794,7 +794,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot update row(s): database operation failed for table "wp_table". Error: Unknown error.',
+			'Failed to update rows in table "wp_table".',
 		);
 
 		$this->db->update( $table, $data, $where );
@@ -817,7 +817,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot update row(s): database operation failed for table "wp_table". Error: Update failed.',
+			'Failed to update rows in table "wp_table".',
 		);
 
 		$this->db->update( $table, $data, $where );
@@ -871,7 +871,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot delete row: database operation failed for table "wp_table". Error: Unknown error. Given: 7.',
+			'Failed to delete row "7" from table "wp_table".',
 		);
 
 		$this->db->delete( $table, $id );
@@ -893,7 +893,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot delete row: database operation failed for table "wp_table". Error: Delete failed. Given: 7.',
+			'Failed to delete row "7" from table "wp_table".',
 		);
 
 		$this->db->delete( $table, $id );
@@ -929,7 +929,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage( 'Cannot execute query: database operation failed. Error: Unknown error.' );
+		$this->expectExceptionMessage( 'Failed to execute database query.' );
 
 		$this->db->query( $sql );
 	}
@@ -948,7 +948,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Query failed';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage( 'Cannot execute query: database operation failed. Error: Query failed.' );
+		$this->expectExceptionMessage( 'Failed to execute database query.' );
 
 		$this->db->query( $sql );
 	}
@@ -993,7 +993,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot prepare query: wpdb->prepare() must return a non-empty string. Given: null.',
+			'Prepared query must be a string. Given: null.',
 		);
 
 		$this->db->query_with_args( $sql, ...$args );
@@ -1019,7 +1019,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage( 'Cannot execute query: database operation failed. Error: Unknown error.' );
+		$this->expectExceptionMessage( 'Failed to execute database query.' );
 
 		$this->db->query_with_args( $sql, ...$args );
 	}
@@ -1046,7 +1046,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->prefix = [ 'invalid' ];
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage( 'Cannot determine database table prefix: wpdb returned invalid type array.' );
+		$this->expectExceptionMessage( 'Database table prefix must be a string. Given: array.' );
 
 		$this->db->qualify_table_name( 'table' );
 	}
@@ -1079,7 +1079,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage(
-			'Cannot determine database charset and collate: wpdb returned an empty collation string.',
+			'Database charset and collation must be non-empty. Given: empty string.',
 		);
 
 		$this->db->get_charset_collate();

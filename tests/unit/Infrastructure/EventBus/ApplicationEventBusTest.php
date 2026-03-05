@@ -57,7 +57,7 @@ final class ApplicationEventBusTest extends MockeryTestCase {
 			->andThrow( $previous );
 
 		$this->expectException( ApplicationEventBusException::class );
-		$this->expectExceptionMessage( 'Cannot publish application event.' );
+		$this->expectExceptionMessage( 'Failed to publish application event' );
 
 		try {
 			$this->event_bus->publish( $event );

@@ -81,7 +81,7 @@ final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 			->andThrow( new FakeDatabaseException( 'DB failed' ) );
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Cannot create the "wp_fundrik_donations" table.' );
+		$this->expectExceptionMessage( 'Failed to create table "wp_fundrik_donations".' );
 
 		$this->migration->apply( $charset_collate );
 	}

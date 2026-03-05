@@ -39,7 +39,7 @@ final class PostTypeConfigFactoryTest extends FundrikTestCase {
 
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage(
-			'Cannot create the post type configuration: the class must exist. Given: No\\Such\\Class.',
+			'Post type config class must exist. Given: No\\Such\\Class.',
 		);
 
 		$this->factory->create( 'No\\Such\\Class' );
@@ -51,7 +51,7 @@ final class PostTypeConfigFactoryTest extends FundrikTestCase {
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage(
 			sprintf(
-				'Cannot create the post type configuration: the class must implement %s. Given: %s.',
+				'Post type config class must implement %s. Given: %s.',
 				PostTypeConfigInterface::class,
 				NotAPostTypeConfig::class,
 			),

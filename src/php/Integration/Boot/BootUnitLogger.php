@@ -160,7 +160,7 @@ final class BootUnitLogger {
 		if ( ! isset( $this->boot_unit_class ) ) {
 
 			throw new LogicException(
-				'BootUnitLogger class name is not set. Call set_boot_unit_class() before logging.',
+				'Boot unit class must be set before logging. Given: unset.',
 			);
 		}
 	}

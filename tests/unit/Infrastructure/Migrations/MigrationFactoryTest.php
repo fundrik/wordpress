@@ -48,7 +48,7 @@ final class MigrationFactoryTest extends MockeryTestCase {
 		$class_name = 'Fundrik\\WordPress\\Tests\\Fixtures\\Migrations\\MissingMigration';
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Cannot create the migration: the class must exist.' );
+		$this->expectExceptionMessage( 'Migration class must exist.' );
 		$this->expectExceptionMessage( sprintf( 'Given: %s.', $class_name ) );
 
 		$this->factory->create( $class_name );
@@ -58,7 +58,7 @@ final class MigrationFactoryTest extends MockeryTestCase {
 	public function it_throws_when_the_class_does_not_extend_abstract_migration(): void {
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Cannot create the migration: the class must extend' );
+		$this->expectExceptionMessage( 'Migration class must extend' );
 		$this->expectExceptionMessage( AbstractMigration::class );
 		$this->expectExceptionMessage( sprintf( 'Given: %s.', NotAMigration::class ) );
 

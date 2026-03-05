@@ -83,7 +83,7 @@ final readonly class PostTypeRegistrar {
 
 			throw new PostTypeRegistrationException(
 				sprintf(
-					'Cannot register the post type `%s`. The registration failed in WordPress: %s.',
+					'Cannot register post type "%s": WordPress returned "%s".',
 					$id,
 					$result->get_error_message(),
 				),
@@ -120,8 +120,7 @@ final readonly class PostTypeRegistrar {
 
 				throw new PostMetaRegistrationException(
 					sprintf(
-						// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-						'Cannot register the post meta field `%s` for the post type `%s`. The registration failed in WordPress.',
+						'Cannot register post meta "%s" for post type "%s": WordPress returned false.',
 						$meta_key,
 						$post_type_id,
 					),

@@ -46,7 +46,7 @@ final readonly class HookDispatcherResolver {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot resolve the hook dispatcher: the class must exist. Given: %s.',
+					'Hook dispatcher class must exist. Given: %s.',
 					$class_name,
 				),
 			);
@@ -56,7 +56,7 @@ final readonly class HookDispatcherResolver {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot resolve the hook dispatcher: the class must implement %s. Given: %s.',
+					'Hook dispatcher class must implement %s. Given: %s.',
 					HookDispatcherInterface::class,
 					$class_name,
 				),

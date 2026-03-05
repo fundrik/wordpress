@@ -32,7 +32,7 @@ final readonly class PostTypeConfigFactory {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot create the post type configuration: the class must exist. Given: %s.',
+					'Post type config class must exist. Given: %s.',
 					$class_name,
 				),
 			);
@@ -42,7 +42,7 @@ final readonly class PostTypeConfigFactory {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot create the post type configuration: the class must implement %s. Given: %s.',
+					'Post type config class must implement %s. Given: %s.',
 					PostTypeConfigInterface::class,
 					$class_name,
 				),

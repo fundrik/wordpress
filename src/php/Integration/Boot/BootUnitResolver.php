@@ -46,7 +46,7 @@ final readonly class BootUnitResolver {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot resolve the boot unit: the class must exist. Given: %s.',
+					'Boot unit class must exist. Given: %s.',
 					$class_name,
 				),
 			);
@@ -56,7 +56,7 @@ final readonly class BootUnitResolver {
 
 			throw new InvalidArgumentException(
 				sprintf(
-					'Cannot resolve the boot unit: the class must implement %s. Given: %s.',
+					'Boot unit class must implement %s. Given: %s.',
 					BootUnitInterface::class,
 					$class_name,
 				),

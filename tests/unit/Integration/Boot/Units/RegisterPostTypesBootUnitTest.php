@@ -210,7 +210,7 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 				Mockery::on(
 					static fn ( string $message ): bool => str_contains(
 						$message,
-						'Cannot register the post type `beta`.',
+						'Cannot register post type "beta"',
 					),
 				),
 			);
@@ -242,7 +242,7 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 						$e = $context['exception'] ?? null;
 
 						return $e instanceof PostTypeRegistrationException
-							&& str_contains( $e->getMessage(), 'Cannot register the post type `beta`.' );
+							&& str_contains( $e->getMessage(), 'Cannot register post type "beta"' );
 					},
 				),
 			);

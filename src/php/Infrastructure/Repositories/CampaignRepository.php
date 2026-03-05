@@ -60,7 +60,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot fetch campaign: persistence error. Given: ID %d.', $id_int ),
+				sprintf( 'Failed to fetch campaign "%d".', $id_int ),
 				previous: $e,
 			);
 		}
@@ -89,7 +89,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			$rows = $this->db->get_all( self::TABLE_NAME );
 		} catch ( DatabaseExceptionInterface $e ) {
 
-			throw new CampaignRepositoryException( 'Cannot fetch campaigns: persistence error.', previous: $e );
+			throw new CampaignRepositoryException( 'Failed to fetch campaigns.', previous: $e );
 		}
 
 		return array_map(
@@ -118,7 +118,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot check campaign existence: persistence error. Given: ID %d.', $id_int ),
+				sprintf( 'Failed to check campaign "%d" existence.', $id_int ),
 				previous: $e,
 			);
 		}
@@ -149,7 +149,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot insert campaign: persistence error. Given: ID %d.', $campaign_id_int ),
+				sprintf( 'Failed to insert campaign "%d".', $campaign_id_int ),
 				previous: $e,
 			);
 		}
@@ -160,7 +160,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot fetch campaign after insert: persisted record not found. Given: ID %d.',
+					'Campaign "%d" was inserted, but fetching persisted snapshot failed.',
 					$campaign_id_int,
 				),
 			);
@@ -207,7 +207,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot update campaign: persistence error. Given: ID %d.', $campaign_id_int ),
+				sprintf( 'Failed to update campaign "%d".', $campaign_id_int ),
 				previous: $e,
 			);
 		}
@@ -217,13 +217,13 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			if ( ! $this->exists_by_id( $campaign_entity_id ) ) {
 
 				throw new CampaignRepositoryException(
-					sprintf( 'Cannot update campaign: persisted record not found. Given: ID %d.', $campaign_id_int ),
+					sprintf( 'Cannot update campaign "%d": persisted record not found.', $campaign_id_int ),
 				);
 			}
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot update campaign: version mismatch. Given: ID %d, expected version %d.',
+					'Cannot update campaign "%d": version mismatch (expected version %d).',
 					$campaign_id_int,
 					$expected_version->get_value(),
 				),
@@ -236,7 +236,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot fetch campaign after update: persisted record not found. Given: ID %d.',
+					'Campaign "%d" was updated, but fetching persisted snapshot failed.',
 					$campaign_id_int,
 				),
 			);
@@ -299,7 +299,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 
 			throw new CampaignRepositoryException(
-				sprintf( 'Cannot delete campaign: persistence error. Given: ID %d.', $id_int ),
+				sprintf( 'Failed to delete campaign "%d".', $id_int ),
 				previous: $e,
 			);
 		}
@@ -324,7 +324,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Cannot use campaign ID in persistence: ID must be int-compatible. Given: %s.',
+					'Campaign ID must be int-compatible. Given: %s.',
 					$id->get_value(),
 				),
 				previous: $e,
@@ -367,7 +367,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 			throw new CampaignRepositoryException(
 				sprintf(
-					'Failed to map campaign row. Given: ID %s.',
+					'Failed to map campaign row "%s".',
 					$id_for_error,
 				),
 				previous: $e,

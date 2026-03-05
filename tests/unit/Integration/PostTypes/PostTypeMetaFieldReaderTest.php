@@ -94,7 +94,7 @@ final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 		$config = new InvalidDefaultTypePostTypeConfig();
 
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'expected `integer`, got `bool`' );
+		$this->expectExceptionMessage( 'must match "integer". Given: bool.' );
 
 		$reader->get_meta_default_by_config_class( $config::class, InvalidDefaultTypePostTypeConfig::META_BAD_DEFAULT );
 	}
@@ -106,7 +106,7 @@ final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 		$config = new InvalidDefaultTypePostTypeConfig();
 
 		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'expected `integer`, got `bool`' );
+		$this->expectExceptionMessage( 'must match "integer". Given: bool.' );
 
 		$reader->get_meta_fields( $config );
 	}

@@ -35,7 +35,7 @@ final class HookDispatcherResolverTest extends MockeryTestCase {
 
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage(
-			'Cannot resolve the hook dispatcher: the class must exist. Given: NotARealDispatcher.',
+			'Hook dispatcher class must exist. Given: NotARealDispatcher.',
 		);
 
 		$this->resolver->resolve( 'NotARealDispatcher' );
@@ -47,7 +47,7 @@ final class HookDispatcherResolverTest extends MockeryTestCase {
 		$this->expectException( InvalidArgumentException::class );
 		$this->expectExceptionMessage(
 			sprintf(
-				'Cannot resolve the hook dispatcher: the class must implement %s. Given: %s.',
+				'Hook dispatcher class must implement %s. Given: %s.',
 				HookDispatcherInterface::class,
 				stdClass::class,
 			),

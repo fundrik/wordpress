@@ -87,7 +87,7 @@ final class ContainerTest extends MockeryTestCase {
 			->andThrow( $e );
 
 		$this->expectException( ContainerException::class );
-		$this->expectExceptionMessage( 'Cannot resolve dependency: MyClass.' );
+		$this->expectExceptionMessage( 'Failed to resolve dependency "MyClass".' );
 
 		try {
 			$this->container->make( 'MyClass' );
@@ -107,7 +107,7 @@ final class ContainerTest extends MockeryTestCase {
 			->andReturn( new stdClass() );
 
 		$this->expectException( ContainerException::class );
-		$this->expectExceptionMessage( 'The resolved service must be an instance of MyClass. Given: stdClass.' );
+		$this->expectExceptionMessage( 'Resolved service must be an instance of MyClass. Given: stdClass.' );
 
 		$this->container->make( 'MyClass' );
 	}
@@ -220,7 +220,7 @@ final class ContainerTest extends MockeryTestCase {
 		$this->inner->shouldNotReceive( 'instance' );
 
 		$this->expectException( ContainerException::class );
-		$this->expectExceptionMessage( 'The registered instance must be an instance of MyService. Given: stdClass.' );
+		$this->expectExceptionMessage( 'Registered instance must be an instance of MyService. Given: stdClass.' );
 
 		$this->container->instance( 'MyService', $instance );
 	}

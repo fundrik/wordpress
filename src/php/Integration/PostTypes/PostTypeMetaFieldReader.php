@@ -201,7 +201,7 @@ final readonly class PostTypeMetaFieldReader {
 
 		throw new InvalidArgumentException(
 			sprintf(
-				'Cannot use default for post meta field `%s` in `%s`: expected `%s`, got `%s`.',
+				'Post meta default for "%s" in "%s" must match "%s". Given: %s.',
 				$meta_key,
 				$post_type_config_class,
 				$type,

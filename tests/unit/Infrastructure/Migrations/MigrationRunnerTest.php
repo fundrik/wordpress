@@ -147,7 +147,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->once()
 			->andReturn( $charset_collate );
 
-		// wrong order on purpose — the runner must sort by version.
+		// wrong order on purpose - the runner must sort by version.
 		$this->registry
 			->shouldReceive( 'get_migration_classes' )
 			->once()
@@ -267,7 +267,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			);
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Cannot determine database charset and collation.' );
+		$this->expectExceptionMessage( 'Failed to fetch database charset and collation.' );
 
 		$this->runner->migrate();
 	}
@@ -376,7 +376,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 
 		$this->expectException( MigrationException::class );
 		$this->expectExceptionMessage(
-			'Cannot complete migration: the stored DB version must be updated after applying.',
+			'was applied, but updating stored DB version failed.',
 		);
 
 		$this->runner->migrate();

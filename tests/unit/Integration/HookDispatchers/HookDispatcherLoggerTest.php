@@ -35,7 +35,7 @@ final class HookDispatcherLoggerTest extends MockeryTestCase {
 
 		$this->expectException( LogicException::class );
 		$this->expectExceptionMessage(
-			'HookDispatcherLogger context is not set. Call set_hook_name() and set_hook_dispatcher_class() before logging.',
+			'Hook dispatcher logger context must be set before logging. Given: unset.',
 		);
 
 		$this->logger->log_invalid_input(

@@ -51,7 +51,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 			$this->database->query_with_args( $sql, $table_name );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new MigrationException(
-				sprintf( 'Cannot create the "%s" table.', $table_name ),
+				sprintf( 'Failed to create table "%s".', $table_name ),
 				previous: $e,
 			);
 		}
