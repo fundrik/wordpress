@@ -8,6 +8,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesA
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
@@ -30,6 +31,7 @@ final class HookDispatcherRegistryTest extends FundrikTestCase {
 				DeletePostActionHookDispatcher::class,
 				EnqueueBlockEditorAssetsActionHookDispatcher::class,
 				InitActionHookDispatcher::class,
+				RestApiInitActionHookDispatcher::class,
 				RestAfterInsertCampaignActionHookDispatcher::class,
 				RestPreInsertCampaignFilterHookDispatcher::class,
 				RestPrepareCampaignFilterHookDispatcher::class,
