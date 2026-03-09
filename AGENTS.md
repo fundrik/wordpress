@@ -32,3 +32,8 @@
 - `Infrastructure` contains technical implementations of system ports and orchestration that should remain platform-agnostic where possible.
 - `Integration` contains platform adapters that depend on WordPress APIs (`do_action`, `add_action`, `WP_*`, REST hooks, etc.).
 - Port interface docblocks should use the standard wording `Provides the <inbound|outbound> port for ...` for consistency across the codebase.
+
+# Project Scripts
+
+- Source of truth for runnable project commands is the `scripts` section in `composer.json` and `package.json`.
+- Before running lint/tests/build/e2e/integration commands, read scripts from those files and execute via `composer run <script>` or `npm run <script>`.
