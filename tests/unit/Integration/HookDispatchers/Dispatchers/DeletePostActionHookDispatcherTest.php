@@ -46,10 +46,7 @@ final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 
 		$this->dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_action( self::HOOK_NAME, $this->dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -67,7 +64,12 @@ final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 
 		$this->dispatcher->attach( $listener );
 
-		$this->dispatcher->handle( 123, $this->post );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback( 123, $this->post );
 	}
 
 	#[Test]
@@ -83,7 +85,12 @@ final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 
 		$dispatcher = new DeletePostActionHookDispatcher( $logger );
 
-		$dispatcher->handle( 'invalid-id', $this->post );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$callback( 'invalid-id', $this->post );
 	}
 
 	#[Test]
@@ -99,7 +106,12 @@ final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 
 		$dispatcher = new DeletePostActionHookDispatcher( $logger );
 
-		$dispatcher->handle( 123, 'invalid-post' );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$callback( 123, 'invalid-post' );
 	}
 
 	#[Test]
@@ -120,6 +132,11 @@ final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 		$this->dispatcher->attach( $throwing_listener );
 		$this->dispatcher->attach( $listener_after );
 
-		$this->dispatcher->handle( 123, $this->post );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback( 123, $this->post );
 	}
 }

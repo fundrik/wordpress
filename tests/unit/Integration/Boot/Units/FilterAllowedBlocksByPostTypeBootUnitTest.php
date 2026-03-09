@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
+use Closure;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
@@ -14,6 +15,7 @@ use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
+use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -31,7 +33,12 @@ use WP_Block_Editor_Context;
 #[UsesClass( PostTypeConfigFactory::class )]
 final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase {
 
+	use DispatcherTestHelpers;
+
+	private const string HOOK_NAME = 'allowed_block_types_all';
+
 	private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook;
+	private Closure $allowed_block_types_callback;
 
 	private WordPressContextInterface&MockInterface $wp_context;
 	private PostTypeConfigRegistry&MockInterface $post_type_config_registry;
@@ -50,6 +57,10 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 
 		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
 		$this->allowed_block_types_hook = new AllowedBlockTypesAllFilterHookDispatcher( $hook_logger );
+		$this->allowed_block_types_callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$this->allowed_block_types_hook->register( ... ),
+		);
 
 		$this->wp_context = Mockery::mock( WordPressContextInterface::class );
 		$this->post_type_config_registry = Mockery::mock( PostTypeConfigRegistry::class );
@@ -99,7 +110,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 				],
 			);
 
-		$returned = $this->allowed_block_types_hook->handle( true, $editor_context );
+		$returned = ( $this->allowed_block_types_callback )( true, $editor_context );
 
 		self::assertSame( [ 'core/paragraph', 'fundrik/free' ], $returned );
 	}
@@ -114,7 +125,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 
 		$allowed = [ 'core/paragraph' ];
 
-		$returned = $this->allowed_block_types_hook->handle( $allowed, $editor_context );
+		$returned = ( $this->allowed_block_types_callback )( $allowed, $editor_context );
 
 		self::assertSame( $allowed, $returned );
 	}
@@ -147,7 +158,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
 		$editor_context->post = $post;
 
-		$returned = $this->allowed_block_types_hook->handle( false, $editor_context );
+		$returned = ( $this->allowed_block_types_callback )( false, $editor_context );
 
 		self::assertFalse( $returned );
 	}
@@ -174,7 +185,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
 		$editor_context->post = $post;
 
-		$returned = $this->allowed_block_types_hook->handle( true, $editor_context );
+		$returned = ( $this->allowed_block_types_callback )( true, $editor_context );
 
 		self::assertSame( [ 'core/paragraph', 'fundrik/free' ], $returned );
 	}

@@ -39,10 +39,7 @@ final class InitActionHookDispatcherTest extends WordPressTestCase {
 
 		$this->dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_action( self::HOOK_NAME, $this->dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -59,7 +56,12 @@ final class InitActionHookDispatcherTest extends WordPressTestCase {
 		$this->dispatcher->attach( $listener1 );
 		$this->dispatcher->attach( $listener2 );
 
-		$this->dispatcher->handle();
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback();
 	}
 
 	#[Test]
@@ -80,6 +82,11 @@ final class InitActionHookDispatcherTest extends WordPressTestCase {
 		$this->dispatcher->attach( $throwing_listener );
 		$this->dispatcher->attach( $listener_after );
 
-		$this->dispatcher->handle();
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback();
 	}
 }

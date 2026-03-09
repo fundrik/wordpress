@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
+use Closure;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
@@ -34,6 +35,7 @@ use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
 use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
+use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -68,11 +70,24 @@ use WP_Screen;
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
+	use DispatcherTestHelpers;
+
+	private const string REST_PRE_INSERT_HOOK = 'rest_pre_insert_' . CampaignPostTypeConfig::ID;
+	private const string REST_PREPARE_HOOK = 'rest_prepare_' . CampaignPostTypeConfig::ID;
+	private const string REST_AFTER_INSERT_HOOK = 'rest_after_insert_' . CampaignPostTypeConfig::ID;
+	private const string DELETE_POST_HOOK = 'delete_post';
+	private const string ENQUEUE_BLOCK_EDITOR_ASSETS_HOOK = 'enqueue_block_editor_assets';
+
 	private RestPreInsertCampaignFilterHookDispatcher $rest_pre_insert_hook;
 	private RestPrepareCampaignFilterHookDispatcher $rest_prepare_hook;
 	private RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook;
 	private DeletePostActionHookDispatcher $delete_post_hook;
 	private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook;
+	private Closure $rest_pre_insert_callback;
+	private Closure $rest_prepare_callback;
+	private Closure $rest_after_insert_callback;
+	private Closure $delete_post_callback;
+	private Closure $enqueue_block_editor_assets_callback;
 
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
 	private CampaignRepositoryPort&MockInterface $validator_campaign_repository;
@@ -100,21 +115,41 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->rest_pre_insert_hook = new RestPreInsertCampaignFilterHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
 		);
+		$this->rest_pre_insert_callback = $this->register_and_capture_filter_callback(
+			self::REST_PRE_INSERT_HOOK,
+			$this->rest_pre_insert_hook->register( ... ),
+		);
 
 		$this->rest_prepare_hook = new RestPrepareCampaignFilterHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
+		);
+		$this->rest_prepare_callback = $this->register_and_capture_filter_callback(
+			self::REST_PREPARE_HOOK,
+			$this->rest_prepare_hook->register( ... ),
 		);
 
 		$this->rest_after_insert_hook = new RestAfterInsertCampaignActionHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
 		);
+		$this->rest_after_insert_callback = $this->register_and_capture_action_callback(
+			self::REST_AFTER_INSERT_HOOK,
+			$this->rest_after_insert_hook->register( ... ),
+		);
 
 		$this->delete_post_hook = new DeletePostActionHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
 		);
+		$this->delete_post_callback = $this->register_and_capture_action_callback(
+			self::DELETE_POST_HOOK,
+			$this->delete_post_hook->register( ... ),
+		);
 
 		$this->enqueue_block_editor_assets_hook = new EnqueueBlockEditorAssetsActionHookDispatcher(
 			new HookDispatcherLogger( $this->psr_logger ),
+		);
+		$this->enqueue_block_editor_assets_callback = $this->register_and_capture_action_callback(
+			self::ENQUEUE_BLOCK_EDITOR_ASSETS_HOOK,
+			$this->enqueue_block_editor_assets_hook->register( ... ),
 		);
 
 		$this->campaign_factory = new CampaignFactory();
@@ -171,7 +206,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			],
 		);
 
-		$returned = $this->rest_pre_insert_hook->handle( $prepared_post, $request );
+		$returned = ( $this->rest_pre_insert_callback )( $prepared_post, $request );
 
 		self::assertInstanceOf( WP_Error::class, $returned );
 		self::assertSame( 'fundrik_campaign_invalid_payload', $returned->get_error_code() );
@@ -202,7 +237,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			],
 		);
 
-		$returned = $this->rest_pre_insert_hook->handle( $prepared_post, $request );
+		$returned = ( $this->rest_pre_insert_callback )( $prepared_post, $request );
 
 		self::assertInstanceOf( WP_Error::class, $returned );
 		self::assertSame( 'fundrik_campaign_version_mismatch', $returned->get_error_code() );
@@ -234,7 +269,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			],
 		);
 
-		$returned = $this->rest_pre_insert_hook->handle( $prepared_post, $request );
+		$returned = ( $this->rest_pre_insert_callback )( $prepared_post, $request );
 
 		self::assertSame( $prepared_post, $returned );
 	}
@@ -270,7 +305,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$returned = $this->rest_prepare_hook->handle( $response, $post, $request );
+		$returned = ( $this->rest_prepare_callback )( $response, $post, $request );
 
 		self::assertSame( $response, $returned );
 	}
@@ -322,7 +357,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$returned = $this->rest_prepare_hook->handle( $response, $post, $request );
+		$returned = ( $this->rest_prepare_callback )( $response, $post, $request );
 
 		self::assertSame( $response, $returned );
 	}
@@ -366,7 +401,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$returned = $this->rest_prepare_hook->handle( $response, $post, $request );
+		$returned = ( $this->rest_prepare_callback )( $response, $post, $request );
 
 		self::assertSame( $response, $returned );
 	}
@@ -420,7 +455,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$returned = $this->rest_prepare_hook->handle( $response, $post, $request );
+		$returned = ( $this->rest_prepare_callback )( $response, $post, $request );
 
 		self::assertSame( $response, $returned );
 	}
@@ -436,7 +471,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->enqueue_block_editor_assets_hook->handle();
+		( $this->enqueue_block_editor_assets_callback )();
 	}
 
 	#[Test]
@@ -453,7 +488,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->enqueue_block_editor_assets_hook->handle();
+		( $this->enqueue_block_editor_assets_callback )();
 	}
 
 	#[Test]
@@ -483,7 +518,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->enqueue_block_editor_assets_hook->handle();
+		( $this->enqueue_block_editor_assets_callback )();
 	}
 
 	#[Test]
@@ -504,7 +539,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->delete_post_hook->handle( 31, $post );
+		( $this->delete_post_callback )( 31, $post );
 	}
 
 	#[Test]
@@ -518,7 +553,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->delete_post_hook->handle( 32, $post );
+		( $this->delete_post_callback )( 32, $post );
 	}
 
 	#[Test]
@@ -579,7 +614,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->delete_post_hook->handle( 33, $post );
+		( $this->delete_post_callback )( 33, $post );
 	}
 
 	#[Test]
@@ -614,7 +649,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->boot_unit->boot();
 
 		// Exception is caught by RestAfterInsertCampaignActionHookDispatcher.
-		$this->rest_after_insert_hook->handle( $post, $request, true );
+		( $this->rest_after_insert_callback )( $post, $request, true );
 	}
 
 	#[Test]
@@ -683,7 +718,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->boot_unit->boot();
 
 		// Exception is caught by RestAfterInsertCampaignActionHookDispatcher.
-		$this->rest_after_insert_hook->handle( $post, $request, false );
+		( $this->rest_after_insert_callback )( $post, $request, false );
 	}
 
 	#[Test]
@@ -721,7 +756,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->rest_after_insert_hook->handle( $post, $request, true );
+		( $this->rest_after_insert_callback )( $post, $request, true );
 	}
 
 	#[Test]
@@ -764,7 +799,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->rest_after_insert_hook->handle( $post, $request, true );
+		( $this->rest_after_insert_callback )( $post, $request, true );
 	}
 
 	private function create_persisted_campaign( int $id, int $version ): Campaign {

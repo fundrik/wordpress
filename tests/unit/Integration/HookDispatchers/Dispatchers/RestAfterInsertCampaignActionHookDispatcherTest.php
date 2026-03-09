@@ -51,10 +51,7 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 
 		$this->dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_action( self::HOOK_NAME, $this->dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -72,7 +69,12 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 
 		$this->dispatcher->attach( $listener );
 
-		$this->dispatcher->handle( $this->post, $this->request, true );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback( $this->post, $this->request, true );
 	}
 
 	#[Test]
@@ -88,7 +90,12 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 
 		$dispatcher = new RestAfterInsertCampaignActionHookDispatcher( $logger );
 
-		$dispatcher->handle( 'invalid-post', $this->request, true );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$callback( 'invalid-post', $this->request, true );
 	}
 
 	#[Test]
@@ -104,7 +111,12 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 
 		$dispatcher = new RestAfterInsertCampaignActionHookDispatcher( $logger );
 
-		$dispatcher->handle( $this->post, 'invalid-request', true );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$callback( $this->post, 'invalid-request', true );
 	}
 
 	#[Test]
@@ -120,7 +132,12 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 
 		$dispatcher = new RestAfterInsertCampaignActionHookDispatcher( $logger );
 
-		$dispatcher->handle( $this->post, $this->request, 'not-bool' );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$callback( $this->post, $this->request, 'not-bool' );
 	}
 
 	#[Test]
@@ -141,6 +158,11 @@ final class RestAfterInsertCampaignActionHookDispatcherTest extends WordPressTes
 		$this->dispatcher->attach( $throwing_listener );
 		$this->dispatcher->attach( $listener_after );
 
-		$this->dispatcher->handle( $this->post, $this->request, true );
+		$callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->dispatcher->register( ... ),
+		);
+
+		$callback( $this->post, $this->request, true );
 	}
 }

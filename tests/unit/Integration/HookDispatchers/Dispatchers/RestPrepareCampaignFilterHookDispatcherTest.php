@@ -50,10 +50,7 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 
 		$dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_filter( self::HOOK_NAME, $dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_filter( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -73,7 +70,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 			static fn ( WP_REST_Response $r, WP_Post $p, WP_REST_Request $q ): WP_REST_Response => $changed,
 		);
 
-		$returned = $dispatcher->handle( $response, $this->post, $this->request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $response, $this->post, $this->request );
 
 		self::assertSame( $changed, $returned );
 	}
@@ -93,7 +95,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 
 		$original = 'invalid-response';
 
-		$returned = $dispatcher->handle( $original, $this->post, $this->request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, $this->post, $this->request );
 
 		self::assertSame( $original, $returned );
 	}
@@ -114,7 +121,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 		$response = Mockery::mock( WP_REST_Response::class );
 		$original = $response;
 
-		$returned = $dispatcher->handle( $response, 'invalid-post', $this->request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $response, 'invalid-post', $this->request );
 
 		self::assertSame( $original, $returned );
 	}
@@ -135,7 +147,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 		$response = Mockery::mock( WP_REST_Response::class );
 		$original = $response;
 
-		$returned = $dispatcher->handle( $response, $this->post, 'invalid-request' );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $response, $this->post, 'invalid-request' );
 
 		self::assertSame( $original, $returned );
 	}
@@ -159,7 +176,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 
 		$response = Mockery::mock( WP_REST_Response::class );
 
-		$returned = $dispatcher->handle( $response, $this->post, $this->request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $response, $this->post, $this->request );
 
 		self::assertSame( $response, $returned );
 	}
@@ -181,7 +203,12 @@ final class RestPrepareCampaignFilterHookDispatcherTest extends WordPressTestCas
 
 		$response = Mockery::mock( WP_REST_Response::class );
 
-		$returned = $dispatcher->handle( $response, $this->post, $this->request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $response, $this->post, $this->request );
 
 		self::assertSame( $response, $returned );
 	}

@@ -45,10 +45,7 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 
 		$dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_filter( self::HOOK_NAME, $dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_filter( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -72,7 +69,12 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 			},
 		);
 
-		$returned = $dispatcher->handle( true, $this->editor_context );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( true, $this->editor_context );
 
 		self::assertSame( [ 'core/paragraph' ], $returned );
 	}
@@ -91,7 +93,13 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
 
 		$original = 'invalid';
-		$returned = $dispatcher->handle( $original, $this->editor_context );
+
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, $this->editor_context );
 
 		self::assertSame( $original, $returned );
 	}
@@ -110,7 +118,13 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
 
 		$original = [ new stdClass() ];
-		$returned = $dispatcher->handle( $original, $this->editor_context );
+
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, $this->editor_context );
 
 		self::assertSame( $original, $returned );
 	}
@@ -129,7 +143,13 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
 
 		$original = true;
-		$returned = $dispatcher->handle( $original, 'invalid-context' );
+
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, 'invalid-context' );
 
 		self::assertSame( $original, $returned );
 	}
@@ -151,7 +171,12 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 
 		$original = true;
 
-		$returned = $dispatcher->handle( $original, $this->editor_context );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, $this->editor_context );
 
 		self::assertSame( $original, $returned );
 	}
@@ -175,7 +200,12 @@ final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCa
 
 		$original = true;
 
-		$returned = $dispatcher->handle( $original, $this->editor_context );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $original, $this->editor_context );
 
 		self::assertSame( $original, $returned );
 	}

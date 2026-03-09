@@ -68,7 +68,7 @@ final class InitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @since 1.0.0
 	 */
-	public function handle(): void {
+	private function handle(): void {
 
 		try {
 

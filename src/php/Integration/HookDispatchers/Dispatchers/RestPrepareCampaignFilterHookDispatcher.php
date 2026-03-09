@@ -90,7 +90,7 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function handle( mixed $response, mixed $post, mixed $request ): mixed {
+	private function handle( mixed $response, mixed $post, mixed $request ): mixed {
 
 		try {
 

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
+use Closure;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -25,7 +27,12 @@ use Psr\Log\LoggerInterface;
 #[UsesClass( PluginPath::class )]
 final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 
+	use DispatcherTestHelpers;
+
+	private const string HOOK_NAME = 'init';
+
 	private InitActionHookDispatcher $init_hook;
+	private Closure $init_callback;
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private BootUnitLogger $logger;
@@ -40,6 +47,10 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 
 		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
 		$this->init_hook = new InitActionHookDispatcher( $hook_logger );
+		$this->init_callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->init_hook->register( ... ),
+		);
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
 
@@ -58,6 +69,6 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 			->once()
 			->with( $blocks_path, $manifest_path );
 
-		$this->init_hook->handle();
+		( $this->init_callback )();
 	}
 }

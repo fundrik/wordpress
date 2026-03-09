@@ -81,7 +81,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function handle( mixed $allowed, mixed $editor_context ): mixed {
+	private function handle( mixed $allowed, mixed $editor_context ): mixed {
 
 		try {
 

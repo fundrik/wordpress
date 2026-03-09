@@ -68,7 +68,7 @@ final class EnqueueBlockEditorAssetsActionHookDispatcher implements HookDispatch
 	 *
 	 * @since 1.0.0
 	 */
-	public function handle(): void {
+	private function handle(): void {
 
 		try {
 

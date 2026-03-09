@@ -36,10 +36,7 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 
 		$dispatcher->register();
 
-		self::assertSame(
-			10,
-			has_filter( self::HOOK_NAME, $dispatcher->handle( ... ) ),
-		);
+		self::assertNotFalse( has_filter( self::HOOK_NAME ) );
 	}
 
 	#[Test]
@@ -61,7 +58,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 			static fn ( stdClass $p, WP_REST_Request $r ): stdClass => $changed,
 		);
 
-		$returned = $dispatcher->handle( $prepared_post, $request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $prepared_post, $request );
 
 		self::assertSame( $changed, $returned );
 	}
@@ -85,7 +87,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 			static fn ( stdClass $p, WP_REST_Request $r ): WP_Error => $changed,
 		);
 
-		$returned = $dispatcher->handle( $prepared_post, $request );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $prepared_post, $request );
 
 		self::assertSame( $changed, $returned );
 	}
@@ -105,10 +112,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 
 		$original = 'invalid-prepared-post';
 
-		$returned = $dispatcher->handle(
-			$original,
-			new WP_REST_Request(),
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
 		);
+
+		$returned = $callback( $original, new WP_REST_Request() );
 
 		self::assertSame( $original, $returned );
 	}
@@ -129,7 +138,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 		$prepared_post = new stdClass();
 		$original = $prepared_post;
 
-		$returned = $dispatcher->handle( $prepared_post, 'invalid-request' );
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
+		);
+
+		$returned = $callback( $prepared_post, 'invalid-request' );
 
 		self::assertSame( $original, $returned );
 	}
@@ -153,10 +167,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 
 		$prepared_post = new stdClass();
 
-		$returned = $dispatcher->handle(
-			$prepared_post,
-			new WP_REST_Request(),
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
 		);
+
+		$returned = $callback( $prepared_post, new WP_REST_Request() );
 
 		self::assertSame( $prepared_post, $returned );
 	}
@@ -178,10 +194,12 @@ final class RestPreInsertCampaignFilterHookDispatcherTest extends WordPressTestC
 
 		$prepared_post = new stdClass();
 
-		$returned = $dispatcher->handle(
-			$prepared_post,
-			new WP_REST_Request(),
+		$callback = $this->register_and_capture_filter_callback(
+			self::HOOK_NAME,
+			$dispatcher->register( ... ),
 		);
+
+		$returned = $callback( $prepared_post, new WP_REST_Request() );
 
 		self::assertSame( $prepared_post, $returned );
 	}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
+use Closure;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
@@ -18,6 +19,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
+use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -38,7 +40,12 @@ use WP_Error;
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 
+	use DispatcherTestHelpers;
+
+	private const string HOOK_NAME = 'init';
+
 	private InitActionHookDispatcher $init_hook;
+	private Closure $init_callback;
 
 	private PostTypeConfigRegistry&MockInterface $post_type_config_registry;
 	private PostTypeConfigFactory $post_type_config_factory;
@@ -57,6 +64,10 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 
 		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
 		$this->init_hook = new InitActionHookDispatcher( $hook_logger );
+		$this->init_callback = $this->register_and_capture_action_callback(
+			self::HOOK_NAME,
+			$this->init_hook->register( ... ),
+		);
 
 		$this->post_type_config_registry = Mockery::mock( PostTypeConfigRegistry::class );
 
@@ -165,7 +176,7 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 
 		$this->boot_unit->boot();
 
-		$this->init_hook->handle();
+		( $this->init_callback )();
 	}
 
 	#[Test]
@@ -250,6 +261,6 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 		$this->boot_unit->boot();
 
 		// No exception expected: InitActionHookDispatcher::handle() catches Throwable.
-		$this->init_hook->handle();
+		( $this->init_callback )();
 	}
 }

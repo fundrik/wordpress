@@ -77,7 +77,7 @@ final class DeletePostActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function handle( mixed $post_id, mixed $post ): void {
+	private function handle( mixed $post_id, mixed $post ): void {
 
 		try {
 

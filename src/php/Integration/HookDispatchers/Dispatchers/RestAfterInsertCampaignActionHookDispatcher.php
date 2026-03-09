@@ -87,7 +87,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function handle( mixed $post, mixed $request, mixed $creating ): void {
+	private function handle( mixed $post, mixed $request, mixed $creating ): void {
 
 		try {
 
