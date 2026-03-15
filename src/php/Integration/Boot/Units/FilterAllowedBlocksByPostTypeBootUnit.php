@@ -7,11 +7,8 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
-use InvalidArgumentException;
 use WP_Block_Editor_Context;
 
 /**
@@ -36,6 +33,15 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	private array $block_allowed_post_types;
 
 	/**
+	 * The configured post type configs.
+	 *
+	 * @var array<int, PostTypeConfigInterface>
+	 *
+	 * @phpstan-var list<PostTypeConfigInterface>
+	 */
+	private array $post_type_configs;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -43,17 +49,17 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
 	 * @param AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook Dispatches the WordPress 'allowed_block_types_all' filter.
 	 * @param WordPressContextInterface $wp_context Provides access to registered WordPress types.
-	 * @param PostTypeConfigRegistry $post_type_config_registry Provides the declared post type config classes.
-	 * @param PostTypeConfigFactory $post_type_config_factory Creates post type config instances.
 	 * @param BootUnitLogger $logger Writes structured log entries.
+	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs used to build the block restriction map.
 	 */
 	public function __construct(
 		private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook,
 		private WordPressContextInterface $wp_context,
-		private PostTypeConfigRegistry $post_type_config_registry,
-		private PostTypeConfigFactory $post_type_config_factory,
 		private BootUnitLogger $logger,
+		PostTypeConfigInterface ...$post_type_configs,
 	) {
+
+		$this->post_type_configs = $post_type_configs;
 
 		$this->block_allowed_post_types = $this->build_block_allowed_post_types_map();
 
@@ -64,8 +70,6 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 * Attaches the filter and prepares the block restriction map.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
 	 */
 	public function boot(): void {
 
@@ -125,14 +129,12 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 * @since 1.0.0
 	 *
 	 * @return array<string, array<string>> The map of block names to allowed post types.
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
 	 */
 	private function build_block_allowed_post_types_map(): array {
 
 		$map = [];
 
-		foreach ( $this->create_post_type_configs() as $post_type_config ) {
+		foreach ( $this->post_type_configs as $post_type_config ) {
 
 			$post_type_id = $post_type_config->get_id();
 
@@ -142,28 +144,6 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 		}
 
 		return $map;
-	}
-
-	/**
-	 * Creates all declared post type configs.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<int, PostTypeConfigInterface> The list of post type config instances.
-	 *
-	 * @phpstan-return list<PostTypeConfigInterface>
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
-	 */
-	private function create_post_type_configs(): array {
-
-		$configs = [];
-
-		foreach ( $this->post_type_config_registry->get_post_type_config_classes() as $class_name ) {
-			$configs[] = $this->post_type_config_factory->create( $class_name );
-		}
-
-		return $configs;
 	}
 
 	/**

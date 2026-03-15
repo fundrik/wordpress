@@ -7,7 +7,6 @@ namespace Fundrik\WordPress\Infrastructure\Migrations\Files;
 use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 
 /**
  * Creates the `fundrik_donations` table in the database.
@@ -16,8 +15,19 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
  *
  * @internal
  */
-#[MigrationVersion( '2026_03_04_00' )]
 final readonly class CreateFundrikDonationsTable extends AbstractMigration {
+
+	/**
+	 * Returns the migration version.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string The sortable migration version.
+	 */
+	protected static function define_version(): string {
+
+		return '2026_03_04_00';
+	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**

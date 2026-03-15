@@ -7,8 +7,10 @@ namespace Fundrik\WordPress\Tests\Kernel\Container;
 use Closure;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
-use Fundrik\WordPress\Kernel\Container\ContainerInterface;
+use Fundrik\WordPress\Kernel\Container\ContextualBindingDefinition;
 use Fundrik\WordPress\Tests\MockeryTestCase;
+use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
+use Illuminate\Contracts\Container\ContextualBindingBuilder;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -19,7 +21,7 @@ use stdClass;
 final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 
 	private ContainerBindingsRegistry&MockInterface $registry;
-	private ContainerInterface&MockInterface $container;
+	private LaravelContainerInterface&MockInterface $container;
 
 	private ContainerBindingsRegistrar $registrar;
 
@@ -28,7 +30,7 @@ final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 		parent::setUp();
 
 		$this->registry = Mockery::mock( ContainerBindingsRegistry::class );
-		$this->container = Mockery::mock( ContainerInterface::class );
+		$this->container = Mockery::mock( LaravelContainerInterface::class );
 
 		$this->registrar = new ContainerBindingsRegistrar( $this->registry );
 	}
@@ -56,6 +58,30 @@ final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 			->once()
 			->andReturn( $bindings );
 
+		$first_contextual_builder = Mockery::mock( ContextualBindingBuilder::class );
+		$second_contextual_builder = Mockery::mock( ContextualBindingBuilder::class );
+
+		$this->registry
+			->shouldReceive( 'get_contextual_bindings' )
+			->once()
+			->andReturn(
+				[
+					new ContextualBindingDefinition(
+						'My\\ConsumerA',
+						'My\\DependencyA',
+						[
+							'My\\ImplementationA1',
+							'My\\ImplementationA2',
+						],
+					),
+					new ContextualBindingDefinition(
+						'My\\ConsumerB',
+						'$configValue',
+						'configured-value',
+					),
+				],
+			);
+
 		$this->container
 			->shouldReceive( 'singleton' )
 			->once()
@@ -79,6 +105,47 @@ final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 				Mockery::type( Closure::class ),
 			);
 
+		$this->container
+			->shouldReceive( 'when' )
+			->once()
+			->with( 'My\\ConsumerA' )
+			->andReturn( $first_contextual_builder );
+
+		$first_contextual_builder
+			->shouldReceive( 'needs' )
+			->once()
+			->with( 'My\\DependencyA' )
+			->andReturnSelf();
+
+		$first_contextual_builder
+			->shouldReceive( 'give' )
+			->once()
+			->with(
+				[
+					'My\\ImplementationA1',
+					'My\\ImplementationA2',
+				],
+			)
+			->andReturnSelf();
+
+		$this->container
+			->shouldReceive( 'when' )
+			->once()
+			->with( 'My\\ConsumerB' )
+			->andReturn( $second_contextual_builder );
+
+		$second_contextual_builder
+			->shouldReceive( 'needs' )
+			->once()
+			->with( '$configValue' )
+			->andReturnSelf();
+
+		$second_contextual_builder
+			->shouldReceive( 'give' )
+			->once()
+			->with( 'configured-value' )
+			->andReturnSelf();
+
 		$this->registrar->register_bindings_into_container( $this->container );
 	}
 
@@ -95,8 +162,14 @@ final class ContainerBindingsRegistrarTest extends MockeryTestCase {
 			->once()
 			->andReturn( [] );
 
+		$this->registry
+			->shouldReceive( 'get_contextual_bindings' )
+			->once()
+			->andReturn( [] );
+
 		$this->container->shouldNotReceive( 'singleton' );
 		$this->container->shouldNotReceive( 'bind' );
+		$this->container->shouldNotReceive( 'when' );
 
 		$this->registrar->register_bindings_into_container( $this->container );
 	}

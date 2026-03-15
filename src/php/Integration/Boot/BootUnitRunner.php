@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot;
 
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
-use RuntimeException;
 
 /**
- * Registers all WordPress integration boot units.
+ * Boots all configured WordPress integration boot units.
  *
  * @since 1.0.0
  *
@@ -17,31 +16,35 @@ use RuntimeException;
 final readonly class BootUnitRunner implements BootUnitRunnerPort {
 
 	/**
+	 * The configured boot units.
+	 *
+	 * @var array<int, BootUnitInterface>
+	 *
+	 * @phpstan-var list<BootUnitInterface>
+	 */
+	private array $boot_units;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param BootUnitRegistry $registry Provides the list of boot unit classes.
-	 * @param BootUnitResolver $resolver Resolves boot unit instances.
+	 * @param BootUnitInterface ...$boot_units The boot units to run.
 	 */
-	public function __construct(
-		private BootUnitRegistry $registry,
-		private BootUnitResolver $resolver,
-	) {}
+	public function __construct( BootUnitInterface ...$boot_units ) {
+
+		$this->boot_units = $boot_units;
+	}
 
 	/**
-	 * Boot all declared boot units.
+	 * Boot all configured boot units.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws RuntimeException When the boot unit class does not implement the required interface.
 	 */
 	public function boot_all(): void {
 
-		foreach ( $this->registry->get_boot_unit_classes() as $class_name ) {
-
-			$dispatcher = $this->resolver->resolve( $class_name );
-			$dispatcher->boot();
+		foreach ( $this->boot_units as $boot_unit ) {
+			$boot_unit->boot();
 		}
 	}
 }

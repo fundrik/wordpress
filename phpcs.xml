@@ -50,14 +50,6 @@
 
 	<rule ref="FundrikStandard.Classes.RequireAbstractOrFinal">
 		<properties>
-			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry" />
-				<element value="Fundrik\WordPress\Infrastructure\EventDispatcher\EventListenerRegistry" />
-				<element value="Fundrik\WordPress\Infrastructure\Migrations\MigrationRegistry" />
-				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry"/>
-				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry"/>
-				<element value="Fundrik\WordPress\Integration\Boot\BootUnitRegistry"/>
-			</property>
 			<property name="excludedParentClasses" type="array">
 				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface"/>
 			</property>

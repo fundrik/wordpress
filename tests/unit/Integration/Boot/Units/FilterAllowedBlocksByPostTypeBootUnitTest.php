@@ -9,8 +9,7 @@ use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
@@ -30,7 +29,6 @@ use WP_Block_Editor_Context;
 #[UsesClass( BootUnitLogger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( AllowedBlockTypesAllFilterHookDispatcher::class )]
-#[UsesClass( PostTypeConfigFactory::class )]
 final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase {
 
 	use DispatcherTestHelpers;
@@ -41,13 +39,9 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	private Closure $allowed_block_types_callback;
 
 	private WordPressContextInterface&MockInterface $wp_context;
-	private PostTypeConfigRegistry&MockInterface $post_type_config_registry;
-	private PostTypeConfigFactory $post_type_config_factory;
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private BootUnitLogger $logger;
-
-	private FilterAllowedBlocksByPostTypeBootUnit $boot_unit;
 
 	protected function setUp(): void {
 
@@ -63,35 +57,16 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 		);
 
 		$this->wp_context = Mockery::mock( WordPressContextInterface::class );
-		$this->post_type_config_registry = Mockery::mock( PostTypeConfigRegistry::class );
-
-		$this->post_type_config_factory = new PostTypeConfigFactory();
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
-
-		$this->post_type_config_registry
-			->shouldReceive( 'get_post_type_config_classes' )
-			->andReturn(
-				[
-					AlphaPostTypeConfig::class,
-					BetaPostTypeConfig::class,
-					GammaPostTypeConfig::class,
-				],
-			);
-
-		$this->boot_unit = new FilterAllowedBlocksByPostTypeBootUnit(
-			$this->allowed_block_types_hook,
-			$this->wp_context,
-			$this->post_type_config_registry,
-			$this->post_type_config_factory,
-			$this->logger,
-		);
 	}
 
 	#[Test]
 	public function boot_attaches_filter_callback(): void {
 
-		$this->boot_unit->boot();
+		$boot_unit = $this->create_boot_unit();
+
+		$boot_unit->boot();
 
 		$post = new stdClass();
 		$post->post_type = 'post';
@@ -118,7 +93,9 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	#[Test]
 	public function filter_returns_original_when_post_type_is_missing(): void {
 
-		$this->boot_unit->boot();
+		$boot_unit = $this->create_boot_unit();
+
+		$boot_unit->boot();
 
 		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
 		$editor_context->post = null;
@@ -150,7 +127,9 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 				),
 			);
 
-		$this->boot_unit->boot();
+		$boot_unit = $this->create_boot_unit();
+
+		$boot_unit->boot();
 
 		$post = new stdClass();
 		$post->post_type = 'gamma';
@@ -177,7 +156,9 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 				],
 			);
 
-		$this->boot_unit->boot();
+		$boot_unit = $this->create_boot_unit();
+
+		$boot_unit->boot();
 
 		$post = new stdClass();
 		$post->post_type = 'post';
@@ -188,5 +169,28 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 		$returned = ( $this->allowed_block_types_callback )( true, $editor_context );
 
 		self::assertSame( [ 'core/paragraph', 'fundrik/free' ], $returned );
+	}
+
+	/**
+	 * Creates the boot unit with the provided post type configs.
+	 *
+	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs used to build the block map.
+	 */
+	private function create_boot_unit( PostTypeConfigInterface ...$post_type_configs ): FilterAllowedBlocksByPostTypeBootUnit {
+
+		if ( $post_type_configs === [] ) {
+			$post_type_configs = [
+				new AlphaPostTypeConfig(),
+				new BetaPostTypeConfig(),
+				new GammaPostTypeConfig(),
+			];
+		}
+
+		return new FilterAllowedBlocksByPostTypeBootUnit(
+			$this->allowed_block_types_hook,
+			$this->wp_context,
+			$this->logger,
+			...$post_type_configs,
+		);
 	}
 }

@@ -10,53 +10,64 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\Delete
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
+use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonation\CreateDonationHandler;
+use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonation\CreateDonationUseCase;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
+use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
+use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
 use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
+use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
+use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
-use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigDefinitions;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
+use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Integration\WpdbDatabase;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
+use Fundrik\WordPress\Kernel\Container\ContextualBindingDefinition;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 #[CoversClass( ContainerBindingsRegistry::class )]
-#[UsesClass( HookDispatcherRegistry::class )]
 final class ContainerBindingsRegistryTest extends FundrikTestCase {
 
-	private HookDispatcherRegistry $hook_dispatcher_registry;
 	private ContainerBindingsRegistry $registry;
 
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->hook_dispatcher_registry = new HookDispatcherRegistry();
-		$this->registry = new ContainerBindingsRegistry( $this->hook_dispatcher_registry );
+		$this->registry = new ContainerBindingsRegistry();
 	}
 
 	#[Test]
 	public function it_exposes_expected_singletons(): void {
 
 		$this->assertSame(
-			self::expected_singletons_map( $this->hook_dispatcher_registry ),
+			self::expected_singletons_map(),
 			$this->registry->get_singletons(),
 		);
 	}
@@ -70,7 +81,23 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 		);
 	}
 
-	private static function expected_singletons_map( HookDispatcherRegistry $hook_dispatcher_registry ): array {
+	#[Test]
+	public function it_exposes_expected_contextual_bindings(): void {
+
+		$this->assertSame(
+			self::expected_contextual_bindings(),
+			array_map(
+				static fn ( ContextualBindingDefinition $definition ): array => [
+					'consumer' => $definition->consumer,
+					'dependency' => $definition->dependency,
+					'implementation' => $definition->implementation,
+				],
+				$this->registry->get_contextual_bindings(),
+			),
+		);
+	}
+
+	private static function expected_singletons_map(): array {
 
 		return [
 			LoggerInterface::class => NullLogger::class,
@@ -85,10 +112,48 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 			ApplicationEventPublisherPort::class => WordPressActionApplicationEventPublisher::class,
 			SaveCampaignUseCase::class => SaveCampaignHandler::class,
 			DeleteCampaignUseCase::class => DeleteCampaignHandler::class,
+			CreateDonationUseCase::class => CreateDonationHandler::class,
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			BootUnitRunnerPort::class => BootUnitRunner::class,
 			WordPressContextInterface::class => WordPressContext::class,
-		] + $hook_dispatcher_registry->get_dispatcher_classes();
+			...HookDispatcherDefinitions::classes(),
+		];
+	}
+
+	private static function expected_contextual_bindings(): array {
+
+		return [
+			[
+				'consumer' => BootUnitRunner::class,
+				'dependency' => BootUnitInterface::class,
+				'implementation' => BootUnitDefinitions::classes(),
+			],
+			[
+				'consumer' => HookDispatcherRegistrar::class,
+				'dependency' => HookDispatcherInterface::class,
+				'implementation' => HookDispatcherDefinitions::classes(),
+			],
+			[
+				'consumer' => RegisterRestApiRoutesBootUnit::class,
+				'dependency' => RestRouteInterface::class,
+				'implementation' => RestRouteDefinitions::classes(),
+			],
+			[
+				'consumer' => RegisterPostTypesBootUnit::class,
+				'dependency' => PostTypeConfigInterface::class,
+				'implementation' => PostTypeConfigDefinitions::classes(),
+			],
+			[
+				'consumer' => FilterAllowedBlocksByPostTypeBootUnit::class,
+				'dependency' => PostTypeConfigInterface::class,
+				'implementation' => PostTypeConfigDefinitions::classes(),
+			],
+			[
+				'consumer' => MigrationRunner::class,
+				'dependency' => AbstractMigration::class,
+				'implementation' => MigrationDefinitions::classes(),
+			],
+		];
 	}
 }

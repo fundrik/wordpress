@@ -7,10 +7,8 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
-use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -23,23 +21,32 @@ use Throwable;
 final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 
 	/**
+	 * The configured post type configs.
+	 *
+	 * @var array<int, PostTypeConfigInterface>
+	 *
+	 * @phpstan-var list<PostTypeConfigInterface>
+	 */
+	private array $post_type_configs;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param InitActionHookDispatcher $init_hook Dispatches the WordPress 'init' action to attached listeners.
-	 * @param PostTypeConfigRegistry $post_type_config_registry Provides the declared post type config classes.
-	 * @param PostTypeConfigFactory $post_type_config_factory Creates post type config instances.
 	 * @param PostTypeRegistrar $post_type_registrar Registers post types and post meta fields in WordPress.
 	 * @param BootUnitLogger $logger Writes structured log entries.
+	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs to register.
 	 */
 	public function __construct(
 		private InitActionHookDispatcher $init_hook,
-		private PostTypeConfigRegistry $post_type_config_registry,
-		private PostTypeConfigFactory $post_type_config_factory,
 		private PostTypeRegistrar $post_type_registrar,
 		private BootUnitLogger $logger,
+		PostTypeConfigInterface ...$post_type_configs,
 	) {
+
+		$this->post_type_configs = $post_type_configs;
 
 		$this->logger->set_boot_unit_class( self::class );
 	}
@@ -56,23 +63,17 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
-	 * Registers all declared post types in WordPress.
+	 * Registers all configured post types in WordPress.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws InvalidArgumentException When a post type config class is invalid.
 	 */
 	private function register_post_types(): void {
-
-		$classes = $this->post_type_config_registry->get_post_type_config_classes();
 
 		$registered_post_type_ids = [];
 
 		try {
 
-			foreach ( $classes as $post_type_config_class ) {
-
-				$post_type_config = $this->post_type_config_factory->create( $post_type_config_class );
+			foreach ( $this->post_type_configs as $post_type_config ) {
 
 				$this->post_type_registrar->register( $post_type_config );
 
@@ -84,7 +85,7 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 				'Post type registration failed.',
 				[
 					'registered_count' => count( $registered_post_type_ids ),
-					'total_count' => count( $classes ),
+					'total_count' => count( $this->post_type_configs ),
 					'exception' => $e,
 				],
 			);

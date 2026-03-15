@@ -26,7 +26,6 @@
 
 declare(strict_types=1);
 
-use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerFactory;
@@ -56,7 +55,7 @@ if ( ! function_exists( 'fundrik_init' ) ) {
 			$container = ( new ContainerFactory() )->create();
 
 			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry( new HookDispatcherRegistry() ) );
+			$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry() );
 			$registrar->register_bindings_into_container( $container );
 
 			$container->make( Plugin::class )->run();

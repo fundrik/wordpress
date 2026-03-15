@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
-use RuntimeException;
 
 /**
  * Registers all WordPress hook dispatchers.
@@ -17,30 +16,34 @@ use RuntimeException;
 final readonly class HookDispatcherRegistrar implements HookDispatcherRegistrarPort {
 
 	/**
+	 * The configured hook dispatchers.
+	 *
+	 * @var array<int, HookDispatcherInterface>
+	 *
+	 * @phpstan-var list<HookDispatcherInterface>
+	 */
+	private array $hook_dispatchers;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param HookDispatcherRegistry $registry Provides the list of hook dispatcher classes.
-	 * @param HookDispatcherResolver $resolver Resolves hook dispatcher instances.
+	 * @param HookDispatcherInterface ...$hook_dispatchers The hook dispatchers to register.
 	 */
-	public function __construct(
-		private HookDispatcherRegistry $registry,
-		private HookDispatcherResolver $resolver,
-	) {}
+	public function __construct( HookDispatcherInterface ...$hook_dispatchers ) {
+
+		$this->hook_dispatchers = $hook_dispatchers;
+	}
 
 	/**
-	 * Registers all declared hook dispatchers.
+	 * Registers all configured hook dispatchers.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws RuntimeException When the hook dispatcher class does not implement the required interface.
 	 */
 	public function register_all(): void {
 
-		foreach ( $this->registry->get_dispatcher_classes() as $class_name ) {
-
-			$dispatcher = $this->resolver->resolve( $class_name );
+		foreach ( $this->hook_dispatchers as $dispatcher ) {
 			$dispatcher->register();
 		}
 	}

@@ -24,25 +24,33 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	private const string OPTION_KEY = 'fundrik_db_version';
 
 	/**
+	 * The configured migrations.
+	 *
+	 * @var array<int, AbstractMigration>
+	 *
+	 * @phpstan-var list<AbstractMigration>
+	 */
+	private array $migrations;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param DatabasePort $database Provides access to the database.
 	 * @param StoragePort $storage Stores and retrieves the current schema version.
-	 * @param MigrationVersionReader $version_reader Reads migration versions from classes.
-	 * @param MigrationRegistry $registry Provides the list of available migrations and the target version.
 	 * @param MigrationRunnerLogger $logger Logs the migration steps for debugging and traceability.
-	 * @param MigrationFactory $migration_factory Creates migration instances.
+	 * @param AbstractMigration ...$migrations The configured migrations to apply if needed.
 	 */
 	public function __construct(
 		private DatabasePort $database,
 		private StoragePort $storage,
-		private MigrationVersionReader $version_reader,
-		private MigrationRegistry $registry,
 		private MigrationRunnerLogger $logger,
-		private MigrationFactory $migration_factory,
-	) {}
+		AbstractMigration ...$migrations,
+	) {
+
+		$this->migrations = $migrations;
+	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -55,20 +63,21 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	public function migrate(): void {
 
 		$from_db_version = $this->get_current_db_version();
-		$target_db_version = $this->registry->get_target_db_version();
+		$target_db_version = $this->get_target_db_version();
 
 		if ( ! $this->should_migrate( $from_db_version, $target_db_version ) ) {
 			return;
 		}
 
 		$charset_collate = $this->get_charset_collate();
+		$migrations = $this->get_sorted_migrations();
 
 		$applied_count = 0;
 		$current_db_version = $from_db_version;
 
-		foreach ( $this->get_sorted_migrations() as $version => $class ) {
+		foreach ( $migrations as $version => $migration ) {
 
-			$applied = $this->maybe_apply_migration( $class, $version, $current_db_version, $charset_collate );
+			$applied = $this->maybe_apply_migration( $migration, $version, $current_db_version, $charset_collate );
 
 			if ( ! $applied ) {
 				continue;
@@ -86,6 +95,33 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		);
 	}
 	// phpcs:enable
+
+	/**
+	 * Returns the latest configured migration version.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string The target DB version derived from configured migrations.
+	 *
+	 * @throws MigrationException When a migration version is invalid.
+	 */
+	private function get_target_db_version(): string {
+
+		$target_db_version = '0000_00_00_00';
+
+		foreach ( $this->migrations as $migration ) {
+
+			$version = $migration::version();
+
+			if ( ! version_compare( $version, $target_db_version, '>' ) ) {
+				continue;
+			}
+
+			$target_db_version = $version;
+		}
+
+		return $target_db_version;
+	}
 
 	/**
 	 * Checks whether the target version is newer than the current version.
@@ -108,19 +144,17 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $class_name Resolves and runs the migration class.
+	 * @param AbstractMigration $migration The migration instance to run.
 	 * @param string $version The migration version.
 	 * @param string $current_db_version The currently stored DB version.
 	 * @param string $charset_collate The charset and collation string for schema operations.
-	 *
-	 * @phpstan-param class-string<AbstractMigration> $class_name
 	 *
 	 * @return bool True when the migration was applied, false when skipped.
 	 *
 	 * @throws MigrationException When applying the migration or updating the stored DB version fails.
 	 */
 	private function maybe_apply_migration(
-		string $class_name,
+		AbstractMigration $migration,
 		string $version,
 		string $current_db_version,
 		string $charset_collate,
@@ -131,15 +165,14 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		}
 
 		try {
-			$migration = $this->migration_factory->create( $class_name );
 			$migration->apply( $charset_collate );
 		} catch ( MigrationException $e ) {
-			$this->logger->log_migration_failed( $class_name, $version, $e );
+			$this->logger->log_migration_failed( $migration::class, $version, $e );
 			throw $e;
 		}
 
 		if ( ! $this->update_current_db_version( $version ) ) {
-			$this->logger->log_db_version_update_failed( $class_name, $version );
+			$this->logger->log_db_version_update_failed( $migration::class, $version );
 			throw new MigrationException(
 				sprintf(
 					'Migration "%s" was applied, but updating stored DB version failed.',
@@ -148,7 +181,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 			);
 		}
 
-		$this->logger->log_migration_applied( $class_name, $version );
+		$this->logger->log_migration_applied( $migration::class, $version );
 
 		return true;
 	}
@@ -159,17 +192,17 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, string> The [version => class] map.
+	 * @return array<string, AbstractMigration> The [version => migration] map.
 	 *
-	 * @phpstan-return array<string, class-string<AbstractMigration>>
+	 * @phpstan-return array<string, AbstractMigration>
 	 */
 	private function get_sorted_migrations(): array {
 
 		$map = [];
 
-		foreach ( $this->registry->get_migration_classes() as $class ) {
+		foreach ( $this->migrations as $migration ) {
 
-			$version = $this->version_reader->get_version( $class );
+			$version = $migration::version();
 
 			if ( isset( $map[ $version ] ) ) {
 
@@ -178,7 +211,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 				);
 			}
 
-			$map[ $version ] = $class;
+			$map[ $version ] = $migration;
 		}
 
 		ksort( $map );

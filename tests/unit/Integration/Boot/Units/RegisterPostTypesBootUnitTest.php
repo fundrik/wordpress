@@ -11,8 +11,7 @@ use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigFactory;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigRegistry;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
@@ -35,7 +34,6 @@ use WP_Error;
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( InitActionHookDispatcher::class )]
 #[UsesClass( PostTypeRegistrar::class )]
-#[UsesClass( PostTypeConfigFactory::class )]
 #[UsesClass( PostTypeMetaField::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
@@ -46,15 +44,10 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 
 	private InitActionHookDispatcher $init_hook;
 	private Closure $init_callback;
-
-	private PostTypeConfigRegistry&MockInterface $post_type_config_registry;
-	private PostTypeConfigFactory $post_type_config_factory;
 	private PostTypeRegistrar $post_type_registrar;
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private BootUnitLogger $logger;
-
-	private RegisterPostTypesBootUnit $boot_unit;
 
 	protected function setUp(): void {
 
@@ -69,37 +62,20 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 			$this->init_hook->register( ... ),
 		);
 
-		$this->post_type_config_registry = Mockery::mock( PostTypeConfigRegistry::class );
-
-		$this->post_type_config_factory = new PostTypeConfigFactory();
-
 		$meta_reader = new PostTypeMetaFieldReader();
 		$this->post_type_registrar = new PostTypeRegistrar( $meta_reader );
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
-
-		$this->boot_unit = new RegisterPostTypesBootUnit(
-			$this->init_hook,
-			$this->post_type_config_registry,
-			$this->post_type_config_factory,
-			$this->post_type_registrar,
-			$this->logger,
-		);
 	}
 
 	#[Test]
 	public function boot_attaches_callback_that_registers_all_post_types(): void {
 
-		$this->post_type_config_registry
-			->shouldReceive( 'get_post_type_config_classes' )
-			->once()
-			->andReturn(
-				[
-					AlphaPostTypeConfig::class,
-					BetaPostTypeConfig::class,
-					GammaPostTypeConfig::class,
-				],
-			);
+		$boot_unit = $this->create_boot_unit(
+			new AlphaPostTypeConfig(),
+			new BetaPostTypeConfig(),
+			new GammaPostTypeConfig(),
+		);
 
 		Functions\expect( 'apply_filters' )
 			->times( 6 )
@@ -174,7 +150,7 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 			)
 			->andReturnTrue();
 
-		$this->boot_unit->boot();
+		$boot_unit->boot();
 
 		( $this->init_callback )();
 	}
@@ -182,15 +158,10 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 	#[Test]
 	public function register_post_types_logs_error_and_sets_failure_message_when_registration_fails(): void {
 
-		$this->post_type_config_registry
-			->shouldReceive( 'get_post_type_config_classes' )
-			->once()
-			->andReturn(
-				[
-					AlphaPostTypeConfig::class,
-					BetaPostTypeConfig::class,
-				],
-			);
+		$boot_unit = $this->create_boot_unit(
+			new AlphaPostTypeConfig(),
+			new BetaPostTypeConfig(),
+		);
 
 		Functions\expect( 'apply_filters' )
 			->times( 4 )
@@ -258,9 +229,24 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 				),
 			);
 
-		$this->boot_unit->boot();
+		$boot_unit->boot();
 
 		// No exception expected: InitActionHookDispatcher::handle() catches Throwable.
 		( $this->init_callback )();
+	}
+
+	/**
+	 * Creates the boot unit with the provided post type configs.
+	 *
+	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs to register.
+	 */
+	private function create_boot_unit( PostTypeConfigInterface ...$post_type_configs ): RegisterPostTypesBootUnit {
+
+		return new RegisterPostTypesBootUnit(
+			$this->init_hook,
+			$this->post_type_registrar,
+			$this->logger,
+			...$post_type_configs,
+		);
 	}
 }

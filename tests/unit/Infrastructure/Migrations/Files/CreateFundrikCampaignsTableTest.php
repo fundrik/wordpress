@@ -7,17 +7,14 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Migrations\Files;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikCampaignsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( CreateFundrikCampaignsTable::class )]
-#[UsesClass( MigrationVersion::class )]
 final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 
 	private CreateFundrikCampaignsTable $migration;
@@ -86,12 +83,8 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function it_has_the_migration_version_attribute_with_expected_value(): void {
+	public function it_exposes_the_expected_migration_version(): void {
 
-		$this->assert_class_has_attribute(
-			class_name: CreateFundrikCampaignsTable::class,
-			attribute_class: MigrationVersion::class,
-			expected_values: [ 'value' => '2025_06_15_00' ],
-		);
+		$this->assertSame( '2025_06_15_00', CreateFundrikCampaignsTable::version() );
 	}
 }

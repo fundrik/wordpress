@@ -55,6 +55,5 @@ final readonly class RegisterBlocksBootUnit implements BootUnitInterface {
 		$manifest_path = PluginPath::BlocksManifest->get_full_path();
 
 		wp_register_block_types_from_metadata_collection( $blocks_path, $manifest_path );
-
 	}
 }

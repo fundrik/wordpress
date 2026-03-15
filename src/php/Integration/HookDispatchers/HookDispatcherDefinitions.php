@@ -8,30 +8,30 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesA
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
-use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
 
 /**
- * Provides the list of hook dispatcher classes.
+ * Provides hook dispatcher declarations for container configuration.
  *
  * @since 1.0.0
  *
  * @internal
  */
-class HookDispatcherRegistry {
+final readonly class HookDispatcherDefinitions {
 
 	/**
-	 * Returns the list of hook dispatcher class names.
+	 * Returns the configured hook dispatcher classes.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string> The list of hook dispatcher classes.
+	 * @return array<int, string>
 	 *
 	 * @phpstan-return list<class-string<HookDispatcherInterface>>
 	 */
-	public function get_dispatcher_classes(): array {
+	public static function classes(): array {
 
 		return [
 			AllowedBlockTypesAllFilterHookDispatcher::class,

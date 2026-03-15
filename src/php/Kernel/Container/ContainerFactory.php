@@ -21,15 +21,12 @@ final readonly class ContainerFactory {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return ContainerInterface The initialized container instance.
+	 * @return LaravelContainerInterface The initialized Laravel container instance.
 	 */
-	public function create(): ContainerInterface {
+	public function create(): LaravelContainerInterface {
 
-		$laravel_container = new LaravelContainer();
-		$container = new Container( $laravel_container );
-
-		$container->instance( ContainerInterface::class, $container );
-		$container->instance( LaravelContainerInterface::class, $laravel_container );
+		$container = new LaravelContainer();
+		$container->instance( LaravelContainerInterface::class, $container );
 
 		return $container;
 	}

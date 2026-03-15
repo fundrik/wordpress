@@ -6,13 +6,21 @@ namespace Fundrik\WordPress\Tests\Fixtures\Migrations;
 
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 
 /**
  * Provides a migration that always fails to apply.
  */
-#[MigrationVersion( '2025_12_27_00' )]
 final readonly class FailingMigration extends AbstractMigration {
+
+	/**
+	 * Returns the migration version.
+	 *
+	 * @return string The sortable migration version.
+	 */
+	protected static function define_version(): string {
+
+		return '2025_12_27_00';
+	}
 
 	/**
 	 * Applies the migration and always fails for testing purposes.

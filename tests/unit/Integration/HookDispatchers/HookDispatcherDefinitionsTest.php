@@ -8,24 +8,22 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesA
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
-use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
-use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistry;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass( HookDispatcherRegistry::class )]
-final class HookDispatcherRegistryTest extends FundrikTestCase {
+#[CoversClass( HookDispatcherDefinitions::class )]
+final class HookDispatcherDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_returns_expected_dispatcher_class_names(): void {
+	public function it_exposes_expected_hook_dispatcher_classes(): void {
 
-		$registry = new HookDispatcherRegistry();
-
-		self::assertSame(
+		$this->assertSame(
 			[
 				AllowedBlockTypesAllFilterHookDispatcher::class,
 				DeletePostActionHookDispatcher::class,
@@ -36,7 +34,7 @@ final class HookDispatcherRegistryTest extends FundrikTestCase {
 				RestPreInsertCampaignFilterHookDispatcher::class,
 				RestPrepareCampaignFilterHookDispatcher::class,
 			],
-			$registry->get_dispatcher_classes(),
+			HookDispatcherDefinitions::classes(),
 		);
 	}
 }

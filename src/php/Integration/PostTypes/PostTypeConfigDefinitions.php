@@ -7,24 +7,24 @@ namespace Fundrik\WordPress\Integration\PostTypes;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 
 /**
- * Provides the list of available post type config classes.
+ * Provides post type config declarations for container configuration.
  *
  * @since 1.0.0
  *
  * @internal
  */
-class PostTypeConfigRegistry {
+final readonly class PostTypeConfigDefinitions {
 
 	/**
-	 * Returns all post type config class names.
+	 * Returns the configured post type config classes.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string> The list of post type config class names.
+	 * @return array<int, string>
 	 *
 	 * @phpstan-return list<class-string<PostTypeConfigInterface>>
 	 */
-	public function get_post_type_config_classes(): array {
+	public static function classes(): array {
 
 		return [
 			CampaignPostTypeConfig::class,
