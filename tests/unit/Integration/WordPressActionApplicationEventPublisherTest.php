@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration;
 
 use Brain\Monkey\Actions;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignClosedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignCreatedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDeletedEvent;
-use Fundrik\Core\Components\Campaigns\Application\Events\CampaignUpdatedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignOpenedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Tests\Fixtures\DummyApplicationEvent;
 use Fundrik\WordPress\Tests\Fixtures\DummyCampaignApplicationEvent;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use Mockery\Expectation;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -29,7 +33,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 
 		parent::setUp();
 
-		$this->logger = Mockery::mock( LoggerInterface::class );
+		/** @var LoggerInterface&MockInterface $logger */
+		$logger = Mockery::mock( LoggerInterface::class );
+
+		$this->logger = $logger;
 		$this->publisher = new WordPressActionApplicationEventPublisher( $this->logger );
 	}
 
@@ -46,13 +53,49 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_updated_event_to_wordpress_actions(): void {
+	public function publish_dispatches_campaign_opened_event_to_wordpress_actions(): void {
 
-		$event = new CampaignUpdatedEvent( EntityId::create( 12 ) );
+		$event = new CampaignOpenedEvent( EntityId::create( 12 ) );
 
-		Actions\expectDone( 'fundrik_campaign_updated' )
+		Actions\expectDone( 'fundrik_campaign_opened' )
 			->once()
 			->with( 12 );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_campaign_closed_event_to_wordpress_actions(): void {
+
+		$event = new CampaignClosedEvent( EntityId::create( 14 ) );
+
+		Actions\expectDone( 'fundrik_campaign_closed' )
+			->once()
+			->with( 14 );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_campaign_renamed_event_to_wordpress_actions(): void {
+
+		$event = new CampaignRenamedEvent( EntityId::create( 15 ) );
+
+		Actions\expectDone( 'fundrik_campaign_renamed' )
+			->once()
+			->with( 15 );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_campaign_target_changed_event_to_wordpress_actions(): void {
+
+		$event = new CampaignTargetChangedEvent( EntityId::create( 16 ) );
+
+		Actions\expectDone( 'fundrik_campaign_target_changed' )
+			->once()
+			->with( 16 );
 
 		$this->publisher->publish( $event );
 	}
@@ -76,8 +119,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			EntityId::create( '2be078f7-7d75-4450-90d0-e7fd204f072e' ),
 		);
 
-		$this->logger
-			->shouldReceive( 'warning' )
+		/** @var Expectation $logger_warning_expectation */
+		$logger_warning_expectation = $this->logger->shouldReceive( 'warning' );
+
+		$logger_warning_expectation
 			->once()
 			->with(
 				'Publishing application event skipped due to invalid campaign ID.',
@@ -98,6 +143,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 
 		Actions\expectDone( 'fundrik_campaign_created' )->never();
 		Actions\expectDone( 'fundrik_campaign_updated' )->never();
+		Actions\expectDone( 'fundrik_campaign_opened' )->never();
+		Actions\expectDone( 'fundrik_campaign_closed' )->never();
+		Actions\expectDone( 'fundrik_campaign_renamed' )->never();
+		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
 
 		$this->publisher->publish( $event );
@@ -110,6 +159,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 
 		Actions\expectDone( 'fundrik_campaign_created' )->never();
 		Actions\expectDone( 'fundrik_campaign_updated' )->never();
+		Actions\expectDone( 'fundrik_campaign_opened' )->never();
+		Actions\expectDone( 'fundrik_campaign_closed' )->never();
+		Actions\expectDone( 'fundrik_campaign_renamed' )->never();
+		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
 
 		$this->publisher->publish( $event );
@@ -122,6 +175,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 
 		Actions\expectDone( 'fundrik_campaign_created' )->never();
 		Actions\expectDone( 'fundrik_campaign_updated' )->never();
+		Actions\expectDone( 'fundrik_campaign_opened' )->never();
+		Actions\expectDone( 'fundrik_campaign_closed' )->never();
+		Actions\expectDone( 'fundrik_campaign_renamed' )->never();
+		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
 
 		$this->publisher->publish( $event );
