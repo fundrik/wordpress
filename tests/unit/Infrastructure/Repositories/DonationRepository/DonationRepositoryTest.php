@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Repositories;
+namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\DonationRepository;
 
-use DateTimeImmutable;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
-use Fundrik\WordPress\Infrastructure\Repositories\DonationRepositoryException;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationNotFoundException;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepositoryException;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
@@ -19,6 +19,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass( DonationRepository::class )]
+#[CoversClass( DonationNotFoundException::class )]
 final class DonationRepositoryTest extends MockeryTestCase {
 
 	private const string TABLE_NAME = 'fundrik_donations';
@@ -35,7 +36,10 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		$this->db = Mockery::mock( DatabasePort::class );
+		/** @var DatabasePort&MockInterface $db */
+		$db = Mockery::mock( DatabasePort::class );
+
+		$this->db = $db;
 		$this->donation_factory = new DonationFactory();
 
 		$this->repository = new DonationRepository( $this->db, $this->donation_factory );
@@ -57,8 +61,8 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		self::assertSame( self::DONATION_ID, $result?->get_id()->get_value() );
 		self::assertSame( 3, $result?->get_version()->get_value() );
 		self::assertSame( 77, $result?->get_campaign_id()->get_value() );
-		self::assertSame( 1_000, $result?->get_money()->get_amount_minor() );
-		self::assertSame( 'USD', $result?->get_money()->get_currency() );
+		self::assertSame( 1_000, $result?->get_money()->get_amount()->get_value() );
+		self::assertSame( 'USD', $result?->get_money()->get_currency()->get_code() );
 		self::assertSame( 'captured', $result?->get_status()->value );
 	}
 
@@ -112,7 +116,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		$id = EntityId::create( self::DONATION_ID );
 
 		$row = self::make_row();
-		unset( $row['amount_minor'] );
+		unset( $row['amount'] );
 
 		$this->db
 			->shouldReceive( 'get_by_id' )
@@ -129,99 +133,49 @@ final class DonationRepositoryTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function find_all_maps_rows_to_donations(): void {
-
-		$this->db
-			->shouldReceive( 'get_all' )
-			->once()
-			->with( self::TABLE_NAME )
-			->andReturn(
-				[
-					self::make_row(),
-					self::make_row(
-						[
-							'id' => '01956b66-c80b-7f0e-b8d4-4c4f9f7d5532',
-							'status' => 'pending',
-							'captured_at' => null,
-							'status_changed_at' => null,
-						],
-					),
-				],
-			);
-
-		$result = $this->repository->find_all();
-
-		self::assertCount( 2, $result );
-		self::assertSame( self::DONATION_ID, $result[0]->get_id()->get_value() );
-		self::assertSame( '01956b66-c80b-7f0e-b8d4-4c4f9f7d5532', $result[1]->get_id()->get_value() );
-	}
-
-	#[Test]
-	public function find_all_throws_when_database_query_fails(): void {
-
-		$this->db
-			->shouldReceive( 'get_all' )
-			->once()
-			->with( self::TABLE_NAME )
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
-
-		$this->expectException( DonationRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to fetch donations.' );
-
-		$this->repository->find_all();
-	}
-
-	#[Test]
-	public function find_all_by_campaign_id_returns_only_matching_donations(): void {
+	public function exists_by_campaign_id_returns_true_when_row_exists(): void {
 
 		$campaign_id = EntityId::create( 77 );
 
 		$this->db
-			->shouldReceive( 'get_all_by_column' )
+			->shouldReceive( 'exists_by_column' )
 			->once()
 			->with( self::TABLE_NAME, 'campaign_id', 77 )
-			->andReturn(
-				[
-					self::make_row( [ 'campaign_id' => '77' ] ),
-				],
-			);
+			->andReturn( true );
 
-		$result = $this->repository->find_all_by_campaign_id( $campaign_id );
-
-		self::assertCount( 1, $result );
-		self::assertSame( self::DONATION_ID, $result[0]->get_id()->get_value() );
+		self::assertTrue( $this->repository->exists_by_campaign_id( $campaign_id ) );
 	}
 
 	#[Test]
-	public function find_all_by_campaign_id_throws_when_database_query_fails(): void {
+	public function exists_by_campaign_id_throws_when_database_query_fails(): void {
 
 		$campaign_id = EntityId::create( 77 );
 
 		$this->db
-			->shouldReceive( 'get_all_by_column' )
+			->shouldReceive( 'exists_by_column' )
 			->once()
 			->with( self::TABLE_NAME, 'campaign_id', 77 )
 			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
 
 		$this->expectException( DonationRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to fetch donations for campaign "77".' );
+		$this->expectExceptionMessage( 'Failed to check donations for campaign "77".' );
 
-		$this->repository->find_all_by_campaign_id( $campaign_id );
+		$this->repository->exists_by_campaign_id( $campaign_id );
 	}
 
 	#[Test]
-	public function find_all_by_campaign_id_throws_when_campaign_id_is_not_int_compatible(): void {
+	public function exists_by_campaign_id_throws_when_campaign_id_is_not_int_compatible(): void {
 
 		$campaign_id = EntityId::create( '01956b66-c80b-7f0e-b8d4-4c4f9f7d5599' );
 
-		$this->db->shouldNotReceive( 'get_all_by_column' );
+		$this->db->shouldNotReceive( 'exists_by_column' );
 
 		$this->expectException( DonationRepositoryException::class );
 		$this->expectExceptionMessage(
 			'Campaign ID must be int-compatible. Given: 01956b66-c80b-7f0e-b8d4-4c4f9f7d5599.',
 		);
 
-		$this->repository->find_all_by_campaign_id( $campaign_id );
+		$this->repository->exists_by_campaign_id( $campaign_id );
 	}
 
 	#[Test]
@@ -265,17 +219,9 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			->once()
 			->with(
 				self::TABLE_NAME,
-				[
-					'id' => self::DONATION_ID,
-					'version' => 1,
-					'campaign_id' => 77,
-					'amount_minor' => 1_000,
-					'currency' => 'USD',
-					'status' => 'pending',
-					'created_at' => '2026-01-01 10:00:00.000000',
-					'captured_at' => null,
-					'status_changed_at' => null,
-				],
+				Mockery::on(
+					static fn ( array $row ): bool => self::matches_pending_insert_row( $row, 1 ),
+				),
 			);
 
 		$this->db
@@ -287,8 +233,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 					[
 						'version' => '1',
 						'status' => 'pending',
-						'captured_at' => null,
-						'status_changed_at' => null,
+						'updated_at' => null,
 					],
 				),
 			);
@@ -315,6 +260,22 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( DonationRepositoryException::class );
 		$this->expectExceptionMessage( sprintf( 'Failed to insert donation "%s".', self::DONATION_ID ) );
+
+		$this->repository->insert( $donation );
+	}
+
+	#[Test]
+	public function insert_throws_when_version_is_not_initial(): void {
+
+		$donation = self::make_pending_donation( id: self::DONATION_ID, version: 2, campaign_id: 77 );
+
+		$this->db->shouldNotReceive( 'insert' );
+		$this->db->shouldNotReceive( 'get_by_id' );
+
+		$this->expectException( DonationRepositoryException::class );
+		$this->expectExceptionMessage(
+			sprintf( 'Cannot insert donation "%s": version must be initial. Given: 2.', self::DONATION_ID ),
+		);
 
 		$this->repository->insert( $donation );
 	}
@@ -353,17 +314,9 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			->once()
 			->with(
 				self::TABLE_NAME,
-				[
-					'id' => self::DONATION_ID,
-					'version' => 4,
-					'campaign_id' => 77,
-					'amount_minor' => 1_000,
-					'currency' => 'USD',
-					'status' => 'pending',
-					'created_at' => '2026-01-01 10:00:00.000000',
-					'captured_at' => null,
-					'status_changed_at' => null,
-				],
+				Mockery::on(
+					static fn ( array $row ): bool => self::matches_update_row( $row, 4, 'pending' ),
+				),
 				[
 					'id' => self::DONATION_ID,
 					'version' => 3,
@@ -380,8 +333,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 					[
 						'version' => '4',
 						'status' => 'pending',
-						'captured_at' => null,
-						'status_changed_at' => null,
+						'updated_at' => '2026-01-01 11:00:00.000000',
 					],
 				),
 			);
@@ -430,7 +382,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		$this->db->shouldNotReceive( 'get_by_id' );
 
-		$this->expectException( DonationRepositoryException::class );
+		$this->expectException( DonationNotFoundException::class );
 		$this->expectExceptionMessage(
 			sprintf( 'Cannot update donation "%s": persisted record not found.', self::DONATION_ID ),
 		);
@@ -501,12 +453,11 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			'id' => self::DONATION_ID,
 			'version' => '3',
 			'campaign_id' => '77',
-			'amount_minor' => '1000',
-			'currency' => 'USD',
+			'amount' => '1000',
+			'currency_code' => 'USD',
 			'status' => 'captured',
 			'created_at' => '2026-01-01 10:00:00.000000',
-			'captured_at' => '2026-01-01 11:00:00.000000',
-			'status_changed_at' => '2026-01-01 11:00:00.000000',
+			'updated_at' => '2026-01-01 11:00:00.000000',
 		];
 	}
 
@@ -516,10 +467,40 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			id: $id,
 			version: $version,
 			campaign_id: $campaign_id,
-			amount_minor: 1_000,
-			currency: 'USD',
+			amount: 1_000,
+			currency_code: 'USD',
 			status: 'pending',
-			created_at: new DateTimeImmutable( '2026-01-01T10:00:00+00:00' ),
 		);
+	}
+
+	/**
+	 * @param array<string, int|string|null> $row
+	 */
+	private static function matches_pending_insert_row( array $row, int $version ): bool {
+
+		return ( $row['id'] ?? null ) === self::DONATION_ID
+			&& ( $row['version'] ?? null ) === $version
+			&& ( $row['campaign_id'] ?? null ) === 77
+			&& ( $row['amount'] ?? null ) === 1_000
+			&& ( $row['currency_code'] ?? null ) === 'USD'
+			&& ( $row['status'] ?? null ) === 'pending'
+			&& is_string( $row['created_at'] ?? null )
+			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/', $row['created_at'] ) === 1
+			&& ( $row['updated_at'] ?? null ) === null
+			&& ! array_key_exists( 'captured_at', $row )
+			&& ! array_key_exists( 'status_changed_at', $row );
+	}
+
+	/**
+	 * @param array<string, int|string|null> $row
+	 */
+	private static function matches_update_row( array $row, int $version, string $status ): bool {
+
+		return ( $row['status'] ?? null ) === $status
+			&& ( $row['version'] ?? null ) === $version
+			&& is_string( $row['updated_at'] ?? null )
+			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/', $row['updated_at'] ) === 1
+			&& ! array_key_exists( 'captured_at', $row )
+			&& ! array_key_exists( 'status_changed_at', $row );
 	}
 }

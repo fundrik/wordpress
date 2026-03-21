@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Repositories;
+namespace Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
 
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationNotFoundExceptionInterface;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryExceptionInterface;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Donations\Domain\Exceptions\DonationFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
+use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
+use Fundrik\WordPress\Infrastructure\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 
@@ -58,7 +62,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_value );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to fetch donation "%s".', (string) $id_value ),
+				sprintf( 'Failed to fetch donation "%s".', $id_value ),
 				previous: $e,
 			);
 		}
@@ -71,63 +75,29 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	}
 
 	/**
-	 * Retrieves all donations.
+	 * Returns whether any donations exist for the specified campaign.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, Donation> The list of donations.
+	 * @param EntityId $campaign_id The campaign ID to check.
 	 *
-	 * @phpstan-return list<Donation>
+	 * @return bool True when at least one donation exists for the campaign.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
+	 * @throws DonationRepositoryExceptionInterface When the existence check fails.
 	 */
-	public function find_all(): array {
-
-		try {
-			$rows = $this->db->get_all( self::TABLE_NAME );
-		} catch ( DatabaseExceptionInterface $e ) {
-			throw new DonationRepositoryException( 'Failed to fetch donations.', previous: $e );
-		}
-
-		return array_map(
-			$this->map_row_to_donation_or_fail( ... ),
-			$rows,
-		);
-	}
-
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
-	/**
-	 * Retrieves all donations for the specified campaign.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param EntityId $campaign_id The campaign ID to filter by.
-	 *
-	 * @return array<int, Donation> The list of campaign donations.
-	 *
-	 * @phpstan-return list<Donation>
-	 *
-	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
-	 */
-	public function find_all_by_campaign_id( EntityId $campaign_id ): array {
+	public function exists_by_campaign_id( EntityId $campaign_id ): bool {
 
 		$campaign_id_value = $this->get_campaign_id_as_int_or_fail( $campaign_id );
 
 		try {
-			$rows = $this->db->get_all_by_column( self::TABLE_NAME, 'campaign_id', $campaign_id_value );
+			return $this->db->exists_by_column( self::TABLE_NAME, 'campaign_id', $campaign_id_value );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to fetch donations for campaign "%s".', (string) $campaign_id_value ),
+				sprintf( 'Failed to check donations for campaign "%s".', $campaign_id_value ),
 				previous: $e,
 			);
 		}
-
-		return array_map(
-			$this->map_row_to_donation_or_fail( ... ),
-			$rows,
-		);
 	}
-	// phpcs:enable
 
 	/**
 	 * Returns whether a donation exists in storage by its ID.
@@ -148,12 +118,13 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_value );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to check donation "%s" existence.', (string) $id_value ),
+				sprintf( 'Failed to check donation "%s" existence.', $id_value ),
 				previous: $e,
 			);
 		}
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Inserts a new donation into storage.
 	 *
@@ -168,12 +139,25 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	public function insert( Donation $donation ): Donation {
 
 		$donation_id = $this->get_donation_id_as_uuid_or_fail( $donation->get_id() );
+		$version = $donation->get_version();
+
+		if ( ! $version->equals( EntityVersion::initial() ) ) {
+			throw new DonationRepositoryException(
+				sprintf(
+					'Cannot insert donation "%s": version must be initial. Given: %d.',
+					$donation_id,
+					$version->get_value(),
+				),
+			);
+		}
 
 		try {
-			$this->db->insert( self::TABLE_NAME, $this->map_donation_to_row( $donation ) );
+			$this->db->insert( self::TABLE_NAME, $this->map_donation_to_insert_row( $donation ) );
+		} catch ( DatabaseDuplicateKeyExceptionInterface $e ) {
+			throw new DonationAlreadyExistsException( $donation_id, $e );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to insert donation "%s".', (string) $donation_id ),
+				sprintf( 'Failed to insert donation "%s".', $donation_id ),
 				previous: $e,
 			);
 		}
@@ -185,9 +169,10 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		}
 
 		throw new DonationRepositoryException(
-			sprintf( 'Donation "%s" was inserted, but fetching persisted snapshot failed.', (string) $donation_id ),
+			sprintf( 'Donation "%s" was inserted, but fetching persisted snapshot failed.', $donation_id ),
 		);
 	}
+	// phpcs:enable
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -199,7 +184,8 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation The persisted donation snapshot.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the update fails.
+	 * @throws DonationNotFoundExceptionInterface When the donation does not exist.
+	 * @throws DonationRepositoryExceptionInterface When the update fails for another reason.
 	 */
 	public function update( Donation $donation ): Donation {
 
@@ -208,7 +194,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		$expected_version = $donation->get_version();
 		$new_version = $expected_version->next();
 
-		$data = $this->map_donation_to_row( $donation );
+		$data = $this->map_donation_to_update_row( $donation );
 		$data['version'] = $new_version->get_value();
 
 		try {
@@ -222,7 +208,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			);
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
-				sprintf( 'Failed to update donation "%s".', (string) $donation_id ),
+				sprintf( 'Failed to update donation "%s".', $donation_id ),
 				previous: $e,
 			);
 		}
@@ -230,13 +216,11 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		if ( $affected === 0 ) {
 
 			if ( ! $this->exists_by_id( $donation->get_id() ) ) {
-				throw new DonationRepositoryException(
-					sprintf( 'Cannot update donation "%s": persisted record not found.', (string) $donation_id ),
-				);
+				throw new DonationNotFoundException( $donation_id );
 			}
 
 			throw new DonationRepositoryException(
-				sprintf( 'Cannot update donation "%s": version mismatch.', (string) $donation_id ),
+				sprintf( 'Cannot update donation "%s": version mismatch.', $donation_id ),
 			);
 		}
 
@@ -247,7 +231,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		}
 
 		throw new DonationRepositoryException(
-			sprintf( 'Donation "%s" was updated, but fetching persisted snapshot failed.', (string) $donation_id ),
+			sprintf( 'Donation "%s" was updated, but fetching persisted snapshot failed.', $donation_id ),
 		);
 	}
 	// phpcs:enable
@@ -273,12 +257,9 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 				id: ArrayExtractor::extract_string_required( $row, 'id' ),
 				version: ArrayExtractor::extract_int_required( $row, 'version' ),
 				campaign_id: ArrayExtractor::extract_int_required( $row, 'campaign_id' ),
-				amount_minor: ArrayExtractor::extract_int_required( $row, 'amount_minor' ),
-				currency: ArrayExtractor::extract_string_required( $row, 'currency' ),
+				amount: ArrayExtractor::extract_int_required( $row, 'amount' ),
+				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
 				status: ArrayExtractor::extract_string_required( $row, 'status' ),
-				created_at: ArrayExtractor::extract_datetime_required( $row, 'created_at', self::DATETIME_DB_FORMAT ),
-				captured_at: ArrayExtractor::extract_datetime_nullable_required( $row, 'captured_at', self::DATETIME_DB_FORMAT ),
-				status_changed_at: ArrayExtractor::extract_datetime_nullable_required( $row, 'status_changed_at', self::DATETIME_DB_FORMAT ),
 			);
 		} catch ( DonationFactoryException | ArrayExtractionException $e ) {
 
@@ -294,7 +275,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	// phpcs:enable
 
 	/**
-	 * Converts a Donation entity into a persistence row.
+	 * Converts a new Donation entity into a persistence row.
 	 *
 	 * @since 1.0.0
 	 *
@@ -302,19 +283,49 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return array<string, int|string|bool|null> The persistence row data.
 	 */
-	private function map_donation_to_row( Donation $donation ): array {
+	private function map_donation_to_insert_row( Donation $donation ): array {
+
+		$created_at = $this->current_utc_timestamp();
 
 		return [
 			'id' => $this->get_donation_id_as_uuid_or_fail( $donation->get_id() ),
 			'version' => $donation->get_version()->get_value(),
 			'campaign_id' => $this->get_campaign_id_as_int_or_fail( $donation->get_campaign_id() ),
-			'amount_minor' => $donation->get_money()->get_amount_minor(),
-			'currency' => $donation->get_money()->get_currency(),
+			'amount' => $donation->get_money()->get_amount()->get_value(),
+			'currency_code' => $donation->get_money()->get_currency()->get_code(),
 			'status' => $donation->get_status()->value,
-			'created_at' => $donation->get_created_at()->format( self::DATETIME_DB_FORMAT ),
-			'captured_at' => $donation->get_captured_at()?->format( self::DATETIME_DB_FORMAT ),
-			'status_changed_at' => $donation->get_status_changed_at()?->format( self::DATETIME_DB_FORMAT ),
+			'created_at' => $created_at,
+			'updated_at' => null,
 		];
+	}
+
+	/**
+	 * Converts a Donation entity into persistence fields that are controlled by the domain model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param Donation $donation The donation to convert.
+	 *
+	 * @return array<string, int|string|bool|null> The persistence row data.
+	 */
+	private function map_donation_to_update_row( Donation $donation ): array {
+
+		return [
+			'status' => $donation->get_status()->value,
+			'updated_at' => $this->current_utc_timestamp(),
+		];
+	}
+
+	/**
+	 * Returns current UTC timestamp formatted for storage.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Current UTC timestamp.
+	 */
+	private function current_utc_timestamp(): string {
+
+		return UtcDateTime::now()->format( self::DATETIME_DB_FORMAT );
 	}
 
 	/**

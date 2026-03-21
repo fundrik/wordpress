@@ -2,35 +2,38 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Repositories;
+namespace Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignNotFoundExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
+use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
+use Fundrik\WordPress\Infrastructure\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 
 /**
  * Persists and retrieves campaigns in the storage.
  *
- * @since 0.1.0
+ * @since 1.0.0
  */
 final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 	private const string TABLE_NAME = 'fundrik_campaigns';
+	private const string DATETIME_DB_FORMAT = 'Y-m-d H:i:s';
 
 	/**
 	 * Constructor.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param DatabasePort $db Executes database queries.
 	 * @param CampaignFactory $campaign_factory Builds Campaign entities from persistence values.
@@ -43,7 +46,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	/**
 	 * Retrieves a campaign by its ID.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The campaign ID to retrieve.
 	 *
@@ -58,7 +61,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_int );
 		} catch ( DatabaseExceptionInterface $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to fetch campaign "%d".', $id_int ),
 				previous: $e,
@@ -73,35 +75,9 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	}
 
 	/**
-	 * Retrieves all campaigns.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array<Campaign> The list of campaigns.
-	 *
-	 * @phpstan-return list<Campaign>
-	 *
-	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
-	 */
-	public function find_all(): array {
-
-		try {
-			$rows = $this->db->get_all( self::TABLE_NAME );
-		} catch ( DatabaseExceptionInterface $e ) {
-
-			throw new CampaignRepositoryException( 'Failed to fetch campaigns.', previous: $e );
-		}
-
-		return array_map(
-			$this->map_row_to_campaign_or_fail( ... ),
-			$rows,
-		);
-	}
-
-	/**
 	 * Returns whether a campaign exists in storage by its ID.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The campaign ID to check.
 	 *
@@ -116,7 +92,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_int );
 		} catch ( DatabaseExceptionInterface $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to check campaign "%d" existence.', $id_int ),
 				previous: $e,
@@ -128,7 +103,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	/**
 	 * Inserts a new campaign into storage.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The campaign to insert.
 	 *
@@ -140,14 +115,23 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		$campaign_entity_id = $campaign->get_id();
 		$campaign_id_int = $this->get_campaign_id_as_int_or_fail( $campaign_entity_id );
+		$version = $campaign->get_version();
 
-		$data = $this->map_campaign_to_row( $campaign );
-		$data['version'] = $campaign->get_version()->get_value();
+		if ( ! $version->equals( EntityVersion::initial() ) ) {
+			throw new CampaignRepositoryException(
+				sprintf(
+					'Cannot insert campaign "%d": version must be initial. Given: %d.',
+					$campaign_id_int,
+					$version->get_value(),
+				),
+			);
+		}
 
 		try {
-			$this->db->insert( self::TABLE_NAME, $data );
+			$this->db->insert( self::TABLE_NAME, $this->map_campaign_to_insert_row( $campaign ) );
+		} catch ( DatabaseDuplicateKeyExceptionInterface $e ) {
+			throw new CampaignAlreadyExistsException( $campaign_id_int, $e );
 		} catch ( DatabaseExceptionInterface $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to insert campaign "%d".', $campaign_id_int ),
 				previous: $e,
@@ -156,17 +140,16 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		$persisted = $this->find_by_id( $campaign_entity_id );
 
-		if ( $persisted === null ) {
-
-			throw new CampaignRepositoryException(
-				sprintf(
-					'Campaign "%d" was inserted, but fetching persisted snapshot failed.',
-					$campaign_id_int,
-				),
-			);
+		if ( $persisted !== null ) {
+			return $persisted;
 		}
 
-		return $persisted;
+		throw new CampaignRepositoryException(
+			sprintf(
+				'Campaign "%d" was inserted, but fetching persisted snapshot failed.',
+				$campaign_id_int,
+			),
+		);
 	}
 	// phpcs:enable
 
@@ -174,13 +157,14 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	/**
 	 * Updates an existing campaign in storage.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The campaign to update.
 	 *
 	 * @return Campaign The persisted campaign snapshot.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the update fails.
+	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
+	 * @throws CampaignRepositoryExceptionInterface When the update fails for another reason.
 	 */
 	public function update( Campaign $campaign ): Campaign {
 
@@ -190,11 +174,10 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		$expected_version = $campaign->get_version();
 		$new_version = $expected_version->next();
 
-		$data = $this->map_campaign_to_row( $campaign );
+		$data = $this->map_campaign_to_update_row( $campaign );
 		$data['version'] = $new_version->get_value();
 
 		try {
-
 			$affected = $this->db->update(
 				self::TABLE_NAME,
 				$data,
@@ -203,9 +186,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 					'version' => $expected_version->get_value(),
 				],
 			);
-
 		} catch ( DatabaseExceptionInterface $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to update campaign "%d".', $campaign_id_int ),
 				previous: $e,
@@ -215,89 +196,50 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		if ( $affected === 0 ) {
 
 			if ( ! $this->exists_by_id( $campaign_entity_id ) ) {
-
-				throw new CampaignRepositoryException(
-					sprintf( 'Cannot update campaign "%d": persisted record not found.', $campaign_id_int ),
-				);
+				throw new CampaignNotFoundException( $campaign_id_int, 'update' );
 			}
 
 			throw new CampaignRepositoryException(
-				sprintf(
-					'Cannot update campaign "%d": version mismatch (expected version %d).',
-					$campaign_id_int,
-					$expected_version->get_value(),
-				),
+				sprintf( 'Cannot update campaign "%d": version mismatch.', $campaign_id_int ),
 			);
 		}
 
 		$persisted = $this->find_by_id( $campaign_entity_id );
 
-		if ( $persisted === null ) {
-
-			throw new CampaignRepositoryException(
-				sprintf(
-					'Campaign "%d" was updated, but fetching persisted snapshot failed.',
-					$campaign_id_int,
-				),
-			);
+		if ( $persisted !== null ) {
+			return $persisted;
 		}
 
-		return $persisted;
+		throw new CampaignRepositoryException(
+			sprintf(
+				'Campaign "%d" was updated, but fetching persisted snapshot failed.',
+				$campaign_id_int,
+			),
+		);
 	}
 	// phpcs:enable
 
 	/**
-	 * Saves the given campaign by inserting or updating it.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param Campaign $campaign The campaign to save.
-	 *
-	 * @return CampaignRepositorySaveOutcome Contains the result and the persisted campaign snapshot.
-	 *
-	 * @throws CampaignRepositoryExceptionInterface When the save fails.
-	 *
-	 * @todo Fix race condition. Upsert?
-	 */
-	public function save( Campaign $campaign ): CampaignRepositorySaveOutcome {
-
-		$entity_id = $campaign->get_id();
-
-		if ( $this->exists_by_id( $entity_id ) ) {
-
-			$persisted = $this->update( $campaign );
-
-			return new CampaignRepositorySaveOutcome(
-				result: CampaignRepositorySaveResult::Updated,
-				campaign: $persisted,
-			);
-		}
-
-		$persisted = $this->insert( $campaign );
-
-		return new CampaignRepositorySaveOutcome(
-			result: CampaignRepositorySaveResult::Inserted,
-			campaign: $persisted,
-		);
-	}
-
-	/**
 	 * Removes a campaign from storage by its ID.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The campaign ID to delete.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the delete fails.
+	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
+	 * @throws CampaignRepositoryExceptionInterface When the delete fails for another reason.
 	 */
 	public function delete( EntityId $id ): void {
 
 		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
 
+		if ( ! $this->exists_by_id( $id ) ) {
+			throw new CampaignNotFoundException( $id_int, 'delete' );
+		}
+
 		try {
 			$this->db->delete( self::TABLE_NAME, $id_int );
 		} catch ( DatabaseExceptionInterface $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to delete campaign "%d".', $id_int ),
 				previous: $e,
@@ -308,7 +250,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	/**
 	 * Converts a campaign ID to int.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param EntityId $id The campaign ID to convert.
 	 *
@@ -321,11 +263,10 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		try {
 			return $id->get_as_int();
 		} catch ( InvalidEntityIdException $e ) {
-
 			throw new CampaignRepositoryException(
 				sprintf(
 					'Campaign ID must be int-compatible. Given: %s.',
-					$id->get_value(),
+					(string) $id->get_value(),
 				),
 				previous: $e,
 			);
@@ -336,7 +277,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	/**
 	 * Builds a Campaign entity from a persistence row.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $row The persistence row.
 	 *
@@ -349,16 +290,13 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	private function map_row_to_campaign_or_fail( array $row ): Campaign {
 
 		try {
-
 			return $this->campaign_factory->create_from_primitives(
 				id: ArrayExtractor::extract_int_required( $row, 'id' ),
 				version: ArrayExtractor::extract_int_required( $row, 'version' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
-				is_active: ArrayExtractor::extract_bool_required( $row, 'is_active' ),
 				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
-				has_target: ArrayExtractor::extract_bool_required( $row, 'has_target' ),
-				target_amount: ArrayExtractor::extract_int_required( $row, 'target_amount' ),
-				target_currency: ArrayExtractor::extract_string_required( $row, 'target_currency' ),
+				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
+				target_amount: ArrayExtractor::extract_int_nullable_required( $row, 'target_amount' ),
 			);
 		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
 
@@ -366,10 +304,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			$id_for_error = is_int( $id ) || is_string( $id ) ? (string) $id : '<unavailable>';
 
 			throw new CampaignRepositoryException(
-				sprintf(
-					'Failed to map campaign row "%s".',
-					$id_for_error,
-				),
+				sprintf( 'Failed to map campaign row "%s".', $id_for_error ),
 				previous: $e,
 			);
 		}
@@ -377,24 +312,62 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	// phpcs:enable
 
 	/**
-	 * Converts a Campaign entity into a persistence row.
+	 * Converts a new Campaign entity into a persistence row.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
 	 * @param Campaign $campaign The campaign to convert.
 	 *
-	 * @return array<string, int|string|bool> The persistence row data.
+	 * @return array<string, int|string|bool|null> The persistence row data.
 	 */
-	private function map_campaign_to_row( Campaign $campaign ): array {
+	private function map_campaign_to_insert_row( Campaign $campaign ): array {
+
+		$created_at = $this->current_utc_timestamp();
+		$target = $campaign->get_target();
+		$target_amount = $target->get_amount();
 
 		return [
 			'id' => $campaign->get_id()->get_as_int(),
+			'version' => $campaign->get_version()->get_value(),
 			'title' => $campaign->get_title(),
-			'is_active' => $campaign->is_active(),
-			'is_open' => $campaign->is_open(),
-			'has_target' => $campaign->has_target(),
-			'target_amount' => $campaign->get_target_money()->get_amount_minor(),
-			'target_currency' => $campaign->get_target_money()->get_currency(),
+			'is_open' => $campaign->can_receive_donations(),
+			'currency_code' => $target->get_currency()->get_code(),
+			'target_amount' => $target_amount?->get_value(),
+			'created_at' => $created_at,
+			'updated_at' => null,
 		];
+	}
+
+	/**
+	 * Converts a Campaign entity into persistence fields controlled by the domain model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param Campaign $campaign The campaign to convert.
+	 *
+	 * @return array<string, int|string|bool|null> The persistence row data.
+	 */
+	private function map_campaign_to_update_row( Campaign $campaign ): array {
+
+		$target_amount = $campaign->get_target()->get_amount();
+
+		return [
+			'title' => $campaign->get_title(),
+			'is_open' => $campaign->can_receive_donations(),
+			'target_amount' => $target_amount?->get_value(),
+			'updated_at' => $this->current_utc_timestamp(),
+		];
+	}
+
+	/**
+	 * Returns current UTC timestamp formatted for storage.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Current UTC timestamp.
+	 */
+	private function current_utc_timestamp(): string {
+
+		return UtcDateTime::now()->format( self::DATETIME_DB_FORMAT );
 	}
 }

@@ -26,6 +26,22 @@
 # Editing Conventions
 
 - When editing files in this repository, preserve Windows line endings (`CRLF`).
+- Do not add runtime no-op code like `unset( $unused )` only to silence linting for fixed callback signatures; prefer a targeted `phpcs:ignore` with a short reason instead.
+
+# Docblock Conventions
+
+- Treat docblocks as concise API reference text, not prose paragraphs.
+- Keep class/interface/enum/trait summary lines as one sentence in present tense, ending with a period.
+- Prefer stable summary verbs by artifact role:
+  - `Represents ...` for value objects, DTOs, commands, and read models.
+  - `Provides ...` for services, factories, and ports when they expose an entry point or capability.
+  - `Creates ...`, `Returns ...`, `Checks ...`, `Formats ...`, `Converts ...` for methods, based on what they do.
+- For port interfaces, use the standard summary wording `Provides the <inbound|outbound> port for ...`.
+- In `@param`, `@return`, and `@throws` descriptions, use short noun phrases or outcome phrases, not full explanatory sentences.
+- Do not start `@param`, `@return`, or `@throws` descriptions with `The`; prefer `Campaign ID.` over `The campaign ID.`.
+- Keep tag descriptions in sentence case and end them with a period.
+- For booleans in `@return`, prefer `True when ...`.
+- For nullable values, prefer explicit endings such as `..., if configured.` or `..., null otherwise.`.
 
 # Architecture Conventions
 

@@ -26,7 +26,7 @@ final readonly class CreateFundrikDonationsTable extends AbstractMigration {
 	 */
 	protected static function define_version(): string {
 
-		return '2026_03_04_00';
+		return '2026_03_21_02';
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
@@ -48,12 +48,11 @@ final readonly class CreateFundrikDonationsTable extends AbstractMigration {
 				`id` CHAR(36) NOT NULL,
 				`version` INT UNSIGNED NOT NULL,
 				`campaign_id` BIGINT UNSIGNED NOT NULL,
-				`amount_minor` INT UNSIGNED NOT NULL,
-				`currency` CHAR(3) NOT NULL,
+				`amount` INT UNSIGNED NOT NULL,
+				`currency_code` CHAR(3) NOT NULL,
 				`status` VARCHAR(16) NOT NULL,
 				`created_at` DATETIME(6) NOT NULL,
-				`captured_at` DATETIME(6) NULL,
-				`status_changed_at` DATETIME(6) NULL,
+				`updated_at` DATETIME(6) NULL,
 				PRIMARY KEY (`id`),
 				KEY `campaign_id` (`campaign_id`)
 			) ENGINE=InnoDB {$charset_collate};

@@ -96,6 +96,7 @@ interface DatabasePort {
 	 * @param string $table The table name.
 	 * @param array<string, int|float|string|bool|null> $data The column-value pairs to insert.
 	 *
+	 * @throws DatabaseDuplicateKeyExceptionInterface When the insert fails because of a duplicate key.
 	 * @throws DatabaseExceptionInterface When the insert fails.
 	 */
 	public function insert( string $table, array $data ): void;

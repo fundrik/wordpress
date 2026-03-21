@@ -26,7 +26,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 	 */
 	protected static function define_version(): string {
 
-		return '2025_06_15_00';
+		return '2026_03_21_00';
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
@@ -48,11 +48,11 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 				`id` BIGINT UNSIGNED NOT NULL,
 				`version` INT UNSIGNED NOT NULL,
 				`title` TEXT NOT NULL,
-				`is_active` TINYINT(1) NOT NULL,
 				`is_open` TINYINT(1) NOT NULL,
-				`has_target` TINYINT(1) NOT NULL,
-				`target_amount` INT UNSIGNED NOT NULL,
-				`target_currency` CHAR(3) NOT NULL,
+				`currency_code` CHAR(3) NOT NULL,
+				`target_amount` INT UNSIGNED NULL,
+				`created_at` DATETIME NOT NULL,
+				`updated_at` DATETIME NULL,
 				PRIMARY KEY (`id`)
 			) ENGINE=InnoDB {$charset_collate};
 		";

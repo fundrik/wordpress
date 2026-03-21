@@ -51,7 +51,10 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 					)
 						&& str_contains( $sql, $charset_collate )
 						&& str_contains( $sql, '`version` INT UNSIGNED NOT NULL' )
-						&& str_contains( $sql, '`target_currency` CHAR(3) NOT NULL' )
+						&& str_contains( $sql, '`currency_code` CHAR(3) NOT NULL' )
+						&& str_contains( $sql, '`target_amount` INT UNSIGNED NULL' )
+						&& str_contains( $sql, '`created_at` DATETIME NOT NULL' )
+						&& str_contains( $sql, '`updated_at` DATETIME NULL' )
 						&& str_contains( $sql, 'PRIMARY KEY (`id`)' ),
 				),
 				$table_name,
@@ -85,6 +88,6 @@ final class CreateFundrikCampaignsTableTest extends MockeryTestCase {
 	#[Test]
 	public function it_exposes_the_expected_migration_version(): void {
 
-		$this->assertSame( '2025_06_15_00', CreateFundrikCampaignsTable::version() );
+		$this->assertSame( '2026_03_21_00', CreateFundrikCampaignsTable::version() );
 	}
 }

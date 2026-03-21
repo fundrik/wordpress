@@ -7,17 +7,14 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Migrations\Files;
 use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikDonationsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
-use Fundrik\WordPress\Infrastructure\Migrations\MigrationVersion;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( CreateFundrikDonationsTable::class )]
-#[UsesClass( MigrationVersion::class )]
 final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 
 	private CreateFundrikDonationsTable $migration;
@@ -55,7 +52,10 @@ final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 						&& str_contains( $sql, $charset_collate )
 						&& str_contains( $sql, '`id` CHAR(36) NOT NULL' )
 						&& str_contains( $sql, '`campaign_id` BIGINT UNSIGNED NOT NULL' )
+						&& str_contains( $sql, '`amount` INT UNSIGNED NOT NULL' )
+						&& str_contains( $sql, '`currency_code` CHAR(3) NOT NULL' )
 						&& str_contains( $sql, '`created_at` DATETIME(6) NOT NULL' )
+						&& str_contains( $sql, '`updated_at` DATETIME(6) NULL' )
 						&& str_contains( $sql, 'KEY `campaign_id` (`campaign_id`)' ),
 				),
 				$table_name,
@@ -87,12 +87,8 @@ final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function it_has_the_migration_version_attribute_with_expected_value(): void {
+	public function it_exposes_the_expected_migration_version(): void {
 
-		$this->assert_class_has_attribute(
-			class_name: CreateFundrikDonationsTable::class,
-			attribute_class: MigrationVersion::class,
-			expected_values: [ 'value' => '2026_03_04_00' ],
-		);
+		$this->assertSame( '2026_03_21_02', CreateFundrikDonationsTable::version() );
 	}
 }
