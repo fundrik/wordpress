@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure;
+namespace Fundrik\WordPress\Infrastructure\Ports;
 
 /**
  * Provides the outbound port for key-value storage access.

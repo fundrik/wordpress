@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure;
+namespace Fundrik\WordPress\Infrastructure\Ports\Database;
 
 /**
  * Provides the outbound port for database access.

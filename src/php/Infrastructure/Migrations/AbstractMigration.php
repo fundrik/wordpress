@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 
 /**
  * Defines a base class for applying database migrations.

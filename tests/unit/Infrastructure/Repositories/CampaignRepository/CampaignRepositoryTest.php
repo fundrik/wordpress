@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\CampaignRepository
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignNotFoundException;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepositoryException;
@@ -250,9 +250,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage(
-			'Cannot insert campaign "7": version must be initial. Given: 2.',
-		);
+		$this->expectExceptionMessage( 'Cannot insert campaign "7": version must be initial. Given: 2.' );
 
 		$this->repository->insert( $campaign );
 	}
@@ -585,7 +583,9 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	}
 
 	/**
-	 * @return array<string, string>
+	 * Returns a campaign row.
+	 *
+	 * @return array<string, string> Campaign row.
 	 */
 	private function campaign_row(
 		int $id = 7,
@@ -609,7 +609,9 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	}
 
 	/**
-	 * @param array<string, mixed> $row
+	 * Checks whether the row matches the expected insert payload.
+	 *
+	 * @param array<string, mixed> $row Insert row.
 	 */
 	private static function matches_insert_row(
 		array $row,
@@ -633,7 +635,9 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	}
 
 	/**
-	 * @param array<string, mixed> $row
+	 * Checks whether the row matches the expected update payload.
+	 *
+	 * @param array<string, mixed> $row Update row.
 	 */
 	private static function matches_update_row(
 		array $row,

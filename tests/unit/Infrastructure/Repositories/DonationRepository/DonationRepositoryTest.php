@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\DonationRepository
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationNotFoundException;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepositoryException;
@@ -36,7 +36,11 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		/** @var DatabasePort&MockInterface $db */
+		/**
+		 * Test database mock.
+		 *
+		 * @var DatabasePort&MockInterface $db
+		 */
 		$db = Mockery::mock( DatabasePort::class );
 
 		$this->db = $db;
@@ -474,7 +478,9 @@ final class DonationRepositoryTest extends MockeryTestCase {
 	}
 
 	/**
-	 * @param array<string, int|string|null> $row
+	 * Checks whether the row matches the expected pending insert payload.
+	 *
+	 * @param array<string, int|string|null> $row Insert row.
 	 */
 	private static function matches_pending_insert_row( array $row, int $version ): bool {
 
@@ -492,7 +498,9 @@ final class DonationRepositoryTest extends MockeryTestCase {
 	}
 
 	/**
-	 * @param array<string, int|string|null> $row
+	 * Checks whether the row matches the expected update payload.
+	 *
+	 * @param array<string, int|string|null> $row Update row.
 	 */
 	private static function matches_update_row( array $row, int $version, string $status ): bool {
 

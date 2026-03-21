@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Infrastructure\Migrations;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
-use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 
 /**

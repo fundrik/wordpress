@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Migrations\Files;
 
-use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 
 /**
  * Creates the `fundrik_campaigns` table in the database.

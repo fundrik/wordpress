@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure;
+namespace Fundrik\WordPress\Infrastructure\Ports\Database;
 
 use Throwable;
 

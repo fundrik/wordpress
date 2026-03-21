@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\DonationRepository;
 
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationAlreadyExistsException;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseDuplicateKeyException;
@@ -29,7 +29,11 @@ final class DonationRepositoryDuplicateInsertTest extends MockeryTestCase {
 
 		parent::setUp();
 
-		/** @var DatabasePort&MockInterface $db */
+		/**
+		 * Test database mock.
+		 *
+		 * @var DatabasePort&MockInterface $db
+		 */
 		$db = Mockery::mock( DatabasePort::class );
 
 		$this->db = $db;

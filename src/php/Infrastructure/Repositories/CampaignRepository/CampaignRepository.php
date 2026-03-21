@@ -16,9 +16,9 @@ use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\WordPress\Infrastructure\DatabaseDuplicateKeyExceptionInterface;
-use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 
 /**
  * Persists and retrieves campaigns in the storage.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure;
+namespace Fundrik\WordPress\Infrastructure\Ports\Database;
 
 /**
  * Marks database write failures caused by duplicate-key violations.

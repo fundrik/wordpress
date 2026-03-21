@@ -5,23 +5,17 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Kernel\Container;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignHandler;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
-use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonation\CreateDonationHandler;
-use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonation\CreateDonationUseCase;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
-use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
-use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
-use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
-use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
+use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -53,7 +47,7 @@ use Psr\Log\NullLogger;
  *
  * @internal
  */
-class ContainerBindingsRegistry {
+final readonly class ContainerBindingsRegistry {
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
@@ -76,13 +70,12 @@ class ContainerBindingsRegistry {
 
 			DatabasePort::class => WpdbDatabase::class,
 			StoragePort::class => WordPressOptionsStorage::class,
+
 			CampaignRepositoryPort::class => CampaignRepository::class,
 			DonationRepositoryPort::class => DonationRepository::class,
+
 			ApplicationEventBusPort::class => ApplicationEventBus::class,
 			ApplicationEventPublisherPort::class => WordPressActionApplicationEventPublisher::class,
-			SaveCampaignUseCase::class => SaveCampaignHandler::class,
-			DeleteCampaignUseCase::class => DeleteCampaignHandler::class,
-			CreateDonationUseCase::class => CreateDonationHandler::class,
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			BootUnitRunnerPort::class => BootUnitRunner::class,

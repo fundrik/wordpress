@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
-use Fundrik\WordPress\Infrastructure\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
-use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\DuplicateVersionMigration;
@@ -312,9 +312,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			);
 
 		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage(
-			'was applied, but updating stored DB version failed.',
-		);
+		$this->expectExceptionMessage( 'was applied, but updating stored DB version failed.' );
 
 		$runner->migrate();
 
@@ -323,6 +321,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 
 	#[Test]
 	public function it_throws_when_two_migrations_have_the_same_version(): void {
+
 		$runner = $this->create_runner(
 			new NewMigration1( $this->database ),
 			new DuplicateVersionMigration( $this->database ),
@@ -354,11 +353,6 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	 */
 	private function create_runner( AbstractMigration ...$migrations ): MigrationRunner {
 
-		return new MigrationRunner(
-			$this->database,
-			$this->storage,
-			$this->logger,
-			...$migrations,
-		);
+		return new MigrationRunner( $this->database, $this->storage, $this->logger, ...$migrations );
 	}
 }
