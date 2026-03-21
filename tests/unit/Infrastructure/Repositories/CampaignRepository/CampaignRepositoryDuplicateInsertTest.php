@@ -46,7 +46,7 @@ final class CampaignRepositoryDuplicateInsertTest extends MockeryTestCase {
 			id: 7,
 			version: 1,
 			title: 'Hello',
-			is_open: true,
+			accepts_donations: true,
 			currency_code: 'USD',
 			target_amount: null,
 		);
@@ -65,3 +65,4 @@ final class CampaignRepositoryDuplicateInsertTest extends MockeryTestCase {
 		$this->repository->insert( $campaign );
 	}
 }
+

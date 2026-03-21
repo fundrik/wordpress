@@ -48,7 +48,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 				`id` BIGINT UNSIGNED NOT NULL,
 				`version` INT UNSIGNED NOT NULL,
 				`title` TEXT NOT NULL,
-				`is_open` TINYINT(1) NOT NULL,
+				`accepts_donations` TINYINT(1) NOT NULL,
 				`currency_code` CHAR(3) NOT NULL,
 				`target_amount` INT UNSIGNED NULL,
 				`created_at` DATETIME NOT NULL,

@@ -294,7 +294,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 				id: ArrayExtractor::extract_int_required( $row, 'id' ),
 				version: ArrayExtractor::extract_int_required( $row, 'version' ),
 				title: ArrayExtractor::extract_string_required( $row, 'title' ),
-				is_open: ArrayExtractor::extract_bool_required( $row, 'is_open' ),
+				accepts_donations: ArrayExtractor::extract_bool_required( $row, 'accepts_donations' ),
 				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
 				target_amount: ArrayExtractor::extract_int_nullable_required( $row, 'target_amount' ),
 			);
@@ -330,7 +330,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			'id' => $campaign->get_id()->get_as_int(),
 			'version' => $campaign->get_version()->get_value(),
 			'title' => $campaign->get_title(),
-			'is_open' => $campaign->can_receive_donations(),
+			'accepts_donations' => $campaign->accepts_donations(),
 			'currency_code' => $target->get_currency()->get_code(),
 			'target_amount' => $target_amount?->get_value(),
 			'created_at' => $created_at,
@@ -353,7 +353,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		return [
 			'title' => $campaign->get_title(),
-			'is_open' => $campaign->can_receive_donations(),
+			'accepts_donations' => $campaign->accepts_donations(),
 			'target_amount' => $target_amount?->get_value(),
 			'updated_at' => $this->current_utc_timestamp(),
 		];

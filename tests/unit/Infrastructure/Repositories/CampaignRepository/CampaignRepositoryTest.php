@@ -46,14 +46,14 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 3, is_open: false, target_amount: 123 ) );
+			->andReturn( $this->campaign_row( id: 7, version: 3, accepts_donations: false, target_amount: 123 ) );
 
 		$result = $this->repository->find_by_id( $id );
 
 		self::assertSame( 7, $result?->get_id()->get_value() );
 		self::assertSame( 3, $result?->get_version()->get_value() );
 		self::assertSame( 'Hello', $result?->get_title() );
-		self::assertFalse( $result?->can_receive_donations() );
+		self::assertFalse( $result?->accepts_donations() );
 		self::assertTrue( $result?->has_target() );
 		self::assertSame( 123, $result?->get_target()->get_amount()?->get_value() );
 		self::assertSame( 'RUB', $result?->get_target()->get_currency()->get_code() );
@@ -68,11 +68,11 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 3, is_open: true, target_amount: null ) );
+			->andReturn( $this->campaign_row( id: 7, version: 3, accepts_donations: true, target_amount: null ) );
 
 		$result = $this->repository->find_by_id( $id );
 
-		self::assertTrue( $result?->can_receive_donations() );
+		self::assertTrue( $result?->accepts_donations() );
 		self::assertFalse( $result?->has_target() );
 		self::assertNull( $result?->get_target()->get_amount() );
 		self::assertSame( 'RUB', $result?->get_target()->get_currency()->get_code() );
@@ -191,7 +191,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_inserts_row_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign( id: 7, version: 1, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'insert' )
@@ -204,7 +204,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 						id: 7,
 						version: 1,
 						title: 'Hello',
-						is_open: false,
+						accepts_donations: false,
 						currency_code: 'RUB',
 						target_amount: 123,
 					),
@@ -215,13 +215,13 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 1, is_open: false, target_amount: 123 ) );
+			->andReturn( $this->campaign_row( id: 7, version: 1, accepts_donations: false, target_amount: 123 ) );
 
 		$result = $this->repository->insert( $campaign );
 
 		self::assertSame( 7, $result->get_id()->get_value() );
 		self::assertSame( 1, $result->get_version()->get_value() );
-		self::assertFalse( $result->can_receive_donations() );
+		self::assertFalse( $result->accepts_donations() );
 		self::assertSame( 123, $result->get_target()->get_amount()?->get_value() );
 	}
 
@@ -244,7 +244,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_version_is_not_initial(): void {
 
-		$campaign = $this->campaign( id: 7, version: 2, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 2, accepts_donations: false, target_amount: 123 );
 
 		$this->db->shouldNotReceive( 'insert' );
 		$this->db->shouldNotReceive( 'get_by_id' );
@@ -258,7 +258,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_database_insert_fails(): void {
 
-		$campaign = $this->campaign( id: 7, version: 1, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'insert' )
@@ -271,7 +271,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 						id: 7,
 						version: 1,
 						title: 'Hello',
-						is_open: false,
+						accepts_donations: false,
 						currency_code: 'RUB',
 						target_amount: 123,
 					),
@@ -290,7 +290,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function insert_throws_when_campaign_is_not_found_after_insert(): void {
 
-		$campaign = $this->campaign( id: 7, version: 1, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'insert' )
@@ -303,7 +303,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 						id: 7,
 						version: 1,
 						title: 'Hello',
-						is_open: false,
+						accepts_donations: false,
 						currency_code: 'RUB',
 						target_amount: 123,
 					),
@@ -325,7 +325,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_updates_row_with_next_version_and_returns_persisted_campaign_snapshot(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, is_open: true, target_amount: null );
+		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: true, target_amount: null );
 
 		$this->db
 			->shouldReceive( 'update' )
@@ -336,7 +336,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					static fn ( array $row ): bool => self::matches_update_row(
 						$row,
 						title: 'Hello',
-						is_open: true,
+						accepts_donations: true,
 						target_amount: null,
 						version: 4,
 					),
@@ -352,12 +352,12 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 4, is_open: true, target_amount: null ) );
+			->andReturn( $this->campaign_row( id: 7, version: 4, accepts_donations: true, target_amount: null ) );
 
 		$result = $this->repository->update( $campaign );
 
 		self::assertSame( 4, $result->get_version()->get_value() );
-		self::assertTrue( $result->can_receive_donations() );
+		self::assertTrue( $result->accepts_donations() );
 		self::assertFalse( $result->has_target() );
 		self::assertNull( $result->get_target()->get_amount() );
 	}
@@ -382,7 +382,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_database_update_fails(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, is_open: true, target_amount: null );
+		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: true, target_amount: null );
 
 		$this->db
 			->shouldReceive( 'update' )
@@ -393,7 +393,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 					static fn ( array $row ): bool => self::matches_update_row(
 						$row,
 						title: 'Hello',
-						is_open: true,
+						accepts_donations: true,
 						target_amount: null,
 						version: 4,
 					),
@@ -417,7 +417,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_campaign_is_missing(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'update' )
@@ -441,7 +441,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_no_rows_affected_and_version_mismatch(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'update' )
@@ -465,7 +465,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	#[Test]
 	public function update_throws_when_campaign_is_not_found_after_update(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, is_open: false, target_amount: 123 );
+		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
 
 		$this->db
 			->shouldReceive( 'update' )
@@ -567,7 +567,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		int|string $id = 7,
 		int $version = 3,
 		string $title = 'Hello',
-		bool $is_open = false,
+		bool $accepts_donations = false,
 		string $currency_code = 'RUB',
 		?int $target_amount = 123,
 	): Campaign {
@@ -576,7 +576,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			id: $id,
 			version: $version,
 			title: $title,
-			is_open: $is_open,
+			accepts_donations: $accepts_donations,
 			currency_code: $currency_code,
 			target_amount: $target_amount,
 		);
@@ -591,7 +591,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		int $id = 7,
 		?int $version = 3,
 		string $title = 'Hello',
-		bool $is_open = false,
+		bool $accepts_donations = false,
 		string $currency_code = 'RUB',
 		?int $target_amount = 123,
 	): array {
@@ -600,7 +600,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			'id' => (string) $id,
 			'version' => (string) $version,
 			'title' => $title,
-			'is_open' => $is_open ? '1' : '0',
+			'accepts_donations' => $accepts_donations ? '1' : '0',
 			'currency_code' => $currency_code,
 			'target_amount' => $target_amount === null ? null : (string) $target_amount,
 			'created_at' => '2026-03-21 10:00:00',
@@ -618,7 +618,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		int $id,
 		int $version,
 		string $title,
-		bool $is_open,
+		bool $accepts_donations,
 		string $currency_code,
 		?int $target_amount,
 	): bool {
@@ -626,7 +626,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		return ( $row['id'] ?? null ) === $id
 			&& ( $row['version'] ?? null ) === $version
 			&& ( $row['title'] ?? null ) === $title
-			&& ( $row['is_open'] ?? null ) === $is_open
+			&& ( $row['accepts_donations'] ?? null ) === $accepts_donations
 			&& ( $row['currency_code'] ?? null ) === $currency_code
 			&& ( $row['target_amount'] ?? null ) === $target_amount
 			&& is_string( $row['created_at'] ?? null )
@@ -642,13 +642,13 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	private static function matches_update_row(
 		array $row,
 		string $title,
-		bool $is_open,
+		bool $accepts_donations,
 		?int $target_amount,
 		int $version,
 	): bool {
 
 		return ( $row['title'] ?? null ) === $title
-			&& ( $row['is_open'] ?? null ) === $is_open
+			&& ( $row['accepts_donations'] ?? null ) === $accepts_donations
 			&& ( $row['target_amount'] ?? null ) === $target_amount
 			&& ( $row['version'] ?? null ) === $version
 			&& is_string( $row['updated_at'] ?? null )
@@ -656,3 +656,4 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			&& ! array_key_exists( 'currency_code', $row );
 	}
 }
+
