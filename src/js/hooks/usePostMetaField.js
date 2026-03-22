@@ -7,7 +7,15 @@ export function usePostMetaField(postType, fieldName) {
 	const value = meta?.[fieldName];
 
 	const setValue = (newValue) => {
-		setMeta({ ...meta, [fieldName]: newValue });
+		const nextMeta = { ...(meta ?? {}) };
+
+		if (newValue === undefined) {
+			delete nextMeta[fieldName];
+		} else {
+			nextMeta[fieldName] = newValue;
+		}
+
+		setMeta(nextMeta);
 	};
 
 	return [value, setValue];

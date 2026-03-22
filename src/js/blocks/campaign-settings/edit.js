@@ -12,8 +12,8 @@ export default function Edit({
 	const [targetAmount, setTargetAmount] = usePostMetaField(postType, 'fundrik_campaign_target_amount');
 
 	useEffect(() => {
-		if ( ! hasTarget && targetAmount !== null ) {
-			setTargetAmount( null );
+		if ( ! hasTarget && targetAmount !== undefined ) {
+			setTargetAmount( undefined );
 		}
 	}, [ hasTarget, targetAmount, setTargetAmount ]);
 

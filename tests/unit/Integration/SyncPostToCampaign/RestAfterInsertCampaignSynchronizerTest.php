@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
+use Brain\Monkey\Functions;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\ChangeCampaignTargetHandler;
@@ -19,6 +20,7 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -72,6 +74,9 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
 		$this->campaign_repository->shouldNotReceive( 'update' );
+		Functions\expect( 'delete_post_meta' )
+			->once()
+			->with( 10, CampaignPostTypeConfig::META_TARGET_AMOUNT );
 
 		$this->campaign_repository
 			->shouldReceive( 'insert' )
@@ -116,6 +121,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 
 		$this->campaign_repository->shouldNotReceive( 'insert' );
+		Functions\expect( 'delete_post_meta' )->never();
 
 		$this->campaign_repository
 			->shouldReceive( 'find_by_id' )
@@ -138,6 +144,61 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 				),
 			)
 			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
+
+		$this->event_bus->shouldReceive( 'publish' )->once();
+
+		$this->synchronizer->sync( $data, false );
+	}
+
+	#[Test]
+	public function sync_updates_campaign_and_clears_target_amount_meta_when_target_is_disabled(): void {
+
+		$data = new RestCampaignSyncDataDto(
+			id: EntityId::create( 15 ),
+			title: 'Updated title',
+			version: EntityVersion::create( 7 ),
+			accepts_donations: false,
+			has_target: false,
+			target_amount: null,
+			target_currency: 'EUR',
+		);
+
+		$persisted = $this->campaign_factory->create_from_primitives(
+			id: 15,
+			version: 6,
+			title: 'Persisted title',
+			accepts_donations: true,
+			currency_code: 'EUR',
+			target_amount: 1_500,
+		);
+
+		$this->campaign_repository->shouldNotReceive( 'insert' );
+
+		$this->campaign_repository
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( $persisted );
+
+		$this->campaign_repository
+			->shouldReceive( 'update' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id()->get_value() === 15
+						&& $campaign->get_version()->get_value() === 7
+						&& $campaign->get_title() === 'Updated title'
+						&& ! $campaign->accepts_donations()
+						&& ! $campaign->has_target()
+						&& $campaign->get_target()->get_amount() === null
+						&& $campaign->get_target()->get_currency()->get_code() === 'EUR',
+				),
+			)
+			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
+
+		Functions\expect( 'delete_post_meta' )
+			->once()
+			->with( 15, CampaignPostTypeConfig::META_TARGET_AMOUNT );
 
 		$this->event_bus->shouldReceive( 'publish' )->once();
 

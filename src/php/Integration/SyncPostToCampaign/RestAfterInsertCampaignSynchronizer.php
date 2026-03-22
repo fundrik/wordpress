@@ -9,6 +9,7 @@ use Fundrik\Core\Components\Campaigns\Application\Commands\SyncCampaignFromSnaps
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 
 /**
  * Synchronizes the saved campaign post snapshot into Fundrik storage after REST saves.
@@ -45,11 +46,15 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 
 		if ( $creating ) {
 			$this->campaign_command->create( $this->new_create_command( $data ) );
+		} else {
+			$this->campaign_command->sync_from_snapshot( $this->new_sync_command( $data ) );
+		}
 
+		if ( $data->has_target ) {
 			return;
 		}
 
-		$this->campaign_command->sync_from_snapshot( $this->new_sync_command( $data ) );
+		delete_post_meta( $data->id->get_value(), CampaignPostTypeConfig::META_TARGET_AMOUNT );
 	}
 
 	/**
