@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration;
 
-use Fundrik\WordPress\Infrastructure\DatabasePort;
-use Fundrik\WordPress\Integration\WpdbDatabase;
-use Fundrik\WordPress\Integration\WpdbDatabaseException;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Integration\Database\WpdbDatabase;
+use Fundrik\WordPress\Integration\Database\WpdbDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -49,9 +49,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		unset( $GLOBALS['wpdb'] );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Global $wpdb must be an instance of wpdb.',
-		);
+		$this->expectExceptionMessage( 'Global $wpdb must be an instance of wpdb.' );
 
 		new WpdbDatabase();
 	}
@@ -63,9 +61,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$GLOBALS['wpdb'] = new stdClass();
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Global $wpdb must be an instance of wpdb.',
-		);
+		$this->expectExceptionMessage( 'Global $wpdb must be an instance of wpdb.' );
 
 		new WpdbDatabase();
 	}
@@ -178,9 +174,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Boom';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to fetch row "7" from table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to fetch row "7" from table "wp_table".' );
 
 		$this->db->get_by_id( $table, $id );
 	}
@@ -420,6 +414,70 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function get_all_by_column_uses_float_placeholder_when_value_is_float(): void {
+
+		$table = 'wp_table';
+		$column = 'amount';
+		$value = 12.5;
+
+		$sql = 'SELECT * FROM %i WHERE %i = %f';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 1,
+				'amount' => 12.5,
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame( $results, $this->db->get_all_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function get_all_by_column_uses_is_null_comparison_when_value_is_null(): void {
+
+		$table = 'wp_table';
+		$column = 'updated_at';
+		$value = null;
+
+		$sql = 'SELECT * FROM %i WHERE %i IS NULL';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 1,
+				'updated_at' => null,
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame( $results, $this->db->get_all_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
 	public function get_all_by_column_returns_empty_array_when_results_is_not_array(): void {
 
 		$table = 'wp_table';
@@ -595,9 +653,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Boom';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to check row existence for table "wp_table" and ID "7".',
-		);
+		$this->expectExceptionMessage( 'Failed to check row existence for table "wp_table" and ID "7".' );
 
 		$this->db->exists_by_id( $table, $id );
 	}
@@ -653,6 +709,56 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->shouldReceive( 'prepare' )
 			->once()
 			->with( $sql, $table, $column, $value )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		self::assertTrue( $this->db->exists_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function exists_by_column_uses_bool_placeholder_when_value_is_bool(): void {
+
+		$table = 'wp_table';
+		$column = 'is_active';
+		$value = false;
+
+		$sql = 'SELECT 1 FROM %i WHERE %i = %d LIMIT 1';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column, 0 )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		self::assertTrue( $this->db->exists_by_column( $table, $column, $value ) );
+	}
+
+	#[Test]
+	public function exists_by_column_uses_is_null_comparison_when_value_is_null(): void {
+
+		$table = 'wp_table';
+		$column = 'deleted_at';
+		$value = null;
+
+		$sql = 'SELECT 1 FROM %i WHERE %i IS NULL LIMIT 1';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, $column )
 			->andReturn( $query );
 
 		$this->wpdb
@@ -730,14 +836,11 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to insert row into table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to insert row into table "wp_table".' );
 
 		$this->db->insert( $table, $data );
 	}
 
-	#[Test]
 	public function insert_throws_when_wpdb_last_error_is_set(): void {
 
 		$table = 'wp_table';
@@ -752,9 +855,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Insert failed';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to insert row into table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to insert row into table "wp_table".' );
 
 		$this->db->insert( $table, $data );
 	}
@@ -793,9 +894,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to update rows in table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to update rows in table "wp_table".' );
 
 		$this->db->update( $table, $data, $where );
 	}
@@ -816,9 +915,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Update failed';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to update rows in table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to update rows in table "wp_table".' );
 
 		$this->db->update( $table, $data, $where );
 	}
@@ -870,9 +967,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( false );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to delete row "7" from table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to delete row "7" from table "wp_table".' );
 
 		$this->db->delete( $table, $id );
 	}
@@ -892,9 +987,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 		$this->wpdb->last_error = 'Delete failed';
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Failed to delete row "7" from table "wp_table".',
-		);
+		$this->expectExceptionMessage( 'Failed to delete row "7" from table "wp_table".' );
 
 		$this->db->delete( $table, $id );
 	}
@@ -992,9 +1085,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( null );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Prepared query must be a string. Given: null.',
-		);
+		$this->expectExceptionMessage( 'Prepared query must be a string. Given: null.' );
 
 		$this->db->query_with_args( $sql, ...$args );
 	}
@@ -1078,9 +1169,7 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 			->andReturn( '' );
 
 		$this->expectException( WpdbDatabaseException::class );
-		$this->expectExceptionMessage(
-			'Database charset and collation must be non-empty. Given: empty string.',
-		);
+		$this->expectExceptionMessage( 'Database charset and collation must be non-empty. Given: empty string.' );
 
 		$this->db->get_charset_collate();
 	}

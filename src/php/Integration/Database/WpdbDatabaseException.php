@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration;
+namespace Fundrik\WordPress\Integration\Database;
 
-use Fundrik\WordPress\Infrastructure\DatabaseExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use RuntimeException;
 
 /**

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration;
 
-use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 
 /**
  * Provides access to WordPress options storage.

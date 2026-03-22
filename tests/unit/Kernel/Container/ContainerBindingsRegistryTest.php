@@ -33,7 +33,7 @@ use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
-use Fundrik\WordPress\Integration\WpdbDatabase;
+use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContextualBindingDefinition;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;

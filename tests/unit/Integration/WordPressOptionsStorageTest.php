@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Infrastructure\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;

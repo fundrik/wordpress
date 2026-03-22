@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration;
+namespace Fundrik\WordPress\Integration\Database;
 
-use Fundrik\WordPress\Infrastructure\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use wpdb;
 
 /**
@@ -89,7 +89,6 @@ final readonly class WpdbDatabase implements DatabasePort {
 		return $this->sanitize_db_row( $row );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Retrieves all rows from the given table.
 	 *
@@ -130,9 +129,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		return $this->sanitize_db_results( $results );
 	}
-	// phpcs:enable
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Retrieves all rows from the given table filtered by a column value.
 	 *
@@ -151,11 +148,11 @@ final readonly class WpdbDatabase implements DatabasePort {
 	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array {
 
 		$table = $this->qualify_table_name( $table );
-		$placeholder = is_int( $value ) ? '%d' : '%s';
+		[ $where_sql, $where_args ] = $this->build_column_value_filter( $column, $value );
 
-		$sql = "SELECT * FROM %i WHERE %i = {$placeholder}";
+		$sql = "SELECT * FROM %i {$where_sql}";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, $column, $value );
+		$query = $this->wpdb->prepare( $sql, $table, ...$where_args );
 
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var list<array<string, mixed>>|null $results */
@@ -179,7 +176,6 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		return $this->sanitize_db_results( $results );
 	}
-	// phpcs:enable
 
 	/**
 	 * Determines whether the table contains a row with the given ID.
@@ -235,11 +231,11 @@ final readonly class WpdbDatabase implements DatabasePort {
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool {
 
 		$table = $this->qualify_table_name( $table );
-		$placeholder = is_int( $value ) ? '%d' : '%s';
+		[ $where_sql, $where_args ] = $this->build_column_value_filter( $column, $value );
 
-		$sql = "SELECT 1 FROM %i WHERE %i = {$placeholder} LIMIT 1";
+		$sql = "SELECT 1 FROM %i {$where_sql} LIMIT 1";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, $column, $value );
+		$query = $this->wpdb->prepare( $sql, $table, ...$where_args );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$exists = $this->wpdb->get_var( $query );
@@ -275,6 +271,15 @@ final readonly class WpdbDatabase implements DatabasePort {
 		$result = $this->wpdb->insert( $table, $data );
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
+
+			if ( $this->is_duplicate_key_error() ) {
+				throw new WpdbDuplicateKeyException(
+					sprintf(
+						'Cannot insert row into table "%s": duplicate key.',
+						$table,
+					),
+				);
+			}
 
 			throw new WpdbDatabaseException(
 				sprintf(
@@ -362,9 +367,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		if ( $result === false || $this->wpdb->last_error !== '' ) {
 
-			throw new WpdbDatabaseException(
-				'Failed to execute database query.',
-			);
+			throw new WpdbDatabaseException( 'Failed to execute database query.' );
 		}
 	}
 
@@ -411,9 +414,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		if ( $charset_collate === '' ) {
 
-			throw new WpdbDatabaseException(
-				'Database charset and collation must be non-empty. Given: empty string.',
-			);
+			throw new WpdbDatabaseException( 'Database charset and collation must be non-empty. Given: empty string.' );
 		}
 
 		return $charset_collate;
@@ -510,5 +511,49 @@ final readonly class WpdbDatabase implements DatabasePort {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Builds a column comparison clause and its placeholder arguments.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $column The column to filter by.
+	 * @param int|float|string|bool|null $value The value to match.
+	 *
+	 * @return array{0:string,1:list<int|float|string>} The SQL fragment and bound arguments.
+	 */
+	private function build_column_value_filter( string $column, int|float|string|bool|null $value ): array {
+
+		if ( $value === null ) {
+			return [ 'WHERE %i IS NULL', [ $column ] ];
+		}
+
+		$placeholder = match ( true ) {
+			is_bool( $value ), is_int( $value ) => '%d',
+			is_float( $value ) => '%f',
+			default => '%s',
+		};
+
+		if ( is_bool( $value ) ) {
+			$value = (int) $value;
+		}
+
+		return [ "WHERE %i = {$placeholder}", [ $column, $value ] ];
+	}
+
+	/**
+	 * Returns whether the last wpdb error indicates a duplicate-key violation.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when the last error matches duplicate-key semantics.
+	 */
+	private function is_duplicate_key_error(): bool {
+
+		return preg_match(
+			'/duplicate entry|duplicate key|unique constraint|unique key/i',
+			$this->wpdb->last_error,
+		) === 1;
 	}
 }
