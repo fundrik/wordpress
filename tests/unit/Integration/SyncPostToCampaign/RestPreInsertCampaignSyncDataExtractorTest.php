@@ -10,6 +10,7 @@ use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
+use Brain\Monkey\Functions;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -73,13 +74,17 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 			->andReturn(
 				[
 					'id' => 10,
-					// title missing -> defaults to "Unchanged title"
 					'meta' => [
 						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 3,
 						// meta flags missing -> defaults in extractor
 					],
-				],
+			],
 			);
+
+		Functions\expect( 'get_post_field' )
+			->once()
+			->with( 'post_title', 10, 'raw' )
+			->andReturn( 'Persisted title' );
 
 		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
 
@@ -88,15 +93,14 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertInstanceOf( EntityId::class, $result->id );
 		self::assertSame( 10, $result->id->get_value() );
 
-		self::assertSame( 'Unchanged title', $result->title );
+		self::assertSame( 'Persisted title', $result->title );
 
 		self::assertInstanceOf( EntityVersion::class, $result->version );
 		self::assertSame( 3, $result->version->get_value() );
 
-		self::assertSame( true, $result->is_active );
-		self::assertSame( true, $result->is_open );
+		self::assertSame( true, $result->accepts_donations );
 		self::assertSame( false, $result->has_target );
-		self::assertSame( 0, $result->target_amount );
+		self::assertNull( $result->target_amount );
 		self::assertSame(
 			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
 				CampaignPostTypeConfig::class,
@@ -118,10 +122,9 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 				[
 					'id' => 15,
 					'title' => 'Ok',
-					'status' => 'draft',
 					'meta' => [
 						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 7,
-						CampaignPostTypeConfig::META_IS_OPEN => false,
+						CampaignPostTypeConfig::META_ACCEPTS_DONATIONS => false,
 						CampaignPostTypeConfig::META_HAS_TARGET => true,
 						CampaignPostTypeConfig::META_TARGET_AMOUNT => 123,
 						CampaignPostTypeConfig::META_TARGET_CURRENCY => 'USD',
@@ -137,10 +140,12 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( 'Ok', $result->title );
 		self::assertSame( 7, $result->version->get_value() );
 
-		self::assertFalse( $result->is_active );
-		self::assertFalse( $result->is_open );
+		self::assertFalse( $result->accepts_donations );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
+
 }
+
+

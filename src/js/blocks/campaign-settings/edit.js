@@ -1,33 +1,47 @@
 import { usePostMetaField } from '../../hooks/usePostMetaField';
 import { useBlockProps } from '@wordpress/block-editor';
+import { useEffect } from '@wordpress/element';
 import { ToggleControl, TextControl } from '@wordpress/components';
 
 export default function Edit({
 	context: { postType },
 }) {
 
-	const [isOpen, setIsOpen] = usePostMetaField(postType, 'fundrik_campaign_is_open');
+	const [acceptsDonations, setAcceptsDonations] = usePostMetaField(postType, 'fundrik_campaign_accepts_donations');
 	const [hasTarget, setHasTarget] = usePostMetaField(postType, 'fundrik_campaign_has_target');
 	const [targetAmount, setTargetAmount] = usePostMetaField(postType, 'fundrik_campaign_target_amount');
+
+	useEffect(() => {
+		if ( ! hasTarget && targetAmount !== null ) {
+			setTargetAmount( null );
+		}
+	}, [ hasTarget, targetAmount, setTargetAmount ]);
 
 	return (
 		<div {...useBlockProps()}>
 			<ToggleControl
-				label="Is Open"
-				checked={isOpen}
-				onChange={setIsOpen}
+				label="Accepts Donations"
+				checked={acceptsDonations}
+				onChange={setAcceptsDonations}
 			/>
 			<ToggleControl
 				label="Has Target"
 				checked={hasTarget}
 				onChange={setHasTarget}
 			/>
-			<TextControl
-				label="Target Amount"
-				type="number"
-				value={targetAmount}
-				onChange={setTargetAmount}
-			/>
+			{ hasTarget ? (
+				<TextControl
+					label="Target Amount"
+					type="number"
+					value={targetAmount ?? ''}
+					onChange={setTargetAmount}
+				/>
+			) : (
+				<p className="fundrik-campaign-settings__hint">
+					Enable target to set a fundraising amount.
+				</p>
+			) }
 		</div>
 	);
 }
+

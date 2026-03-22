@@ -22,10 +22,10 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	public const string ENTITY_VERSION_FIELD_NAME = 'fundrik_campaign_version';
 
 	/**
-	 * Stores whether the campaign is open for donations.
+	 * Stores whether the campaign accepts donations.
 	 */
 	#[PostTypeMetaField( type: PostTypeMetaFieldType::Boolean, default: true )]
-	public const string META_IS_OPEN = 'fundrik_campaign_is_open';
+	public const string META_ACCEPTS_DONATIONS = 'fundrik_campaign_accepts_donations';
 
 	/**
 	 * Stores whether the campaign has a fundraising target.
@@ -36,7 +36,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	/**
 	 * Stores the fundraising target amount in minor units.
 	 */
-	#[PostTypeMetaField( type: PostTypeMetaFieldType::Integer, default: 0 )]
+	#[PostTypeMetaField( type: PostTypeMetaFieldType::Integer )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
 
 	/**

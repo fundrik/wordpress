@@ -36,7 +36,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		private PostTypeMetaFieldReader $meta_field_reader,
 	) {}
 
-	// // phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint, SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
+	// phpcs:disable Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	/**
 	 * Extracts and normalizes the synchronization data from the REST request.
 	 *
@@ -46,6 +46,8 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 * @param WP_REST_Request $request The REST request.
 	 *
 	 * @return RestCampaignSyncDataDto|WP_Error The normalized data, or a WP_Error when the payload is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
 	public function extract_or_error(
 		stdClass $prepared_post,
@@ -57,31 +59,28 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 
 		try {
 
-			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
+			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 			$id = ArrayExtractor::extract_int_required( $params, 'id' );
-			$title = ArrayExtractor::extract_string_optional( $params, 'title' ) ?? 'Unchanged title';
-			$status = ArrayExtractor::extract_string_optional( $params, 'status' ) ?? 'publish';
+			$title = $this->resolve_title_or_fallback( $params, $id );
 
 			/** @var array<string, mixed> $meta */
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
-			$default_is_open = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_IS_OPEN );
+			$default_accepts_donations = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
 			$default_has_target = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_HAS_TARGET );
-			$default_target_amount = $this->get_meta_default_int_or_fail( CampaignPostTypeConfig::META_TARGET_AMOUNT );
 			$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 
 			return new RestCampaignSyncDataDto(
 				id: EntityId::create( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),
-				is_active: $status === 'publish',
-				is_open: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_IS_OPEN ) ?? $default_is_open,
+				accepts_donations: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations,
 				has_target: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target,
-				target_amount: ArrayExtractor::extract_int_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT ) ?? $default_target_amount,
+				target_amount: ArrayExtractor::extract_int_nullable_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT ),
 				target_currency: ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency,
 			);
-			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
+			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 
 		} catch ( ArrayExtractionException | InvalidArgumentException $e ) {
 
@@ -92,6 +91,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			);
 		}
 	}
+	// phpcs:enable
 
 	/**
 	 * Returns a boolean default for the given campaign meta key.
@@ -111,31 +111,6 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 
 		if ( $default !== null ) {
 			return TypeCaster::to_bool( $default );
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
-		);
-	}
-
-	/**
-	 * Returns an integer default for the given campaign meta key.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $meta_key The campaign post meta key.
-	 *
-	 * @return int The integer default value.
-	 */
-	private function get_meta_default_int_or_fail( string $meta_key ): int {
-
-		$default = $this->meta_field_reader->get_meta_default_by_config_class(
-			CampaignPostTypeConfig::class,
-			$meta_key,
-		);
-
-		if ( $default !== null ) {
-			return TypeCaster::to_int( $default );
 		}
 
 		throw new InvalidArgumentException(
@@ -167,5 +142,29 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
 		);
 	}
-	// phpcs:enable
+
+	/**
+	 * Returns the campaign title from the payload, prepared post, or persisted post.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $params The REST request payload.
+	 * @param int $post_id The campaign post ID.
+	 *
+	 * @return string The campaign title.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function resolve_title_or_fallback( array $params, int $post_id ): string {
+
+		$title = ArrayExtractor::extract_string_optional( $params, 'title' );
+
+		if ( $title !== null ) {
+			return $title;
+		}
+
+		$persisted_title = get_post_field( 'post_title', $post_id, 'raw' );
+
+		return TypeCaster::to_string( $persisted_title );
+	}
 }

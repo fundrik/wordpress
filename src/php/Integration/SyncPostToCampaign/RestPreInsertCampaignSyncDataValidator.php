@@ -44,6 +44,12 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 */
 	public function validate_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
 
+		$target_error = $this->validate_target_or_error( $data );
+
+		if ( $target_error instanceof WP_Error ) {
+			return $target_error;
+		}
+
 		$domain_error = $this->validate_domain_or_error( $data );
 
 		if ( $domain_error instanceof WP_Error ) {
@@ -52,6 +58,44 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 
 		return $this->validate_version_or_error( $data );
 	}
+
+	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Validates the target payload consistency.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param RestCampaignSyncDataDto $data The synchronization data.
+	 *
+	 * @return WP_Error|null A WP_Error when rejected, or null when accepted.
+	 */
+	private function validate_target_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
+
+		if ( $data->has_target && ( $data->target_amount === null || $data->target_amount <= 0 ) ) {
+			return new WP_Error(
+				'fundrik_campaign_validation_failed',
+				sprintf(
+					'Target amount must be positive when targeting is enabled. Given: %s.',
+					$data->target_amount === null ? 'null' : (string) $data->target_amount,
+				),
+				[ 'status' => 422 ],
+			);
+		}
+
+		if ( ! $data->has_target && $data->target_amount !== null ) {
+			return new WP_Error(
+				'fundrik_campaign_validation_failed',
+				sprintf(
+					'Target amount must be null when targeting is disabled. Given: %s.',
+					$data->target_amount === null ? 'null' : (string) $data->target_amount,
+				),
+				[ 'status' => 422 ],
+			);
+		}
+
+		return null;
+	}
+	// phpcs:enable
 
 	/**
 	 * Validates the payload against Campaign domain invariants.
@@ -70,11 +114,9 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 				id: $data->id->get_value(),
 				version: $data->version->get_value(),
 				title: $data->title,
-				is_active: $data->is_active,
-				is_open: $data->is_open,
-				has_target: $data->has_target,
+				accepts_donations: $data->accepts_donations,
+				currency_code: $data->target_currency,
 				target_amount: $data->target_amount,
-				target_currency: $data->target_currency,
 			);
 
 			return null;

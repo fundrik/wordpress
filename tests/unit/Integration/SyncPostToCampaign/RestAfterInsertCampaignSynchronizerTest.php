@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
+use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\ChangeCampaignTargetHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\EnableCampaignDonations\EnableCampaignDonationsHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\RenameCampaign\RenameCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotHandler;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
+use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
-use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -28,7 +34,8 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
-	private SaveCampaignUseCase&MockInterface $save_campaign_use_case;
+	private DonationRepositoryPort&MockInterface $donation_repository;
+	private ApplicationEventBusPort&MockInterface $event_bus;
 
 	private RestAfterInsertCampaignSynchronizer $synchronizer;
 
@@ -38,39 +45,77 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->campaign_factory = new CampaignFactory();
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
-		$this->save_campaign_use_case = Mockery::mock( SaveCampaignUseCase::class );
+		$this->donation_repository = Mockery::mock( DonationRepositoryPort::class );
+		$this->event_bus = Mockery::mock( ApplicationEventBusPort::class );
 
 		$this->synchronizer = new RestAfterInsertCampaignSynchronizer(
-			$this->campaign_factory,
-			$this->campaign_repository,
-			$this->save_campaign_use_case,
+			self::new_campaign_command_service(
+				$this->campaign_repository,
+				$this->donation_repository,
+				$this->event_bus,
+			),
 		);
 	}
 
 	#[Test]
-	public function sync_uses_persisted_version_as_expected_version_and_saves(): void {
+	public function sync_creates_campaign_when_post_is_being_created(): void {
 
 		$data = new RestCampaignSyncDataDto(
 			id: EntityId::create( 10 ),
 			title: 'Title',
-			version: EntityVersion::create( 999 ), // Should NOT be used as expected_version here.
-			is_active: false,
-			is_open: true,
+			version: EntityVersion::create( 999 ),
+			accepts_donations: true,
 			has_target: false,
-			target_amount: 0,
+			target_amount: null,
 			target_currency: 'USD',
 		);
 
-		$persisted = $this->campaign_factory->create_from_primitives(
-			id: 10,
-			version: 5,
-			title: 'Persisted',
-			is_active: true,
-			is_open: true,
-			has_target: false,
-			target_amount: 0,
-			target_currency: 'USD',
+		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
+		$this->campaign_repository->shouldNotReceive( 'update' );
+
+		$this->campaign_repository
+			->shouldReceive( 'insert' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id()->get_value() === 10
+						&& $campaign->get_version()->get_value() === 1
+						&& $campaign->get_title() === 'Title'
+						&& $campaign->accepts_donations()
+						&& ! $campaign->has_target()
+						&& $campaign->get_target()->get_currency()->get_code() === 'USD',
+				),
+			)
+			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
+
+		$this->event_bus->shouldReceive( 'publish' )->once();
+
+		$this->synchronizer->sync( $data, true );
+	}
+
+	#[Test]
+	public function sync_updates_campaign_from_snapshot_when_post_is_being_updated(): void {
+
+		$data = new RestCampaignSyncDataDto(
+			id: EntityId::create( 15 ),
+			title: 'Updated title',
+			version: EntityVersion::create( 7 ),
+			accepts_donations: false,
+			has_target: true,
+			target_amount: 1_500,
+			target_currency: 'EUR',
 		);
+
+		$persisted = $this->campaign_factory->create_from_primitives(
+			id: 15,
+			version: 6,
+			title: 'Persisted title',
+			accepts_donations: true,
+			currency_code: 'EUR',
+			target_amount: null,
+		);
+
+		$this->campaign_repository->shouldNotReceive( 'insert' );
 
 		$this->campaign_repository
 			->shouldReceive( 'find_by_id' )
@@ -78,101 +123,43 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			->with( Mockery::type( EntityId::class ) )
 			->andReturn( $persisted );
 
-		$this->save_campaign_use_case
-			->shouldReceive( 'handle' )
+		$this->campaign_repository
+			->shouldReceive( 'update' )
 			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturnUsing(
-				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
+			->with(
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id()->get_value() === 15
+						&& $campaign->get_version()->get_value() === 7
+						&& $campaign->get_title() === 'Updated title'
+						&& ! $campaign->accepts_donations()
+						&& $campaign->has_target()
+						&& $campaign->get_target()->get_amount()?->get_value() === 1_500
+						&& $campaign->get_target()->get_currency()->get_code() === 'EUR',
+				),
+			)
+			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
 
-					self::assertSame( 10, $campaign->get_id()->get_value() );
-					self::assertSame( 5, $campaign->get_version()->get_value() );
-					self::assertSame( 'Title', $campaign->get_title() );
-					self::assertFalse( $campaign->is_active() );
-					self::assertTrue( $campaign->is_open() );
-					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
-					self::assertSame( 'USD', $campaign->get_target_money()->get_currency() );
+		$this->event_bus->shouldReceive( 'publish' )->once();
 
-					return new CampaignRepositorySaveOutcome(
-						result: CampaignRepositorySaveResult::Updated,
-						campaign: $campaign,
-					);
-				},
-			);
-
-		$this->synchronizer->sync( $data );
+		$this->synchronizer->sync( $data, false );
 	}
 
-	#[Test]
-	public function sync_rethrows_when_repository_lookup_throws(): void {
+	private static function new_campaign_command_service(
+		CampaignRepositoryPort $campaign_repository,
+		DonationRepositoryPort $donation_repository,
+		ApplicationEventBusPort $event_bus,
+	): CampaignCommandService {
 
-		$data = new RestCampaignSyncDataDto(
-			id: EntityId::create( 10 ),
-			title: 'Title',
-			version: EntityVersion::create( 3 ),
-			is_active: true,
-			is_open: true,
-			has_target: false,
-			target_amount: 0,
-			target_currency: 'EUR',
+		return new CampaignCommandService(
+			new CreateCampaignHandler( $campaign_repository, $event_bus ),
+			new CampaignFactory(),
+			new SyncCampaignFromSnapshotHandler( $campaign_repository, $event_bus ),
+			new RenameCampaignHandler( $campaign_repository, $event_bus ),
+			new EnableCampaignDonationsHandler( $campaign_repository, $event_bus ),
+			new DisableCampaignDonationsHandler( $campaign_repository, $event_bus ),
+			new ChangeCampaignTargetHandler( $campaign_repository, $event_bus ),
+			new DeleteCampaignHandler( $campaign_repository, $donation_repository, $event_bus ),
 		);
-
-		$this->campaign_repository
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
-
-		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
-
-		$this->expectException( FakeCampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'DB failed.' );
-
-		$this->synchronizer->sync( $data );
-	}
-
-	#[Test]
-	public function sync_uses_initial_version_when_campaign_is_not_found(): void {
-
-		$data = new RestCampaignSyncDataDto(
-			id: EntityId::create( 10 ),
-			title: 'Title',
-			version: EntityVersion::create( 3 ),
-			is_active: true,
-			is_open: true,
-			has_target: false,
-			target_amount: 0,
-			target_currency: 'RUB',
-		);
-
-		$this->campaign_repository
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->andReturn( null );
-
-		$this->save_campaign_use_case
-			->shouldReceive( 'handle' )
-			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturnUsing(
-				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
-
-					self::assertSame( 10, $campaign->get_id()->get_value() );
-					self::assertSame( 1, $campaign->get_version()->get_value() );
-					self::assertSame( 'Title', $campaign->get_title() );
-					self::assertTrue( $campaign->is_active() );
-					self::assertTrue( $campaign->is_open() );
-					self::assertFalse( $campaign->has_target() );
-					self::assertSame( 0, $campaign->get_target_money()->get_amount_minor() );
-					self::assertSame( 'RUB', $campaign->get_target_money()->get_currency() );
-
-					return new CampaignRepositorySaveOutcome(
-						result: CampaignRepositorySaveResult::Inserted,
-						campaign: $campaign,
-					);
-				},
-			);
-
-		$this->synchronizer->sync( $data );
 	}
 }
+

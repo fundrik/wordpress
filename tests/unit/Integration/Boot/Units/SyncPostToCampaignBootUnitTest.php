@@ -7,14 +7,20 @@ namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 use Brain\Monkey\Functions;
 use Closure;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveOutcome;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositorySaveResult;
+use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\ChangeCampaignTargetHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignUseCase;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\EnableCampaignDonations\EnableCampaignDonationsHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\RenameCampaign\RenameCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotHandler;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
-use Fundrik\Core\Components\Shared\Application\Exceptions\UseCaseFailureStage;
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
+use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
@@ -92,8 +98,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
 	private CampaignRepositoryPort&MockInterface $validator_campaign_repository;
 	private CampaignRepositoryPort&MockInterface $synchronizer_campaign_repository;
-	private SaveCampaignUseCase&MockInterface $save_campaign_use_case;
-	private DeleteCampaignUseCase&MockInterface $delete_campaign_use_case;
+	private DonationRepositoryPort&MockInterface $donation_repository;
+	private ApplicationEventBusPort&MockInterface $event_bus;
+	private CampaignCommandService $campaign_command;
 
 	private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor;
 	private RestPreInsertCampaignSyncDataValidator $pre_insert_validator;
@@ -157,8 +164,13 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->validator_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->synchronizer_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
-		$this->save_campaign_use_case = Mockery::mock( SaveCampaignUseCase::class );
-		$this->delete_campaign_use_case = Mockery::mock( DeleteCampaignUseCase::class );
+		$this->donation_repository = Mockery::mock( DonationRepositoryPort::class );
+		$this->event_bus = Mockery::mock( ApplicationEventBusPort::class );
+		$this->campaign_command = self::new_campaign_command_service(
+			$this->synchronizer_campaign_repository,
+			$this->donation_repository,
+			$this->event_bus,
+		);
 
 		$meta_field_reader = new PostTypeMetaFieldReader();
 		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $meta_field_reader );
@@ -167,11 +179,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->validator_campaign_repository,
 		);
 		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor( $meta_field_reader );
-		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer(
-			$this->campaign_factory,
-			$this->synchronizer_campaign_repository,
-			$this->save_campaign_use_case,
-		);
+		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer( $this->campaign_command );
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
 
@@ -182,7 +190,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->delete_post_hook,
 			$this->enqueue_block_editor_assets_hook,
 			$this->campaign_repository,
-			$this->delete_campaign_use_case,
+			$this->campaign_command,
 			$this->pre_insert_extractor,
 			$this->pre_insert_validator,
 			$this->after_insert_extractor,
@@ -230,9 +238,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 				'title' => 'Updated title',
 				'meta' => [
 					CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 3,
-					CampaignPostTypeConfig::META_IS_OPEN => true,
+					CampaignPostTypeConfig::META_ACCEPTS_DONATIONS => true,
 					CampaignPostTypeConfig::META_HAS_TARGET => false,
-					CampaignPostTypeConfig::META_TARGET_AMOUNT => 0,
+					CampaignPostTypeConfig::META_TARGET_AMOUNT => null,
 				],
 			],
 		);
@@ -262,9 +270,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 				'title' => 'Updated title',
 				'meta' => [
 					CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 5,
-					CampaignPostTypeConfig::META_IS_OPEN => true,
+					CampaignPostTypeConfig::META_ACCEPTS_DONATIONS => true,
 					CampaignPostTypeConfig::META_HAS_TARGET => false,
-					CampaignPostTypeConfig::META_TARGET_AMOUNT => 0,
+					CampaignPostTypeConfig::META_TARGET_AMOUNT => null,
 				],
 			],
 		);
@@ -526,14 +534,26 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$post = $this->make_post( 31, 'Campaign title', CampaignPostTypeConfig::ID );
 
-		$this->delete_campaign_use_case
-			->shouldReceive( 'handle' )
+		$this->donation_repository
+			->shouldReceive( 'exists_by_campaign_id' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 31,
+				),
+			)
+			->andReturn( false );
+
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'delete' )
 			->once()
 			->with(
 				Mockery::on(
 					static fn ( EntityId $id ): bool => $id->get_value() === 31,
 				),
 			);
+
+		$this->event_bus->shouldReceive( 'publish' )->once();
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();
 
@@ -547,7 +567,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$post = $this->make_post( 32, 'Regular post', 'post' );
 
-		$this->delete_campaign_use_case->shouldNotReceive( 'handle' );
+		$this->donation_repository->shouldNotReceive( 'exists_by_campaign_id' );
+		$this->synchronizer_campaign_repository->shouldNotReceive( 'delete' );
+		$this->event_bus->shouldNotReceive( 'publish' );
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();
 
@@ -559,21 +581,29 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	#[Test]
 	public function boot_logs_error_and_sets_failure_message_when_campaign_delete_fails(): void {
 
-		$exception = new DeleteCampaignException(
-			stage: UseCaseFailureStage::Persistence,
-			message: 'Failed to delete campaign "33".',
-		);
 		$post = $this->make_post( 33, 'Campaign title', CampaignPostTypeConfig::ID );
 
-		$this->delete_campaign_use_case
-			->shouldReceive( 'handle' )
+		$this->donation_repository
+			->shouldReceive( 'exists_by_campaign_id' )
 			->once()
 			->with(
 				Mockery::on(
 					static fn ( EntityId $id ): bool => $id->get_value() === 33,
 				),
 			)
-			->andThrow( $exception );
+			->andReturn( false );
+
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'delete' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 33,
+				),
+			)
+			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
+
+		$this->event_bus->shouldNotReceive( 'publish' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -581,7 +611,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->with(
 				'Campaign synchronization after post delete failed.',
 				Mockery::on(
-					static function ( array $context ) use ( $exception ): bool {
+					static function ( array $context ): bool {
 
 						if ( ( $context['service_class'] ?? null ) !== SyncPostToCampaignBootUnit::class ) {
 							return false;
@@ -603,7 +633,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 							return false;
 						}
 
-						return ( $context['exception'] ?? null ) === $exception;
+						return ( $context['exception'] ?? null ) instanceof DeleteCampaignException;
 					},
 				),
 			);
@@ -625,7 +655,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->expect_after_insert_meta_defaults( 21 );
 		$this->synchronizer_campaign_repository->shouldNotReceive( 'find_by_id' );
-		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
+		$this->synchronizer_campaign_repository->shouldNotReceive( 'insert' );
+		$this->synchronizer_campaign_repository->shouldNotReceive( 'update' );
+		$this->event_bus->shouldNotReceive( 'publish' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -655,7 +687,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	#[Test]
 	public function boot_logs_error_and_sets_failure_message_when_synchronizer_throws(): void {
 
-		$post = $this->make_post( 22, '' ); // Empty title triggers CampaignFactoryException.
+		$post = $this->make_post( 22, 'Campaign title' );
 		$request = $this->make_request(
 			[
 				'meta' => [
@@ -666,13 +698,28 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->expect_after_insert_meta_defaults( 22 );
 
+		$persisted = $this->campaign_factory->create_from_primitives(
+			id: 22,
+			version: 2,
+			title: 'Persisted campaign',
+			accepts_donations: true,
+			currency_code: 'RUB',
+			target_amount: null,
+		);
+
 		$this->synchronizer_campaign_repository
 			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
-			->andReturn( null );
+			->andReturn( $persisted );
 
-		$this->save_campaign_use_case->shouldNotReceive( 'handle' );
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'update' )
+			->once()
+			->with( Mockery::type( Campaign::class ) )
+			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
+
+		$this->event_bus->shouldNotReceive( 'publish' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -706,7 +753,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 							return false;
 						}
 
-						return ( $context['exception'] ?? null ) instanceof \Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
+						return ( $context['exception'] ?? null ) instanceof SyncCampaignFromSnapshotException;
 					},
 				),
 			);
@@ -735,65 +782,25 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->expect_after_insert_meta_defaults( 23 );
 
-		$this->synchronizer_campaign_repository
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with( Mockery::type( EntityId::class ) )
-			->andReturn( null );
+		$this->synchronizer_campaign_repository->shouldNotReceive( 'find_by_id' );
 
-		$this->save_campaign_use_case
-			->shouldReceive( 'handle' )
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'insert' )
 			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturnUsing(
-				static fn ( Campaign $campaign ): CampaignRepositorySaveOutcome => new CampaignRepositorySaveOutcome(
-					result: CampaignRepositorySaveResult::Inserted,
-					campaign: $campaign,
+			->with(
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id()->get_value() === 23
+						&& $campaign->get_version()->get_value() === 1
+						&& $campaign->get_title() === 'Campaign title'
+						&& $campaign->accepts_donations()
+						&& ! $campaign->has_target()
+						&& $campaign->get_target()->get_currency()->get_code() === 'RUB',
 				),
-			);
+			)
+			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
 
-		Functions\expect( 'fundrik_set_failure_message' )->never();
-
-		$this->boot_unit->boot();
-
-		( $this->rest_after_insert_callback )( $post, $request, true );
-	}
-
-	#[Test]
-	public function boot_saves_inactive_campaign_when_post_status_is_not_publish(): void {
-
-		$post = $this->make_post( 24, 'Campaign title', CampaignPostTypeConfig::ID, 'draft' );
-		$request = $this->make_request(
-			[
-				'meta' => [
-					CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 4,
-				],
-			],
-		);
-
-		$this->expect_after_insert_meta_defaults( 24 );
-
-		$this->synchronizer_campaign_repository
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with( Mockery::type( EntityId::class ) )
-			->andReturn( null );
-
-		$this->save_campaign_use_case
-			->shouldReceive( 'handle' )
-			->once()
-			->with( Mockery::type( Campaign::class ) )
-			->andReturnUsing(
-				static function ( Campaign $campaign ): CampaignRepositorySaveOutcome {
-
-					self::assertFalse( $campaign->is_active() );
-
-					return new CampaignRepositorySaveOutcome(
-						result: CampaignRepositorySaveResult::Inserted,
-						campaign: $campaign,
-					);
-				},
-			);
+		$this->synchronizer_campaign_repository->shouldNotReceive( 'update' );
+		$this->event_bus->shouldReceive( 'publish' )->once();
 
 		Functions\expect( 'fundrik_set_failure_message' )->never();
 
@@ -808,11 +815,27 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			id: $id,
 			version: $version,
 			title: 'Persisted campaign',
-			is_active: true,
-			is_open: true,
-			has_target: false,
-			target_amount: 0,
-			target_currency: 'RUB',
+			accepts_donations: true,
+			currency_code: 'RUB',
+			target_amount: null,
+		);
+	}
+
+	private static function new_campaign_command_service(
+		CampaignRepositoryPort $campaign_repository,
+		DonationRepositoryPort $donation_repository,
+		ApplicationEventBusPort $event_bus,
+	): CampaignCommandService {
+
+		return new CampaignCommandService(
+			new CreateCampaignHandler( $campaign_repository, $event_bus ),
+			new CampaignFactory(),
+			new SyncCampaignFromSnapshotHandler( $campaign_repository, $event_bus ),
+			new RenameCampaignHandler( $campaign_repository, $event_bus ),
+			new EnableCampaignDonationsHandler( $campaign_repository, $event_bus ),
+			new DisableCampaignDonationsHandler( $campaign_repository, $event_bus ),
+			new ChangeCampaignTargetHandler( $campaign_repository, $event_bus ),
+			new DeleteCampaignHandler( $campaign_repository, $donation_repository, $event_bus ),
 		);
 	}
 
@@ -848,17 +871,12 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', $post_id, CampaignPostTypeConfig::META_IS_OPEN )
+			->with( 'post', $post_id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
 			->once()
 			->with( 'post', $post_id, CampaignPostTypeConfig::META_HAS_TARGET )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
@@ -869,3 +887,5 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'get_post_meta' )->never();
 	}
 }
+
+

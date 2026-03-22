@@ -56,29 +56,17 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 
 		$id = TypeCaster::to_int( $post->ID );
 		$title = TypeCaster::to_string( $post->post_title );
-		$status = TypeCaster::to_string( $post->post_status );
 
-		$default_is_open = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_IS_OPEN );
+		// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
+		$default_accepts_donations = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
 		$default_has_target = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_HAS_TARGET );
-		$default_target_amount = $this->get_meta_default_int_or_fail( CampaignPostTypeConfig::META_TARGET_AMOUNT );
-		// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
 		$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 
-		$is_open = TypeCaster::to_string(
-			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_IS_OPEN ) ?? (string) $default_is_open,
-		);
-		$has_target = TypeCaster::to_string(
-			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET )
-				?? (string) $default_has_target,
-		);
-		$target_amount = TypeCaster::to_string(
-			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT )
-				?? (string) $default_target_amount,
-		);
-		$target_currency = TypeCaster::to_string(
-			Meta::get_post_meta_or_null( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY )
-				?? $default_target_currency,
-		);
+		$accepts_donations = Meta::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
+		$has_target = Meta::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
+		$target_amount = $has_target ? Meta::get_post_meta_int_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
+		$target_currency = Meta::get_post_meta_string_or_null( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
+		// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var array<string, mixed> $meta */
@@ -89,10 +77,9 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 			id: EntityId::create( $id ),
 			title: $title,
 			version: EntityVersion::create( $version ),
-			is_active: $status === 'publish',
-			is_open: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $is_open ) ),
-			has_target: TypeCaster::to_bool( Meta::normalize_wp_bool_value( $has_target ) ),
-			target_amount: TypeCaster::to_int( $target_amount ),
+			accepts_donations: $accepts_donations,
+			has_target: $has_target,
+			target_amount: $target_amount,
 			target_currency: $target_currency,
 		);
 	}
@@ -115,31 +102,6 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 
 		if ( $default !== null ) {
 			return TypeCaster::to_bool( $default );
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
-		);
-	}
-
-	/**
-	 * Returns an integer default for the given campaign meta key.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $meta_key The campaign post meta key.
-	 *
-	 * @return int The integer default value.
-	 */
-	private function get_meta_default_int_or_fail( string $meta_key ): int {
-
-		$default = $this->meta_field_reader->get_meta_default_by_config_class(
-			CampaignPostTypeConfig::class,
-			$meta_key,
-		);
-
-		if ( $default !== null ) {
-			return TypeCaster::to_int( $default );
 		}
 
 		throw new InvalidArgumentException(

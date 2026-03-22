@@ -79,21 +79,195 @@ final class MetaTest extends WordPressTestCase {
 	}
 
 	// ---------------------------------------------------------------------
-	// normalize_wp_bool_value()
+	// get_post_meta_bool_or_null()
 	// ---------------------------------------------------------------------
 
 	#[Test]
-	public function normalize_wp_bool_value_converts_empty_string_to_zero_string(): void {
+	public function get_post_meta_bool_or_null_returns_null_when_meta_does_not_exist(): void {
 
-		self::assertSame( '0', Meta::normalize_wp_bool_value( '' ) );
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( false );
+
+		Functions\expect( 'get_post_meta' )->never();
+
+		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+
+		self::assertNull( $result );
 	}
 
 	#[Test]
-	public function normalize_wp_bool_value_returns_value_unchanged_when_not_empty(): void {
+	public function get_post_meta_bool_or_null_converts_wordpress_false_to_false(): void {
 
-		self::assertSame( '1', Meta::normalize_wp_bool_value( '1' ) );
-		self::assertSame( '0', Meta::normalize_wp_bool_value( '0' ) );
-		self::assertSame( 'true', Meta::normalize_wp_bool_value( 'true' ) );
-		self::assertSame( 'anything', Meta::normalize_wp_bool_value( 'anything' ) );
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( '' );
+
+		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+
+		self::assertFalse( $result );
 	}
+
+	#[Test]
+	public function get_post_meta_bool_or_null_converts_wordpress_true_to_true(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( '1' );
+
+		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+
+		self::assertTrue( $result );
+	}
+
+	// ---------------------------------------------------------------------
+	// get_post_meta_int_or_null()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function get_post_meta_int_or_null_returns_null_when_meta_does_not_exist(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( false );
+
+		Functions\expect( 'get_post_meta' )->never();
+
+		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+
+		self::assertNull( $result );
+	}
+
+	#[Test]
+	public function get_post_meta_int_or_null_returns_null_when_meta_is_empty_string(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( '' );
+
+		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+
+		self::assertNull( $result );
+	}
+
+	#[Test]
+	public function get_post_meta_int_or_null_converts_numeric_string_to_int(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( '1500' );
+
+		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+
+		self::assertSame( 1500, $result );
+	}
+
+	// ---------------------------------------------------------------------
+	// get_post_meta_string_or_null()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function get_post_meta_string_or_null_returns_null_when_meta_does_not_exist(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( false );
+
+		Functions\expect( 'get_post_meta' )->never();
+
+		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+
+		self::assertNull( $result );
+	}
+
+	#[Test]
+	public function get_post_meta_string_or_null_returns_null_when_meta_is_empty_string(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( '' );
+
+		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+
+		self::assertNull( $result );
+	}
+
+	#[Test]
+	public function get_post_meta_string_or_null_returns_string_value(): void {
+
+		$post_id = 123;
+		$meta_key = 'fundrik_key';
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', $post_id, $meta_key )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( $post_id, $meta_key, true )
+			->andReturn( 'RUB' );
+
+		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+
+		self::assertSame( 'RUB', $result );
+	}
+
 }

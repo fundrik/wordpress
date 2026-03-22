@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignException;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SaveCampaign\SaveCampaignUseCase;
-use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
-use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
-use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Campaigns\Application\Commands\CreateCampaignCommand;
+use Fundrik\Core\Components\Campaigns\Application\Commands\SyncCampaignFromSnapshotCommand;
+use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignException;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
 
 /**
  * Synchronizes the saved campaign post snapshot into Fundrik storage after REST saves.
@@ -26,63 +24,72 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param CampaignFactory $campaign_factory Builds Campaign entities from primitives.
-	 * @param CampaignRepositoryPort $campaign_repository Reads persisted campaigns to resolve
-	 *                                                    optimistic-locking versions.
-	 * @param SaveCampaignUseCase $save_campaign_use_case Saves campaigns and publishes application events.
+	 * @param CampaignCommandService $campaign_command Provides the public campaign write API.
 	 */
 	public function __construct(
-		private CampaignFactory $campaign_factory,
-		private CampaignRepositoryPort $campaign_repository,
-		private SaveCampaignUseCase $save_campaign_use_case,
+		private CampaignCommandService $campaign_command,
 	) {}
 
 	/**
 	 * Synchronizes the saved post snapshot into campaign persistence.
 	 *
-	 * Uses the persisted campaign version as the expected version for optimistic locking.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 * @param bool $creating True when the campaign post is being created.
 	 *
-	 * @throws CampaignFactoryException When campaign payload cannot be mapped to the domain model.
-	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign fails.
-	 * @throws SaveCampaignException When saving the campaign fails.
+	 * @throws CreateCampaignException When campaign creation fails.
+	 * @throws SyncCampaignFromSnapshotException When campaign synchronization fails.
 	 */
-	public function sync( RestCampaignSyncDataDto $data ): void {
+	public function sync( RestCampaignSyncDataDto $data, bool $creating ): void {
 
-		$expected_version = $this->get_expected_version_or_initial( $data );
+		if ( $creating ) {
+			$this->campaign_command->create( $this->new_create_command( $data ) );
 
-		$campaign = $this->campaign_factory->create_from_primitives(
-			id: $data->id->get_value(),
-			version: $expected_version->get_value(),
-			title: $data->title,
-			is_active: $data->is_active,
-			is_open: $data->is_open,
-			has_target: $data->has_target,
-			target_amount: $data->target_amount,
-			target_currency: $data->target_currency,
-		);
+			return;
+		}
 
-		$this->save_campaign_use_case->handle( $campaign );
+		$this->campaign_command->sync_from_snapshot( $this->new_sync_command( $data ) );
 	}
 
 	/**
-	 * Resolves the expected version for optimistic locking.
+	 * Creates the public command for campaign creation.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
 	 *
-	 * @return EntityVersion The expected entity version.
-	 *
-	 * @throws CampaignRepositoryExceptionInterface When reading the persisted campaign fails.
+	 * @return CreateCampaignCommand The public creation command.
 	 */
-	private function get_expected_version_or_initial( RestCampaignSyncDataDto $data ): EntityVersion {
+	private function new_create_command( RestCampaignSyncDataDto $data ): CreateCampaignCommand {
 
-		$persisted = $this->campaign_repository->find_by_id( $data->id );
+		return new CreateCampaignCommand(
+			id: $data->id,
+			title: $data->title,
+			accepts_donations: $data->accepts_donations,
+			currency_code: $data->target_currency,
+			target_amount: $data->target_amount,
+		);
+	}
 
-		return $persisted?->get_version() ?? EntityVersion::initial();
+	/**
+	 * Creates the public command for campaign synchronization.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 *
+	 * @return SyncCampaignFromSnapshotCommand The public synchronization command.
+	 */
+	private function new_sync_command( RestCampaignSyncDataDto $data ): SyncCampaignFromSnapshotCommand {
+
+		return new SyncCampaignFromSnapshotCommand(
+			id: $data->id,
+			expected_version: $data->version->get_value(),
+			title: $data->title,
+			accepts_donations: $data->accepts_donations,
+			currency_code: $data->target_currency,
+			target_amount: $data->target_amount,
+		);
 	}
 }

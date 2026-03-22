@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Helpers;
 
+use Fundrik\Toolbox\TypeCaster;
+
 /**
  * Provides helpers for safely reading WordPress metadata.
  *
@@ -35,22 +37,70 @@ final readonly class Meta {
 	}
 
 	/**
-	 * Normalizes a WordPress boolean meta value.
-	 *
-	 * Converts the WordPress empty string representation of false to '0'.
+	 * Returns the post meta value as a boolean or null when the meta key does not exist.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $value The raw meta value.
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
 	 *
-	 * @return string The normalized value.
+	 * @return bool|null The stored boolean value, or null when the meta key does not exist.
 	 */
-	public static function normalize_wp_bool_value( string $value ): string {
+	public static function get_post_meta_bool_or_null( int $post_id, string $meta_key ): ?bool {
 
-		if ( $value === '' ) {
-			return '0';
+		$value = self::get_post_meta_or_null( $post_id, $meta_key );
+
+		if ( $value === null ) {
+			return null;
 		}
 
-		return $value;
+		if ( $value === '' ) {
+			return false;
+		}
+
+		return TypeCaster::to_bool( $value );
 	}
+
+	/**
+	 * Returns the post meta value as an integer or null when the meta key does not exist.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
+	 *
+	 * @return int|null The stored integer value, or null when the meta key does not exist.
+	 */
+	public static function get_post_meta_int_or_null( int $post_id, string $meta_key ): ?int {
+
+		$value = self::get_post_meta_or_null( $post_id, $meta_key );
+
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
+
+		return TypeCaster::to_int( $value );
+	}
+
+	/**
+	 * Returns the post meta value as a string or null when the meta key does not exist.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
+	 *
+	 * @return string|null The stored string value, or null when the meta key does not exist.
+	 */
+	public static function get_post_meta_string_or_null( int $post_id, string $meta_key ): ?string {
+
+		$value = self::get_post_meta_or_null( $post_id, $meta_key );
+
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
+
+		return TypeCaster::to_string( $value );
+	}
+
 }

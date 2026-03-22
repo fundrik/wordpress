@@ -108,7 +108,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 
 		$this->assert_class_constant_has_attribute(
 			class_name: CampaignPostTypeConfig::class,
-			constant_name: 'META_IS_OPEN',
+			constant_name: 'META_ACCEPTS_DONATIONS',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => PostTypeMetaFieldType::Boolean,
@@ -132,7 +132,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => PostTypeMetaFieldType::Integer,
-				'default' => 0,
+				'default' => null,
 			],
 		);
 
@@ -147,3 +147,4 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 		);
 	}
 }
+

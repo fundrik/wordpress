@@ -53,17 +53,12 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->with( 'post', 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
 			->once()
 			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
@@ -96,12 +91,12 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->with( 'post', 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
 			->andReturn( true );
 
 		Functions\expect( 'get_post_meta' )
 			->once()
-			->with( 10, CampaignPostTypeConfig::META_IS_OPEN, true )
+			->with( 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS, true )
 			->andReturn( '0' );
 
 		Functions\expect( 'metadata_exists' )
@@ -142,8 +137,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertSame( 'Campaign title', $result->title );
 		self::assertSame( 7, $result->version->get_value() );
 
-		self::assertTrue( $result->is_active );
-		self::assertFalse( $result->is_open );
+		self::assertFalse( $result->accepts_donations );
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
@@ -167,17 +161,12 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->with( 'post', 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
 			->once()
 			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
 			->andReturn( false );
 
 		Functions\expect( 'metadata_exists' )
@@ -193,10 +182,9 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertSame( 'Campaign title', $result->title );
 		self::assertSame( 2, $result->version->get_value() );
 
-		self::assertTrue( $result->is_active );
-		self::assertTrue( $result->is_open );
+		self::assertTrue( $result->accepts_donations );
 		self::assertFalse( $result->has_target );
-		self::assertSame( 0, $result->target_amount );
+		self::assertNull( $result->target_amount );
 		self::assertSame(
 			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
 				CampaignPostTypeConfig::class,
@@ -224,12 +212,12 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
+			->with( 'post', 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
 			->andReturn( true );
 
 		Functions\expect( 'get_post_meta' )
 			->once()
-			->with( 10, CampaignPostTypeConfig::META_IS_OPEN, true )
+			->with( 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS, true )
 			->andReturn( '' ); // WordPress "false"
 
 		Functions\expect( 'metadata_exists' )
@@ -244,16 +232,6 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( 10, CampaignPostTypeConfig::META_TARGET_AMOUNT, true )
-			->andReturn( '0' );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
 			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
 			->andReturn( true );
 
@@ -264,61 +242,10 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		$result = $this->extractor->extract( $post, $this->request );
 
-		self::assertTrue( $result->is_active );
-		self::assertFalse( $result->is_open );
+		self::assertFalse( $result->accepts_donations );
 		self::assertFalse( $result->has_target );
-		self::assertSame( 0, $result->target_amount );
+		self::assertNull( $result->target_amount );
 		self::assertSame( 'EUR', $result->target_currency );
-	}
-
-	#[Test]
-	public function extract_sets_campaign_inactive_when_post_status_is_not_publish(): void {
-
-		$post = $this->make_post( 10, 'Campaign title', 'draft' );
-
-		$this->request
-			->shouldReceive( 'get_json_params' )
-			->once()
-			->andReturn(
-				[
-					'meta' => [
-						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 2,
-					],
-				],
-			);
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_IS_OPEN )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_AMOUNT )
-			->andReturn( false );
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
-			->andReturn( false );
-
-		Functions\expect( 'get_post_meta' )->never();
-
-		$result = $this->extractor->extract( $post, $this->request );
-
-		self::assertFalse( $result->is_active );
-		self::assertSame(
-			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
-				CampaignPostTypeConfig::class,
-				CampaignPostTypeConfig::META_TARGET_CURRENCY,
-			),
-			$result->target_currency,
-		);
 	}
 
 	private function make_post( int $id, string $title, string $status = 'publish' ): WP_Post {
@@ -331,3 +258,5 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		return $post;
 	}
 }
+
+
