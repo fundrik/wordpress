@@ -102,5 +102,4 @@ final readonly class Meta {
 
 		return TypeCaster::to_string( $value );
 	}
-
 }

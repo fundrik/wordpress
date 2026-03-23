@@ -233,7 +233,9 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 *
 	 * @param WP_Post $post The inserted or updated post object.
 	 * @param WP_REST_Request $request The REST request object.
-	 * @param bool $creating Whether the post is being created (true) or updated (false).
+	 * @param bool $creating Whether the post is being created or updated.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
 	private function sync_campaign_after_rest_save( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
 
@@ -249,7 +251,6 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 				'Campaign synchronization after REST save failed: payload is not usable.',
 				[
 					'post_id' => $post_id,
-					'creating' => $creating,
 				],
 			);
 
@@ -258,9 +259,10 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 		try {
 
-			$this->after_insert_synchronizer->sync( $data, $creating );
+			$this->after_insert_synchronizer->sync( $data );
 
 		} catch (
+			CampaignRepositoryExceptionInterface |
 			CreateCampaignException |
 			SyncCampaignFromSnapshotException $e
 		) {
@@ -271,7 +273,6 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 					'post_id' => $post_id,
 					'entity_id' => $data->id->get_value(),
 					'version' => $data->version->get_value(),
-					'creating' => $creating,
 					'exception' => $e,
 				],
 			);

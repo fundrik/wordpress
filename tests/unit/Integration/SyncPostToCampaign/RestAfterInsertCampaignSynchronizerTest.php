@@ -56,6 +56,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 				$this->donation_repository,
 				$this->event_bus,
 			),
+			$this->campaign_repository,
 		);
 	}
 
@@ -72,7 +73,11 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			target_currency: 'USD',
 		);
 
-		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
+		$this->campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( false );
 		$this->campaign_repository->shouldNotReceive( 'update' );
 		Functions\expect( 'delete_post_meta' )
 			->once()
@@ -95,7 +100,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->event_bus->shouldReceive( 'publish' )->once();
 
-		$this->synchronizer->sync( $data, true );
+		$this->synchronizer->sync( $data );
 	}
 
 	#[Test]
@@ -120,6 +125,11 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			target_amount: null,
 		);
 
+		$this->campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( true );
 		$this->campaign_repository->shouldNotReceive( 'insert' );
 		Functions\expect( 'delete_post_meta' )->never();
 
@@ -147,7 +157,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->event_bus->shouldReceive( 'publish' )->once();
 
-		$this->synchronizer->sync( $data, false );
+		$this->synchronizer->sync( $data );
 	}
 
 	#[Test]
@@ -172,6 +182,11 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 			target_amount: 1_500,
 		);
 
+		$this->campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( true );
 		$this->campaign_repository->shouldNotReceive( 'insert' );
 
 		$this->campaign_repository
@@ -202,9 +217,55 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 		$this->event_bus->shouldReceive( 'publish' )->once();
 
-		$this->synchronizer->sync( $data, false );
+		$this->synchronizer->sync( $data );
 	}
 
+	#[Test]
+	public function sync_creates_campaign_when_snapshot_campaign_is_missing(): void {
+
+		$data = new RestCampaignSyncDataDto(
+			id: EntityId::create( 15 ),
+			title: 'Created from snapshot',
+			version: EntityVersion::create( 7 ),
+			accepts_donations: false,
+			has_target: false,
+			target_amount: null,
+			target_currency: 'EUR',
+		);
+
+		$this->campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( false );
+		$this->campaign_repository->shouldNotReceive( 'update' );
+
+		$this->campaign_repository
+			->shouldReceive( 'insert' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id()->get_value() === 15
+						&& $campaign->get_version()->get_value() === 1
+						&& $campaign->get_title() === 'Created from snapshot'
+						&& ! $campaign->accepts_donations()
+						&& ! $campaign->has_target()
+						&& $campaign->get_target()->get_amount() === null
+						&& $campaign->get_target()->get_currency()->get_code() === 'EUR',
+				),
+			)
+			->andReturnUsing( static fn ( Campaign $campaign ): Campaign => $campaign );
+
+		Functions\expect( 'delete_post_meta' )
+			->once()
+			->with( 15, CampaignPostTypeConfig::META_TARGET_AMOUNT );
+
+		$this->event_bus->shouldReceive( 'publish' )->once();
+
+		$this->synchronizer->sync( $data );
+	}
+
+	#[Test]
 	private static function new_campaign_command_service(
 		CampaignRepositoryPort $campaign_repository,
 		DonationRepositoryPort $donation_repository,

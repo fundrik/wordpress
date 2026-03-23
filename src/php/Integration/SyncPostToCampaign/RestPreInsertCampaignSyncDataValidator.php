@@ -59,9 +59,8 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 		return $this->validate_version_or_error( $data );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
-	 * Validates the target payload consistency.
+	 * Validates the target amount constraint.
 	 *
 	 * @since 1.0.0
 	 *
@@ -71,31 +70,19 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 */
 	private function validate_target_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
 
-		if ( $data->has_target && ( $data->target_amount === null || $data->target_amount <= 0 ) ) {
-			return new WP_Error(
-				'fundrik_campaign_validation_failed',
-				sprintf(
-					'Target amount must be positive when targeting is enabled. Given: %s.',
-					$data->target_amount === null ? 'null' : (string) $data->target_amount,
-				),
-				[ 'status' => 422 ],
-			);
+		if ( ! $data->has_target || ( $data->target_amount !== null && $data->target_amount > 0 ) ) {
+			return null;
 		}
 
-		if ( ! $data->has_target && $data->target_amount !== null ) {
-			return new WP_Error(
-				'fundrik_campaign_validation_failed',
-				sprintf(
-					'Target amount must be null when targeting is disabled. Given: %s.',
-					$data->target_amount === null ? 'null' : (string) $data->target_amount,
-				),
-				[ 'status' => 422 ],
-			);
-		}
-
-		return null;
+		return new WP_Error(
+			'fundrik_campaign_validation_failed',
+			sprintf(
+				'Target amount must be positive when targeting is enabled. Given: %s.',
+				$data->target_amount === null ? 'null' : (string) $data->target_amount,
+			),
+			[ 'status' => 422 ],
+		);
 	}
-	// phpcs:enable
 
 	/**
 	 * Validates the payload against Campaign domain invariants.

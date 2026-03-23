@@ -70,14 +70,15 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			$default_accepts_donations = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
 			$default_has_target = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_HAS_TARGET );
 			$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
+			$has_target = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
 
 			return new RestCampaignSyncDataDto(
 				id: EntityId::create( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),
 				accepts_donations: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations,
-				has_target: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target,
-				target_amount: ArrayExtractor::extract_int_nullable_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT ),
+				has_target: $has_target,
+				target_amount: $has_target ? $this->extract_target_amount_or_null( $meta ) : null,
 				target_currency: ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency,
 			);
 			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
@@ -141,6 +142,34 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		throw new InvalidArgumentException(
 			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
 		);
+	}
+
+	/**
+	 * Returns the target amount from meta, treating an empty string as null.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $meta The REST meta payload.
+	 *
+	 * @return int|null The extracted target amount, or null when empty.
+	 *
+	 * @throws ArrayExtractionException When the amount is present but invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function extract_target_amount_or_null( array $meta ): ?int {
+
+		if ( ! array_key_exists( CampaignPostTypeConfig::META_TARGET_AMOUNT, $meta ) ) {
+			return null;
+		}
+
+		$value = $meta[ CampaignPostTypeConfig::META_TARGET_AMOUNT ];
+
+		if ( $value === '' ) {
+			return null;
+		}
+
+		return ArrayExtractor::extract_int_nullable_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT );
 	}
 
 	/**

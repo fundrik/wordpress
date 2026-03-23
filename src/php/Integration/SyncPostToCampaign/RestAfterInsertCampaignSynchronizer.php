@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Campaigns\Application\Commands\CreateCampaignCommand;
 use Fundrik\Core\Components\Campaigns\Application\Commands\SyncCampaignFromSnapshotCommand;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
@@ -26,9 +27,11 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 * @since 1.0.0
 	 *
 	 * @param CampaignCommandService $campaign_command Provides the public campaign write API.
+	 * @param CampaignRepositoryPort $campaign_repository Provides access to persisted campaigns.
 	 */
 	public function __construct(
 		private CampaignCommandService $campaign_command,
+		private CampaignRepositoryPort $campaign_repository,
 	) {}
 
 	/**
@@ -37,14 +40,14 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 * @since 1.0.0
 	 *
 	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
-	 * @param bool $creating True when the campaign post is being created.
 	 *
 	 * @throws CreateCampaignException When campaign creation fails.
+	 * @throws CampaignRepositoryExceptionInterface When campaign existence lookup fails.
 	 * @throws SyncCampaignFromSnapshotException When campaign synchronization fails.
 	 */
-	public function sync( RestCampaignSyncDataDto $data, bool $creating ): void {
+	public function sync( RestCampaignSyncDataDto $data ): void {
 
-		if ( $creating ) {
+		if ( ! $this->campaign_repository->exists_by_id( $data->id ) ) {
 			$this->campaign_command->create( $this->new_create_command( $data ) );
 		} else {
 			$this->campaign_command->sync_from_snapshot( $this->new_sync_command( $data ) );

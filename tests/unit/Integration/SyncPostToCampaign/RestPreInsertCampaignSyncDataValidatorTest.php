@@ -90,32 +90,6 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function validate_or_error_rejects_when_target_is_disabled_with_non_zero_amount(): void {
-
-		$data = new RestCampaignSyncDataDto(
-			id: EntityId::create( 10 ),
-			title: 'Ok',
-			version: EntityVersion::create( 3 ),
-			accepts_donations: true,
-			has_target: false,
-			target_amount: 1_500,
-			target_currency: 'RUB',
-		);
-
-		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
-
-		$error = $this->validator->validate_or_error( $data );
-
-		self::assertInstanceOf( WP_Error::class, $error );
-		self::assertSame( 'fundrik_campaign_validation_failed', $error->get_error_code() );
-		self::assertSame( 422, $error->get_error_data()['status'] );
-		self::assertSame(
-			'Target amount must be null when targeting is disabled. Given: 1500.',
-			$error->get_error_message(),
-		);
-	}
-
-	#[Test]
 	public function validate_or_error_rejects_when_repository_lookup_fails(): void {
 
 		$data = new RestCampaignSyncDataDto(

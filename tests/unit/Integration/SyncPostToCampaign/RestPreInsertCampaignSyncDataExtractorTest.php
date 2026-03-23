@@ -146,6 +146,66 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertSame( 'USD', $result->target_currency );
 	}
 
+	#[Test]
+	public function extract_or_error_ignores_target_amount_when_target_is_disabled(): void {
+
+		$prepared_post = new stdClass();
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'id' => 15,
+					'title' => 'Ok',
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 7,
+						CampaignPostTypeConfig::META_ACCEPTS_DONATIONS => false,
+						CampaignPostTypeConfig::META_HAS_TARGET => false,
+						CampaignPostTypeConfig::META_TARGET_AMOUNT => 123,
+						CampaignPostTypeConfig::META_TARGET_CURRENCY => 'USD',
+					],
+				],
+			);
+
+		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
+
+		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertFalse( $result->has_target );
+		self::assertNull( $result->target_amount );
+		self::assertSame( 'USD', $result->target_currency );
+	}
+
+	#[Test]
+	public function extract_or_error_treats_empty_target_amount_as_null(): void {
+
+		$prepared_post = new stdClass();
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'id' => 15,
+					'title' => 'Ok',
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 7,
+						CampaignPostTypeConfig::META_ACCEPTS_DONATIONS => true,
+						CampaignPostTypeConfig::META_HAS_TARGET => true,
+						CampaignPostTypeConfig::META_TARGET_AMOUNT => '',
+						CampaignPostTypeConfig::META_TARGET_CURRENCY => 'USD',
+					],
+				],
+			);
+
+		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
+
+		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertTrue( $result->has_target );
+		self::assertNull( $result->target_amount );
+		self::assertSame( 'USD', $result->target_currency );
+	}
+
 }
 
 
