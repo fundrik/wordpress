@@ -12,7 +12,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
-use Fundrik\WordPress\Tests\MockeryTestCase;
+use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,7 +22,7 @@ use WP_Error;
 #[CoversClass( PostTypeRegistrar::class )]
 #[UsesClass( PostTypeMetaField::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
-final class PostTypeRegistrarTest extends MockeryTestCase {
+final class PostTypeRegistrarTest extends WordPressTestCase {
 
 	private PostTypeRegistrar $registrar;
 
@@ -125,7 +125,7 @@ final class PostTypeRegistrarTest extends MockeryTestCase {
 
 		$this->expectException( PostTypeRegistrationException::class );
 		$this->expectExceptionMessage(
-			'Cannot register post type "gamma": WordPress returned "Boom".',
+			'Cannot register post type "gamma": Boom.',
 		);
 
 		$this->registrar->register( $config );
@@ -168,7 +168,7 @@ final class PostTypeRegistrarTest extends MockeryTestCase {
 
 		$this->expectException( PostMetaRegistrationException::class );
 		$this->expectExceptionMessage(
-			'Cannot register post meta "gamma_is_open" for post type "gamma": WordPress returned false.',
+			'Failed to register post meta "gamma_is_open" for post type "gamma".',
 		);
 
 		$this->registrar->register( $config );

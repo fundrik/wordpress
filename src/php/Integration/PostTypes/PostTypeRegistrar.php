@@ -83,7 +83,7 @@ final readonly class PostTypeRegistrar {
 
 			throw new PostTypeRegistrationException(
 				sprintf(
-					'Cannot register post type "%s": WordPress returned "%s".',
+					'Cannot register post type "%s": %s.',
 					$id,
 					$result->get_error_message(),
 				),
@@ -94,6 +94,7 @@ final readonly class PostTypeRegistrar {
 	}
 	// phpcs:enable
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Registers all meta fields for the given post type.
 	 *
@@ -120,7 +121,7 @@ final readonly class PostTypeRegistrar {
 
 				throw new PostMetaRegistrationException(
 					sprintf(
-						'Cannot register post meta "%s" for post type "%s": WordPress returned false.',
+						'Failed to register post meta "%s" for post type "%s".',
 						$meta_key,
 						$post_type_id,
 					),
@@ -128,4 +129,5 @@ final readonly class PostTypeRegistrar {
 			}
 		}
 	}
+	// phpcs:enable
 }
