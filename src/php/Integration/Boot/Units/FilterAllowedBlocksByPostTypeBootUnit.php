@@ -9,6 +9,7 @@ use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
+use Override;
 use WP_Block_Editor_Context;
 
 /**
@@ -71,6 +72,7 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function boot(): void {
 
 		$this->allowed_block_types_hook->attach(

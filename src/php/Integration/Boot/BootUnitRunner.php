@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot;
 
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
+use Override;
 
 /**
  * Boots all configured WordPress integration boot units.
@@ -41,6 +42,7 @@ final readonly class BootUnitRunner implements BootUnitRunnerPort {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function boot_all(): void {
 
 		foreach ( $this->boot_units as $boot_unit ) {

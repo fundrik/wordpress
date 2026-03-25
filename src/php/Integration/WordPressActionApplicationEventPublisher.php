@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration;
 
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignApplicationEventInterface;
-use Fundrik\Core\Components\Campaigns\Application\Events\CampaignClosedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignCreatedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDeletedEvent;
-use Fundrik\Core\Components\Campaigns\Application\Events\CampaignOpenedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDonationsDisabledEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDonationsEnabledEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
+use Fundrik\Core\Components\Campaigns\Application\Events\CampaignSynchronizedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
+use Override;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -46,6 +48,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @param ApplicationEventInterface $event The application event.
 	 */
+	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
 
 		if ( ! $event instanceof CampaignApplicationEventInterface ) {
@@ -54,10 +57,11 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 
 		$publisher = match ( true ) {
 			$event instanceof CampaignCreatedEvent => $this->publish_campaign_created( ... ),
-			$event instanceof CampaignOpenedEvent => $this->publish_campaign_opened( ... ),
-			$event instanceof CampaignClosedEvent => $this->publish_campaign_closed( ... ),
+			$event instanceof CampaignDonationsEnabledEvent => $this->publish_campaign_donations_enabled( ... ),
+			$event instanceof CampaignDonationsDisabledEvent => $this->publish_campaign_donations_disabled( ... ),
 			$event instanceof CampaignRenamedEvent => $this->publish_campaign_renamed( ... ),
 			$event instanceof CampaignTargetChangedEvent => $this->publish_campaign_target_changed( ... ),
+			$event instanceof CampaignSynchronizedEvent => $this->publish_campaign_synchronized( ... ),
 			$event instanceof CampaignDeletedEvent => $this->publish_campaign_deleted( ... ),
 			default => null,
 		};
@@ -97,41 +101,41 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	}
 
 	/**
-	 * Publishes a campaign-opened event to WordPress actions.
+	 * Publishes a campaign-donations-enabled event to WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param int $campaign_id The campaign ID.
 	 */
-	private function publish_campaign_opened( int $campaign_id ): void {
+	private function publish_campaign_donations_enabled( int $campaign_id ): void {
 
 		/**
-		 * Fires after a campaign has been opened.
+		 * Fires after campaign donations have been enabled.
 		 *
 		 * @since 1.0.0
 		 *
 		 * @param int $campaign_id The campaign ID.
 		 */
-		do_action( 'fundrik_campaign_opened', $campaign_id );
+		do_action( 'fundrik_campaign_donations_enabled', $campaign_id );
 	}
 
 	/**
-	 * Publishes a campaign-closed event to WordPress actions.
+	 * Publishes a campaign-donations-disabled event to WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param int $campaign_id The campaign ID.
 	 */
-	private function publish_campaign_closed( int $campaign_id ): void {
+	private function publish_campaign_donations_disabled( int $campaign_id ): void {
 
 		/**
-		 * Fires after a campaign has been closed.
+		 * Fires after campaign donations have been disabled.
 		 *
 		 * @since 1.0.0
 		 *
 		 * @param int $campaign_id The campaign ID.
 		 */
-		do_action( 'fundrik_campaign_closed', $campaign_id );
+		do_action( 'fundrik_campaign_donations_disabled', $campaign_id );
 	}
 
 	/**
@@ -170,6 +174,25 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 * @param int $campaign_id The campaign ID.
 		 */
 		do_action( 'fundrik_campaign_target_changed', $campaign_id );
+	}
+
+	/**
+	 * Publishes a campaign-synchronized event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $campaign_id The campaign ID.
+	 */
+	private function publish_campaign_synchronized( int $campaign_id ): void {
+
+		/**
+		 * Fires after a campaign has been synchronized.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $campaign_id The campaign ID.
+		 */
+		do_action( 'fundrik_campaign_synchronized', $campaign_id );
 	}
 
 	/**

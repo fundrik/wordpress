@@ -27,6 +27,7 @@ use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSync
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
 use InvalidArgumentException;
+use Override;
 use stdClass;
 use WP_Error;
 use WP_Post;
@@ -93,6 +94,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function boot(): void {
 
 		$this->rest_pre_insert_hook->attach( $this->reject_when_campaign_cannot_be_synced( ... ) );

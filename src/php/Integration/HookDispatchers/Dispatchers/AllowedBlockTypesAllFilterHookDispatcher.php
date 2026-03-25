@@ -9,6 +9,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
 use InvalidArgumentException;
+use Override;
 use Throwable;
 use WP_Block_Editor_Context;
 
@@ -54,6 +55,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 *
 	 * @param callable $listener Handles the hook dispatch.
 	 */
+	#[Override]
 	public function attach( callable $listener ): void {
 
 		$this->listeners[] = $listener;
@@ -64,6 +66,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register(): void {
 
 		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 2 );

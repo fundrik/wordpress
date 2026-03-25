@@ -8,6 +8,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Override;
 use Throwable;
 use WP_Post;
 use WP_REST_Request;
@@ -61,6 +62,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @param callable $listener Handles the hook dispatch.
 	 */
+	#[Override]
 	public function attach( callable $listener ): void {
 
 		$this->listeners[] = $listener;
@@ -71,6 +73,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register(): void {
 
 		add_action( $this->hook_name, $this->handle( ... ), 10, 3 );

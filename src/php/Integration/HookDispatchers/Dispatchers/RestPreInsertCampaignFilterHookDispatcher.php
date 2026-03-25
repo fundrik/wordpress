@@ -8,6 +8,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Override;
 use stdClass;
 use Throwable;
 use WP_Error;
@@ -62,6 +63,7 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 *
 	 * @param callable $listener Handles the hook dispatch.
 	 */
+	#[Override]
 	public function attach( callable $listener ): void {
 
 		$this->listeners[] = $listener;
@@ -72,6 +74,7 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register(): void {
 
 		add_filter( $this->hook_name, $this->handle( ... ), 10, 2 );

@@ -19,6 +19,7 @@ use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Override;
 
 /**
  * Persists and retrieves donations in storage.
@@ -54,6 +55,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
 	 */
+	#[Override]
 	public function find_by_id( EntityId $id ): ?Donation {
 
 		$id_value = $this->get_donation_id_as_uuid_or_fail( $id );
@@ -85,6 +87,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the existence check fails.
 	 */
+	#[Override]
 	public function exists_by_campaign_id( EntityId $campaign_id ): bool {
 
 		$campaign_id_value = $this->get_campaign_id_as_int_or_fail( $campaign_id );
@@ -110,6 +113,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the existence check fails.
 	 */
+	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
 
 		$id_value = $this->get_donation_id_as_uuid_or_fail( $id );
@@ -136,6 +140,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the insert fails.
 	 */
+	#[Override]
 	public function insert( Donation $donation ): Donation {
 
 		$donation_id = $this->get_donation_id_as_uuid_or_fail( $donation->get_id() );
@@ -187,6 +192,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 * @throws DonationNotFoundExceptionInterface When the donation does not exist.
 	 * @throws DonationRepositoryExceptionInterface When the update fails for another reason.
 	 */
+	#[Override]
 	public function update( Donation $donation ): Donation {
 
 		$donation_id = $this->get_donation_id_as_uuid_or_fail( $donation->get_id() );

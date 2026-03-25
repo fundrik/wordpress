@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Infrastructure\EventBus;
 
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
+use Override;
 use Throwable;
 
 /**
@@ -37,6 +38,7 @@ final readonly class ApplicationEventBus implements ApplicationEventBusPort {
 	 *
 	 * @throws ApplicationEventBusException When publishing fails.
 	 */
+	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
 
 		try {

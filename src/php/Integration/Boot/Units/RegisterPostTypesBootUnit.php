@@ -9,6 +9,7 @@ use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
+use Override;
 use Throwable;
 
 /**
@@ -56,6 +57,7 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function boot(): void {
 
 		$this->init_hook->attach( $this->register_post_types( ... ) );

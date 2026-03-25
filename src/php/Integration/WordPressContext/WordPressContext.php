@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\WordPressContext;
 
+use Override;
 use WP_Block_Type_Registry;
 
 /**
@@ -46,6 +47,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @return array<string, \WP_Post_Type> Registered post type objects keyed by slug.
 	 */
+	#[Override]
 	public function get_registered_post_types(): array {
 
 		if ( $this->registered_post_types === null ) {
@@ -62,6 +64,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @return array<string, \WP_Block_Type> Registered block type objects keyed by name.
 	 */
+	#[Override]
 	public function get_registered_block_types(): array {
 
 		if ( $this->registered_block_types === null ) {

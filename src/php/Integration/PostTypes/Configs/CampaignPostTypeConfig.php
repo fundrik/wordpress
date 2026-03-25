@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\PostTypes\Configs;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
+use Override;
 
 /**
  * Provides configuration for the campaign post type.
@@ -54,6 +55,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @phpstan-return non-empty-lowercase-string
 	 */
+	#[Override]
 	public function get_id(): string {
 
 		return self::ID;
@@ -66,6 +68,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @return string The post type slug.
 	 */
+	#[Override]
 	public function get_slug(): string {
 
 		return 'campaigns';
@@ -80,6 +83,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @phpstan-return list<list<string>>
 	 */
+	#[Override]
 	public function get_block_template(): array {
 
 		return [
@@ -97,6 +101,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @phpstan-return list<string>
 	 */
+	#[Override]
 	public function get_specific_blocks(): array {
 
 		return [
@@ -113,6 +118,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @return array<string, string> The list of localized label strings.
 	 */
+	#[Override]
 	public function get_labels(): array {
 
 		return [

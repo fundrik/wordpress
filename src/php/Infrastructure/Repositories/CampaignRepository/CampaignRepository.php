@@ -19,6 +19,7 @@ use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Override;
 
 /**
  * Persists and retrieves campaigns in the storage.
@@ -54,6 +55,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
 	 */
+	#[Override]
 	public function find_by_id( EntityId $id ): ?Campaign {
 
 		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
@@ -85,6 +87,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the existence check fails.
 	 */
+	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
 
 		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
@@ -111,6 +114,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the insert fails.
 	 */
+	#[Override]
 	public function insert( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
@@ -166,6 +170,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
 	 * @throws CampaignRepositoryExceptionInterface When the update fails for another reason.
 	 */
+	#[Override]
 	public function update( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
@@ -229,6 +234,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
 	 * @throws CampaignRepositoryExceptionInterface When the delete fails for another reason.
 	 */
+	#[Override]
 	public function delete( EntityId $id ): void {
 
 		$id_int = $this->get_campaign_id_as_int_or_fail( $id );

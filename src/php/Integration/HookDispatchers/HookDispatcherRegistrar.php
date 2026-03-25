@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
+use Override;
 
 /**
  * Registers all WordPress hook dispatchers.
@@ -41,6 +42,7 @@ final readonly class HookDispatcherRegistrar implements HookDispatcherRegistrarP
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register_all(): void {
 
 		foreach ( $this->hook_dispatchers as $dispatcher ) {

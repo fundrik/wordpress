@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Database;
 
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Override;
 use wpdb;
 
 /**
@@ -58,6 +59,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
+	#[Override]
 	public function get_by_id( string $table, int|string $id ): ?array {
 
 		$table = $this->qualify_table_name( $table );
@@ -102,6 +104,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
+	#[Override]
 	public function get_all( string $table ): array {
 
 		$table = $this->qualify_table_name( $table );
@@ -145,6 +148,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
+	#[Override]
 	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array {
 
 		$table = $this->qualify_table_name( $table );
@@ -189,6 +193,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
+	#[Override]
 	public function exists_by_id( string $table, int|string $id ): bool {
 
 		$table = $this->qualify_table_name( $table );
@@ -228,6 +233,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
+	#[Override]
 	public function exists_by_column( string $table, string $column, int|float|string|bool|null $value ): bool {
 
 		$table = $this->qualify_table_name( $table );
@@ -265,6 +271,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the insert fails.
 	 */
+	#[Override]
 	public function insert( string $table, array $data ): void {
 
 		$table = $this->qualify_table_name( $table );
@@ -303,6 +310,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the update fails.
 	 */
+	#[Override]
 	public function update( string $table, array $data, array $where ): int {
 
 		$table = $this->qualify_table_name( $table );
@@ -331,6 +339,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the delete fails.
 	 */
+	#[Override]
 	public function delete( string $table, int|string $id ): void {
 
 		$table = $this->qualify_table_name( $table );
@@ -360,6 +369,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When execution fails.
 	 */
+	#[Override]
 	public function query( string $sql ): void {
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -381,6 +391,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When preparing or executing fails.
 	 */
+	#[Override]
 	public function query_with_args( string $sql, int|float|string|bool|null ...$args ): void {
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -408,6 +419,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the information cannot be determined.
 	 */
+	#[Override]
 	public function get_charset_collate(): string {
 
 		$charset_collate = $this->wpdb->get_charset_collate();
@@ -431,6 +443,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @throws WpdbDatabaseException When the prefix cannot be determined.
 	 */
+	#[Override]
 	public function qualify_table_name( string $table ): string {
 
 		$prefix = $this->wpdb->prefix;

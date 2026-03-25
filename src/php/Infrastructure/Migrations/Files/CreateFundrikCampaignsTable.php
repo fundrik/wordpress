@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Infrastructure\Migrations\Files;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
+use Override;
 
 /**
  * Creates the `fundrik_campaigns` table in the database.
@@ -24,6 +25,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 	 *
 	 * @return string The sortable migration version.
 	 */
+	#[Override]
 	protected static function define_version(): string {
 
 		return '2026_03_21_00';
@@ -39,6 +41,7 @@ final readonly class CreateFundrikCampaignsTable extends AbstractMigration {
 	 *
 	 * @throws MigrationException When the table cannot be created.
 	 */
+	#[Override]
 	public function apply( string $charset_collate ): void {
 
 		$table_name = $this->database->qualify_table_name( 'fundrik_campaigns' );

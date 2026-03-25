@@ -8,6 +8,7 @@ use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
+use Override;
 
 /**
  * Registers all custom blocks declared in the plugin.
@@ -39,6 +40,7 @@ final readonly class RegisterBlocksBootUnit implements BootUnitInterface {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function boot(): void {
 
 		$this->init_hook->attach( $this->register_blocks( ... ) );

@@ -9,6 +9,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Override;
 
 /**
  * Runs versioned database migrations.
@@ -60,6 +61,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 *
 	 * @throws MigrationException When running migrations fails.
 	 */
+	#[Override]
 	public function migrate(): void {
 
 		$from_db_version = $this->get_current_db_version();

@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
+use Override;
 use Throwable;
 use WP_REST_Server;
 
@@ -52,6 +53,7 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @param callable $listener Handles the hook dispatch.
 	 */
+	#[Override]
 	public function attach( callable $listener ): void {
 
 		$this->listeners[] = $listener;
@@ -62,6 +64,7 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register(): void {
 
 		add_action( self::HOOK_NAME, $this->handle( ... ), 10, 1 );

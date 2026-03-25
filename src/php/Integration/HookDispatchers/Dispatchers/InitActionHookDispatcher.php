@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Override;
 use Throwable;
 
 /**
@@ -48,6 +49,7 @@ final class InitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @param callable $listener Handles the hook dispatch.
 	 */
+	#[Override]
 	public function attach( callable $listener ): void {
 
 		$this->listeners[] = $listener;
@@ -58,6 +60,7 @@ final class InitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @since 1.0.0
 	 */
+	#[Override]
 	public function register(): void {
 
 		add_action( self::HOOK_NAME, $this->handle( ... ) );

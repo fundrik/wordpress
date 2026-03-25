@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration;
 
 use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
+use Override;
 
 /**
  * Provides access to WordPress options storage.
@@ -27,6 +28,7 @@ final readonly class WordPressOptionsStorage implements StoragePort {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
+	#[Override]
 	public function get( string $key, mixed $default_value = null ): mixed {
 
 		if ( func_num_args() === 1 ) {
@@ -52,6 +54,7 @@ final readonly class WordPressOptionsStorage implements StoragePort {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
+	#[Override]
 	public function set( string $key, mixed $value ): bool {
 
 		return update_option( $key, $value );
