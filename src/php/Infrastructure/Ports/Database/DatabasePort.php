@@ -34,9 +34,7 @@ interface DatabasePort {
 	 *
 	 * @param string $table The table name.
 	 *
-	 * @return array<array<string, int|float|string|bool|null>> The list of rows.
-	 *
-	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 * @return list<array<string, int|float|string|bool|null>> The list of rows.
 	 *
 	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
@@ -51,9 +49,7 @@ interface DatabasePort {
 	 * @param string $column The column to filter by.
 	 * @param int|float|string|bool|null $value The value to match.
 	 *
-	 * @return array<array<string, int|float|string|bool|null>> The list of matching rows.
-	 *
-	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 * @return list<array<string, int|float|string|bool|null>> The list of matching rows.
 	 *
 	 * @throws DatabaseExceptionInterface When the query fails.
 	 */

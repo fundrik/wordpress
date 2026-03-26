@@ -14,16 +14,14 @@ use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikDonationsTabl
  *
  * @internal
  */
-final class MigrationDefinitions {
+final readonly class MigrationDefinitions {
 
 	/**
 	 * Returns the configured migration classes.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, string>
-	 *
-	 * @phpstan-return list<class-string<AbstractMigration>>
+	 * @return list<class-string<AbstractMigration>>
 	 */
 	public static function classes(): array {
 

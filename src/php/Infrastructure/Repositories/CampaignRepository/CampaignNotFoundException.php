@@ -12,6 +12,8 @@ use Throwable;
  * Thrown when persisting a campaign fails because the campaign ID does not exist.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class CampaignNotFoundException extends RuntimeException implements CampaignNotFoundExceptionInterface {
 

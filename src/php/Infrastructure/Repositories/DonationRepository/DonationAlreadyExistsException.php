@@ -12,6 +12,8 @@ use Throwable;
  * Thrown when inserting a donation fails because the donation ID already exists.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class DonationAlreadyExistsException extends RuntimeException implements DonationAlreadyExistsExceptionInterface {
 

@@ -25,6 +25,8 @@ use Override;
  * Persists and retrieves donations in storage.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final readonly class DonationRepository implements DonationRepositoryPort {
 
@@ -242,7 +244,6 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	}
 	// phpcs:enable
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, Universal.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed, SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Builds a Donation entity from a persistence row.
 	 *
@@ -278,7 +279,6 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			);
 		}
 	}
-	// phpcs:enable
 
 	/**
 	 * Converts a new Donation entity into a persistence row.

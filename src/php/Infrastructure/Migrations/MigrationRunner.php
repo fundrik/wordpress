@@ -27,9 +27,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	/**
 	 * The configured migrations.
 	 *
-	 * @var array<int, AbstractMigration>
-	 *
-	 * @phpstan-var list<AbstractMigration>
+	 * @var list<AbstractMigration>
 	 */
 	private array $migrations;
 
@@ -140,7 +138,6 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		return version_compare( $target, $current, '>' );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Applies the given migration when its version is newer than the current version.
 	 *
@@ -187,7 +184,6 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 
 		return true;
 	}
-	// phpcs:enable
 
 	/**
 	 * Builds the migrations map sorted by version.
@@ -195,8 +191,6 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 * @since 1.0.0
 	 *
 	 * @return array<string, AbstractMigration> The [version => migration] map.
-	 *
-	 * @phpstan-return array<string, AbstractMigration>
 	 */
 	private function get_sorted_migrations(): array {
 

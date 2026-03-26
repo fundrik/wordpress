@@ -11,5 +11,7 @@ use RuntimeException;
  * Thrown when campaign persistence operation fails.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class CampaignRepositoryException extends RuntimeException implements CampaignRepositoryExceptionInterface {}

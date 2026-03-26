@@ -12,6 +12,8 @@ use Throwable;
  * Thrown when updating a donation fails because the donation ID does not exist.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class DonationNotFoundException extends RuntimeException implements DonationNotFoundExceptionInterface {
 

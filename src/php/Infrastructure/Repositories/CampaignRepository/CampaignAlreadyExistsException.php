@@ -12,6 +12,8 @@ use Throwable;
  * Thrown when inserting a campaign fails because the campaign ID already exists.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class CampaignAlreadyExistsException extends RuntimeException implements CampaignAlreadyExistsExceptionInterface {
 

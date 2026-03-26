@@ -25,6 +25,8 @@ use Override;
  * Persists and retrieves campaigns in the storage.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final readonly class CampaignRepository implements CampaignRepositoryPort {
 
@@ -279,7 +281,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		}
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Builds a Campaign entity from a persistence row.
 	 *
@@ -315,7 +316,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			);
 		}
 	}
-	// phpcs:enable
 
 	/**
 	 * Converts a new Campaign entity into a persistence row.

@@ -11,5 +11,7 @@ use RuntimeException;
  * Thrown when donation persistence operation fails.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class DonationRepositoryException extends RuntimeException implements DonationRepositoryExceptionInterface {}
