@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Infrastructure\Logger;
 use LogicException;
+use Override;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -14,7 +16,7 @@ use Psr\Log\LoggerInterface;
  *
  * @internal
  */
-final class HookDispatcherLogger {
+final class HookDispatcherLogger extends Logger {
 
 	/**
 	 * The WordPress hook name.
@@ -24,22 +26,16 @@ final class HookDispatcherLogger {
 	private string $hook_name;
 
 	/**
-	 * The fully qualified hook dispatcher class name.
-	 *
-	 * @since 1.0.0
-	 */
-	private string $hook_dispatcher_class;
-
-	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param LoggerInterface $logger Writes structured log entries for hook dispatcher operations.
 	 */
-	public function __construct(
-		private LoggerInterface $logger,
-	) {}
+	public function __construct( LoggerInterface $logger ) {
+
+		parent::__construct( $logger, 'hook_dispatchers', 'integration' );
+	}
 
 	/**
 	 * Sets the WordPress hook name for subsequent log entries.
@@ -62,7 +58,7 @@ final class HookDispatcherLogger {
 	 */
 	public function set_hook_dispatcher_class( string $class_name ): void {
 
-		$this->hook_dispatcher_class = $class_name;
+		$this->set_service_class( $class_name );
 	}
 
 	/**
@@ -74,58 +70,48 @@ final class HookDispatcherLogger {
 	 */
 	public function log_invalid_input( InvalidHookDispatcherArgumentException $e ): void {
 
-		$this->assert_context_is_set();
-
-		$this->logger->error(
+		$this->log_error(
 			$e->getMessage(),
-			$this->logger_context(
-				[
-					'operation' => 'validate',
-					'outcome' => 'invalid',
-					'invalid_argument' => $e->argument,
-					'invoked' => false,
-				],
-			),
+			[
+				'operation' => 'validate',
+				'outcome' => 'invalid',
+				'invalid_argument' => $e->argument,
+				'invoked' => false,
+			],
 		);
 	}
 
 	/**
-	 * Builds the structured logger context for the hook dispatcher.
+	 * Builds the base structured logger context.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $extra Additional context entries to merge.
-	 *
-	 * @return array<string, mixed> The structured context payload.
+	 * @return array<string, mixed> The base structured context payload.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function logger_context( array $extra = [] ): array {
+	#[Override]
+	protected function base_context(): array {
 
 		return [
-			'service_class' => $this->hook_dispatcher_class,
-			'logger_class' => self::class,
-			'component' => 'hook_dispatchers',
 			'hook_name' => $this->hook_name,
-			'layer' => 'integration',
-			'system' => 'wordpress',
-		] + $extra;
+		];
 	}
 
 	/**
 	 * Ensures that context (hook and dispatcher class) is configured before logging.
 	 *
 	 * @since 1.0.0
-	 *
-	 * @throws LogicException When called before context is set.
 	 */
-	private function assert_context_is_set(): void {
+	#[Override]
+	protected function assert_context_is_set(): void {
 
-		if ( ! isset( $this->hook_name, $this->hook_dispatcher_class ) ) {
-
-			throw new LogicException(
-				'Hook dispatcher logger context must be set before logging. Given: unset.',
-			);
+		if ( ! isset( $this->hook_name ) ) {
+			throw new LogicException( 'Hook dispatcher logger context must be set before logging. Given: unset.' );
 		}
+
+		$this->assert_service_class_is_set(
+			'Hook dispatcher logger context must be set before logging. Given: unset.',
+		);
 	}
 }

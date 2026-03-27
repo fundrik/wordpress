@@ -19,9 +19,7 @@ final readonly class BootUnitRunner implements BootUnitRunnerPort {
 	/**
 	 * The configured boot units.
 	 *
-	 * @var array<int, BootUnitInterface>
-	 *
-	 * @phpstan-var list<BootUnitInterface>
+	 * @var list<BootUnitInterface>
 	 */
 	private array $boot_units;
 

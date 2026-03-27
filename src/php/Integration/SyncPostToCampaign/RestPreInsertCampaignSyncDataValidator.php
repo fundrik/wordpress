@@ -38,11 +38,11 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The synchronization data.
+	 * @param RestCampaignSyncData $data The synchronization data.
 	 *
 	 * @return WP_Error|null A WP_Error when rejected, or null when accepted.
 	 */
-	public function validate_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
+	public function validate_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		$target_error = $this->validate_target_or_error( $data );
 
@@ -64,11 +64,11 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The synchronization data.
+	 * @param RestCampaignSyncData $data The synchronization data.
 	 *
 	 * @return WP_Error|null A WP_Error when rejected, or null when accepted.
 	 */
-	private function validate_target_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
+	private function validate_target_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		if ( ! $data->has_target || ( $data->target_amount !== null && $data->target_amount > 0 ) ) {
 			return null;
@@ -89,11 +89,11 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The synchronization data.
+	 * @param RestCampaignSyncData $data The synchronization data.
 	 *
 	 * @return WP_Error|null A WP_Error when rejected, or null when accepted.
 	 */
-	private function validate_domain_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
+	private function validate_domain_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		try {
 
@@ -124,11 +124,11 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The synchronization data.
+	 * @param RestCampaignSyncData $data The synchronization data.
 	 *
 	 * @return WP_Error|null A WP_Error when rejected, or null when accepted.
 	 */
-	private function validate_version_or_error( RestCampaignSyncDataDto $data ): ?WP_Error {
+	private function validate_version_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		try {
 			$persisted = $this->campaign_repository->find_by_id( $data->id );

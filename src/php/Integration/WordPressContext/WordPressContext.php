@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\WordPressContext;
 
 use Override;
+use WP_Block_Type;
 use WP_Block_Type_Registry;
+use WP_Post_Type;
 
 /**
  * Provides access to WordPress-specific plugin context.
@@ -25,7 +27,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @var array<string, \WP_Post_Type>|null
+	 * @var array<string, WP_Post_Type>|null
 	 */
 	private ?array $registered_post_types = null;
 
@@ -45,7 +47,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, \WP_Post_Type> Registered post type objects keyed by slug.
+	 * @return array<string, WP_Post_Type> Registered post type objects keyed by slug.
 	 */
 	#[Override]
 	public function get_registered_post_types(): array {
@@ -62,7 +64,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, \WP_Block_Type> Registered block type objects keyed by name.
+	 * @return array<string, WP_Block_Type> Registered block type objects keyed by name.
 	 */
 	#[Override]
 	public function get_registered_block_types(): array {
@@ -72,7 +74,7 @@ final class WordPressContext implements WordPressContextInterface {
 			$all_blocks = WP_Block_Type_Registry::get_instance()->get_all_registered();
 
 			// phpcs:disable SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.MissingVariable, Generic.Commenting.DocComment.MissingShort
-			/** @var array<string, \WP_Block_Type> $all_blocks */
+			/** @var array<string, WP_Block_Type> $all_blocks */
 			$this->registered_block_types = $all_blocks;
 		}
 

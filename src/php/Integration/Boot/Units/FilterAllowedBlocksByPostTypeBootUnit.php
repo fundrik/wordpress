@@ -29,16 +29,14 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 *
 	 * Format: [ block_name => [ post_type_id1, post_type_id2, ... ] ]
 	 *
-	 * @var array<string, array<string>>
+	 * @var array<string, list<string>>
 	 */
 	private array $block_allowed_post_types;
 
 	/**
 	 * The configured post type configs.
 	 *
-	 * @var array<int, PostTypeConfigInterface>
-	 *
-	 * @phpstan-var list<PostTypeConfigInterface>
+	 * @var list<PostTypeConfigInterface>
 	 */
 	private array $post_type_configs;
 
@@ -47,11 +45,10 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 *
 	 * @since 1.0.0
 	 *
-	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
-	 * @param AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook Dispatches the WordPress 'allowed_block_types_all' filter.
-	 * @param WordPressContextInterface $wp_context Provides access to registered WordPress types.
-	 * @param BootUnitLogger $logger Writes structured log entries.
-	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs used to build the block restriction map.
+	 * @param AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook Dispatches the allowed blocks filter.
+	 * @param WordPressContextInterface $wp_context Provides registered WordPress types.
+	 * @param BootUnitLogger $logger Writes structured boot-unit logs.
+	 * @param PostTypeConfigInterface ...$post_type_configs Supplies post type configs.
 	 */
 	public function __construct(
 		private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook,
@@ -80,7 +77,6 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 		);
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Filters the allowed blocks list based on the current post type.
 	 *
@@ -123,14 +119,13 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 
 		return $filtered;
 	}
-	// phpcs:enable
 
 	/**
 	 * Builds the map of block names to their allowed post types.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, array<string>> The map of block names to allowed post types.
+	 * @return array<string, list<string>> The map of block names to allowed post types.
 	 */
 	private function build_block_allowed_post_types_map(): array {
 

@@ -20,9 +20,7 @@ final readonly class PostTypeConfigDefinitions {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, string>
-	 *
-	 * @phpstan-return list<class-string<PostTypeConfigInterface>>
+	 * @return list<class-string<PostTypeConfigInterface>>
 	 */
 	public static function classes(): array {
 

@@ -39,12 +39,10 @@ final readonly class PostTypeMetaField {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, int|string|bool> The key-value representation of the meta field configuration.
-	 *
-	 * @phpstan-return array{
+	 * @return array{
 	 *   type: string,
 	 *   default?: int|string|bool
-	 * }
+	 * } The key-value representation of the meta field configuration.
 	 */
 	public function to_array(): array {
 

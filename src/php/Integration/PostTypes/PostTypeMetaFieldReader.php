@@ -24,12 +24,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param PostTypeConfigInterface $post_type_config The post type config.
 	 *
-	 * @return array<string, array<string, int|string|bool>> The declared meta fields.
-	 *
-	 * @phpstan-return array<string, array{
-	 *   type: string,
-	 *   default?: int|string|bool,
-	 * }>
+	 * @return array<string, array{type: string, default?: int|string|bool}> The declared meta fields.
 	 *
 	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
@@ -47,8 +42,6 @@ final readonly class PostTypeMetaFieldReader {
 	 * @param string $meta_key The post meta key.
 	 *
 	 * @return int|string|bool|null The declared default value, or null when missing.
-	 *
-	 * @phpstan-return int|string|bool|null
 	 */
 	public function get_meta_default_by_config_class(
 		string $post_type_config_class,
@@ -73,12 +66,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param string $post_type_config_class The post type config class name.
 	 *
-	 * @return array<string, array<string, int|string|bool>> The declared meta fields.
-	 *
-	 * @phpstan-return array<string, array{
-	 *   type: string,
-	 *   default?: int|string|bool,
-	 * }>
+	 * @return array<string, array{type: string, default?: int|string|bool}> The declared meta fields.
 	 *
 	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
@@ -117,12 +105,7 @@ final readonly class PostTypeMetaFieldReader {
 	 * @param string $post_type_config_class The post type config class name.
 	 * @param string $meta_key The post meta key.
 	 *
-	 * @return array<string, int|string|bool>|null The meta field definition, or null when missing.
-	 *
-	 * @phpstan-return array{
-	 *   type: string,
-	 *   default?: int|string|bool,
-	 * }|null
+	 * @return array{type: string, default?: int|string|bool}|null The meta field definition, or null when missing.
 	 */
 	private function get_meta_field_by_config_class( string $post_type_config_class, string $meta_key ): ?array {
 
@@ -137,12 +120,7 @@ final readonly class PostTypeMetaFieldReader {
 	 * @since 1.0.0
 	 *
 	 * @param string $post_type_config_class The post type config class name.
-	 * @param array<string, array<string, int|string|bool>> $fields The declared meta fields.
-	 *
-	 * @phpstan-param array<string, array{
-	 *   type: string,
-	 *   default?: int|string|bool,
-	 * }> $fields
+	 * @param array<string, array{type: string, default?: int|string|bool}> $fields The declared meta fields.
 	 *
 	 * @throws InvalidArgumentException When a default value does not match the declared type.
 	 */
@@ -166,12 +144,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param string $post_type_config_class The post type config class name.
 	 * @param string $meta_key The post meta key.
-	 * @param array<string, int|string|bool> $field The meta field definition.
-	 *
-	 * @phpstan-param array{
-	 *   type: string,
-	 *   default?: int|string|bool,
-	 * } $field
+	 * @param array{type: string, default?: int|string|bool} $field The meta field definition.
 	 *
 	 * @throws InvalidArgumentException When the default value does not match the declared type.
 	 */

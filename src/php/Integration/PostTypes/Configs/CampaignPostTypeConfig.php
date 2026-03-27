@@ -79,9 +79,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, array<int, string>> The block template configuration.
-	 *
-	 * @phpstan-return list<list<string>>
+	 * @return list<list<string>> The block template configuration.
 	 */
 	#[Override]
 	public function get_block_template(): array {
@@ -97,9 +95,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, string> The list of allowed block names.
-	 *
-	 * @phpstan-return list<string>
+	 * @return list<string> The list of allowed block names.
 	 */
 	#[Override]
 	public function get_specific_blocks(): array {

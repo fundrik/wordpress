@@ -1,4 +1,5 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.Files.FileLength.FileTooLong
+
 
 declare(strict_types=1);
 
@@ -8,6 +9,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Override;
 use wpdb;
 
+// phpcs:disable SlevomatCodingStandard.Classes.ClassLength.ClassTooLong
 /**
  * Provides access to WordPress database queries and schema metadata.
  *
@@ -98,9 +100,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 *
 	 * @param string $table The table name.
 	 *
-	 * @return array<array<string, int|float|string|bool|null>> The list of rows.
-	 *
-	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 * @return list<array<string, int|float|string|bool|null>> The list of rows.
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
@@ -142,9 +142,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 * @param string $column The column to filter by.
 	 * @param int|float|string|bool|null $value The value to match.
 	 *
-	 * @return array<array<string, int|float|string|bool|null>> The list of matching rows.
-	 *
-	 * @phpstan-return list<array<string, int|float|string|bool|null>>
+	 * @return list<array<string, int|float|string|bool|null>> The list of matching rows.
 	 *
 	 * @throws WpdbDatabaseException When the query fails.
 	 */
@@ -570,3 +568,4 @@ final readonly class WpdbDatabase implements DatabasePort {
 		) === 1;
 	}
 }
+// phpcs:enable

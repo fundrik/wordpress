@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\WordPressContext;
 
+use WP_Block_Type;
+use WP_Post_Type;
+
 /**
  * Provides methods for accessing WordPress-specific plugin context.
  *
@@ -16,7 +19,7 @@ interface WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, \WP_Post_Type> Registered post type objects keyed by slug.
+	 * @return array<string, WP_Post_Type> Registered post type objects keyed by slug.
 	 */
 	public function get_registered_post_types(): array;
 
@@ -25,7 +28,7 @@ interface WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, \WP_Block_Type> Registered block type objects keyed by name.
+	 * @return array<string, WP_Block_Type> Registered block type objects keyed by name.
 	 */
 	public function get_registered_block_types(): array;
 }

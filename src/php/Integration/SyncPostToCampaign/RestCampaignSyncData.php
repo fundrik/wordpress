@@ -14,7 +14,7 @@ use Fundrik\Core\Components\Shared\Domain\EntityVersion;
  *
  * @internal
  */
-final readonly class RestCampaignSyncDataDto {
+final readonly class RestCampaignSyncData {
 
 	/**
 	 * Constructor.

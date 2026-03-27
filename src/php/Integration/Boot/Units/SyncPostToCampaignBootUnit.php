@@ -176,16 +176,10 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		$version = $campaign === null ? EntityVersion::initial() : $campaign->get_version();
 
 		$data = $response->get_data();
-
-		if ( ! is_array( $data ) ) {
-			$data = [];
-		}
+		$data = is_array( $data ) ? $data : [];
 
 		$meta = $data['meta'] ?? [];
-
-		if ( ! is_array( $meta ) ) {
-			$meta = [];
-		}
+		$meta = is_array( $meta ) ? $meta : [];
 
 		$meta[ CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME ] = $version->get_value();
 		$data['meta'] = $meta;
@@ -284,7 +278,6 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	}
 	// phpcs:enable
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Removes the synchronized campaign when the source campaign post is deleted.
 	 *
@@ -318,5 +311,4 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 			throw $e;
 		}
 	}
-	// phpcs:enable
 }

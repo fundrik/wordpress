@@ -36,7 +36,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		private PostTypeMetaFieldReader $meta_field_reader,
 	) {}
 
-	// phpcs:disable Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	// phpcs:disable Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint, SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Extracts and normalizes the synchronization data from the REST request.
 	 *
@@ -45,14 +45,11 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 * @param stdClass $prepared_post The prepared post object.
 	 * @param WP_REST_Request $request The REST request.
 	 *
-	 * @return RestCampaignSyncDataDto|WP_Error The normalized data, or a WP_Error when the payload is invalid.
+	 * @return RestCampaignSyncData|WP_Error The normalized data, or a WP_Error when the payload is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
-	public function extract_or_error(
-		stdClass $prepared_post,
-		WP_REST_Request $request,
-	): RestCampaignSyncDataDto|WP_Error {
+	public function extract_or_error( stdClass $prepared_post, WP_REST_Request $request ): RestCampaignSyncData|WP_Error {
 
 		/** @var array<string, mixed> $params */
 		$params = $request->get_json_params();
@@ -72,7 +69,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 			$has_target = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
 
-			return new RestCampaignSyncDataDto(
+			return new RestCampaignSyncData(
 				id: EntityId::create( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),

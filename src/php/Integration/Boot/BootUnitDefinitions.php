@@ -24,9 +24,7 @@ final readonly class BootUnitDefinitions {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, string>
-	 *
-	 * @phpstan-return list<class-string<BootUnitInterface>>
+	 * @return list<class-string<BootUnitInterface>>
 	 */
 	public static function classes(): array {
 

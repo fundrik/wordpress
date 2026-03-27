@@ -27,9 +27,7 @@ final readonly class HookDispatcherDefinitions {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, string>
-	 *
-	 * @phpstan-return list<class-string<HookDispatcherInterface>>
+	 * @return list<class-string<HookDispatcherInterface>>
 	 */
 	public static function classes(): array {
 

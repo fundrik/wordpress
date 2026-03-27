@@ -10,6 +10,8 @@ use InvalidArgumentException;
  * Thrown when a WordPress hook receives an argument with an invalid type or structure.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 final class InvalidHookDispatcherArgumentException extends InvalidArgumentException {
 

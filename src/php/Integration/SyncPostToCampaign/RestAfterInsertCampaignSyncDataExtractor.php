@@ -35,7 +35,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		private PostTypeMetaFieldReader $meta_field_reader,
 	) {}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	/**
 	 * Extracts and normalizes the synchronization data from the saved post snapshot.
 	 *
@@ -44,13 +44,12 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 * @param WP_Post $post The saved post.
 	 * @param WP_REST_Request $request The REST request.
 	 *
-	 * @return RestCampaignSyncDataDto The normalized data.
+	 * @return RestCampaignSyncData The normalized data.
 	 *
 	 * @throws InvalidArgumentException When the payload is not usable.
 	 */
-	public function extract( WP_Post $post, WP_REST_Request $request ): RestCampaignSyncDataDto {
+	public function extract( WP_Post $post, WP_REST_Request $request ): RestCampaignSyncData {
 
-		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var array<string, mixed> $params */
 		$params = $request->get_json_params();
 
@@ -66,14 +65,13 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		$has_target = Meta::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
 		$target_amount = $has_target ? Meta::get_post_meta_int_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
 		$target_currency = Meta::get_post_meta_string_or_null( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
-		// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
+		// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 
-		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var array<string, mixed> $meta */
 		$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 		$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
-		return new RestCampaignSyncDataDto(
+		return new RestCampaignSyncData(
 			id: EntityId::create( $id ),
 			title: $title,
 			version: EntityVersion::create( $version ),

@@ -19,9 +19,7 @@ final readonly class HookDispatcherRegistrar implements HookDispatcherRegistrarP
 	/**
 	 * The configured hook dispatchers.
 	 *
-	 * @var array<int, HookDispatcherInterface>
-	 *
-	 * @phpstan-var list<HookDispatcherInterface>
+	 * @var list<HookDispatcherInterface>
 	 */
 	private array $hook_dispatchers;
 

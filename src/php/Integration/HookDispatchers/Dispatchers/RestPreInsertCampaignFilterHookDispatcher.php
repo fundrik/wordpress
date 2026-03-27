@@ -35,7 +35,7 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	/**
 	 * The list of attached hook listeners.
 	 *
-	 * @var array<int, callable>
+	 * @var list<callable>
 	 */
 	private array $listeners = [];
 

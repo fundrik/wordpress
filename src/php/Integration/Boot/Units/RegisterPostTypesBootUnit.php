@@ -24,9 +24,7 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 	/**
 	 * The configured post type configs.
 	 *
-	 * @var array<int, PostTypeConfigInterface>
-	 *
-	 * @phpstan-var list<PostTypeConfigInterface>
+	 * @var list<PostTypeConfigInterface>
 	 */
 	private array $post_type_configs;
 
@@ -63,7 +61,6 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 		$this->init_hook->attach( $this->register_post_types( ... ) );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Registers all configured post types in WordPress.
 	 *
@@ -95,5 +92,4 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 			throw $e;
 		}
 	}
-	// phpcs:enable
 }

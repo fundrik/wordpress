@@ -94,7 +94,6 @@ final readonly class PostTypeRegistrar {
 	}
 	// phpcs:enable
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Registers all meta fields for the given post type.
 	 *
@@ -129,5 +128,4 @@ final readonly class PostTypeRegistrar {
 			}
 		}
 	}
-	// phpcs:enable
 }

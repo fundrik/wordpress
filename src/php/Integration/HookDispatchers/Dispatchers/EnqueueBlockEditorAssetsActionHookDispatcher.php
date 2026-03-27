@@ -23,7 +23,7 @@ final class EnqueueBlockEditorAssetsActionHookDispatcher implements HookDispatch
 	/**
 	 * The list of attached hook listeners.
 	 *
-	 * @var array<int, callable>
+	 * @var list<callable>
 	 */
 	private array $listeners = [];
 

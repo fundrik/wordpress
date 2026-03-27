@@ -42,6 +42,7 @@
 - Keep tag descriptions in sentence case and end them with a period.
 - For booleans in `@return`, prefer `True when ...`.
 - For nullable values, prefer explicit endings such as `..., if configured.` or `..., null otherwise.`.
+- For dependency `@param` docblocks, keep one-line descriptions that state the dependency role and purpose, such as `Writes structured boot-unit logs.` or `Provides registered block types.`.
 
 # Architecture Conventions
 

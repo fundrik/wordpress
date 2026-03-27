@@ -39,13 +39,13 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 * @param RestCampaignSyncData $data The normalized synchronization data.
 	 *
 	 * @throws CreateCampaignException When campaign creation fails.
 	 * @throws CampaignRepositoryExceptionInterface When campaign existence lookup fails.
 	 * @throws SyncCampaignFromSnapshotException When campaign synchronization fails.
 	 */
-	public function sync( RestCampaignSyncDataDto $data ): void {
+	public function sync( RestCampaignSyncData $data ): void {
 
 		if ( ! $this->campaign_repository->exists_by_id( $data->id ) ) {
 			$this->campaign_command->create( $this->new_create_command( $data ) );
@@ -65,11 +65,11 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 * @param RestCampaignSyncData $data The normalized synchronization data.
 	 *
 	 * @return CreateCampaignCommand The public creation command.
 	 */
-	private function new_create_command( RestCampaignSyncDataDto $data ): CreateCampaignCommand {
+	private function new_create_command( RestCampaignSyncData $data ): CreateCampaignCommand {
 
 		return new CreateCampaignCommand(
 			id: $data->id,
@@ -85,11 +85,11 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param RestCampaignSyncDataDto $data The normalized synchronization data.
+	 * @param RestCampaignSyncData $data The normalized synchronization data.
 	 *
 	 * @return SyncCampaignFromSnapshotCommand The public synchronization command.
 	 */
-	private function new_sync_command( RestCampaignSyncDataDto $data ): SyncCampaignFromSnapshotCommand {
+	private function new_sync_command( RestCampaignSyncData $data ): SyncCampaignFromSnapshotCommand {
 
 		return new SyncCampaignFromSnapshotCommand(
 			id: $data->id,
