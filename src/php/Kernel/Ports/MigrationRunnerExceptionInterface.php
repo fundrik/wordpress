@@ -10,5 +10,7 @@ use Throwable;
  * Marks all exceptions that occur during migration running.
  *
  * @since 1.0.0
+ *
+ * @internal
  */
 interface MigrationRunnerExceptionInterface extends Throwable {}

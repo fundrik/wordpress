@@ -22,6 +22,7 @@ use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
+use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
@@ -32,7 +33,6 @@ use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
-use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
@@ -55,9 +55,7 @@ final readonly class ContainerBindingsRegistry {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string|int, string> The list of singleton bindings keyed by the abstract type.
-	 *
-	 * @phpstan-return array<class-string|int, class-string>
+	 * @return array<class-string|int, class-string> The list of singleton bindings keyed by the abstract type.
 	 */
 	public function get_singletons(): array {
 
@@ -105,9 +103,7 @@ final readonly class ContainerBindingsRegistry {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<int, ContextualBindingDefinition> The contextual binding definitions.
-	 *
-	 * @phpstan-return list<ContextualBindingDefinition>
+	 * @return list<ContextualBindingDefinition> The contextual binding definitions.
 	 */
 	public function get_contextual_bindings(): array {
 
