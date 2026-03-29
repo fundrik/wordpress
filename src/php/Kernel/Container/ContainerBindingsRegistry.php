@@ -19,6 +19,9 @@ use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRep
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsDefinitions;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsInterface;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -125,6 +128,11 @@ final readonly class ContainerBindingsRegistry {
 				AdminPageRegistrar::class,
 				AdminPageInterface::class,
 				AdminPageDefinitions::classes(),
+			),
+			new ContextualBindingDefinition(
+				AdminSettingsRegistrar::class,
+				AdminSettingsInterface::class,
+				AdminSettingsDefinitions::classes(),
 			),
 			new ContextualBindingDefinition(
 				RegisterRestApiRoutesBootUnit::class,

@@ -8,7 +8,7 @@ use ArrayObject;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\SettingsAdminPage;
-use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsDefinitions;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( SettingsAdminPage::class )]
 #[UsesClass( AdminPageDefinitions::class )]
+#[UsesClass( AdminSettingsDefinitions::class )]
 final class SettingsAdminPageTest extends WordPressTestCase {
 
 	private SettingsAdminPage $admin_page;
@@ -67,10 +68,41 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 			)
 			->andReturn( 'fundrik_page_fundrik' );
 
-		Functions\expect( 'admin_url' )
+		Functions\expect( 'settings_errors' )
 			->once()
-			->with( sprintf( 'edit.php?post_type=%s', CampaignPostTypeConfig::ID ) )
-			->andReturn( 'http://example.test/wp-admin/edit.php?post_type=fundrik_campaign' );
+			->withNoArgs()
+			->andReturnUsing(
+				static function (): void {
+					echo '<div class="notice"></div>';
+				},
+			);
+
+		Functions\expect( 'settings_fields' )
+			->once()
+			->with( AdminSettingsDefinitions::OPTION_GROUP )
+			->andReturnUsing(
+				static function ( string $option_group ): void {
+					echo '<input type="hidden" name="option_page" value="' . esc_attr( $option_group ) . '" />';
+				},
+			);
+
+		Functions\expect( 'do_settings_sections' )
+			->once()
+			->with( AdminPageDefinitions::ROOT_MENU_SLUG )
+			->andReturnUsing(
+				static function ( string $page ): void {
+					echo '<div data-page="' . esc_attr( $page ) . '"></div>';
+				},
+			);
+
+		Functions\expect( 'submit_button' )
+			->once()
+			->withNoArgs()
+			->andReturnUsing(
+				static function (): void {
+					echo '<button type="submit">Save Changes</button>';
+				},
+			);
 
 		$this->admin_page->register();
 
@@ -80,9 +112,10 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 		( $page_state['callback'] )();
 		$output = (string) ob_get_clean();
 
-		self::assertStringContainsString( '<h1>Settings</h1>', $output );
-		self::assertStringContainsString( 'Fundrik plugin settings will appear here.', $output );
-		self::assertStringContainsString( 'Open Campaigns', $output );
-		self::assertStringContainsString( 'http://example.test/wp-admin/edit.php?post_type=fundrik_campaign', $output );
+		self::assertStringContainsString( '<h1>Fundrik Settings</h1>', $output );
+		self::assertStringContainsString( '<form action="options.php" method="post">', $output );
+		self::assertStringContainsString( 'name="option_page" value="fundrik_settings"', $output );
+		self::assertStringContainsString( 'data-page="fundrik"', $output );
+		self::assertStringContainsString( 'Save Changes', $output );
 	}
 }

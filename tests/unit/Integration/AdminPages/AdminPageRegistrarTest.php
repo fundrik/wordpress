@@ -27,4 +27,15 @@ final class AdminPageRegistrarTest extends MockeryTestCase {
 
 		$registrar->register_all();
 	}
+
+	#[Test]
+	public function it_returns_the_count_of_configured_admin_pages(): void {
+
+		$registrar = new AdminPageRegistrar(
+			Mockery::mock( AdminPageInterface::class ),
+			Mockery::mock( AdminPageInterface::class ),
+		);
+
+		$this->assertSame( 2, $registrar->count() );
+	}
 }

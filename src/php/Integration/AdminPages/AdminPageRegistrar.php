@@ -43,4 +43,16 @@ final readonly class AdminPageRegistrar {
 			$admin_page->register();
 		}
 	}
+
+	/**
+	 * Returns the number of configured admin pages.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return int Admin page count.
+	 */
+	public function count(): int {
+
+		return count( $this->admin_pages );
+	}
 }
