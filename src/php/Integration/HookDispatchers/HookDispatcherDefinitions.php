@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
@@ -33,6 +34,7 @@ final readonly class HookDispatcherDefinitions {
 	public static function classes(): array {
 
 		return [
+			AdminMenuActionHookDispatcher::class,
 			AllowedBlockTypesAllFilterHookDispatcher::class,
 			DeletePostActionHookDispatcher::class,
 			EnqueueBlockEditorAssetsActionHookDispatcher::class,

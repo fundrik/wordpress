@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
@@ -25,12 +27,14 @@ final class HookDispatcherDefinitionsTest extends FundrikTestCase {
 
 		$this->assertSame(
 			[
+				AdminMenuActionHookDispatcher::class,
 				AllowedBlockTypesAllFilterHookDispatcher::class,
 				DeletePostActionHookDispatcher::class,
 				EnqueueBlockEditorAssetsActionHookDispatcher::class,
 				InitActionHookDispatcher::class,
 				RestApiInitActionHookDispatcher::class,
 				RestAfterInsertCampaignActionHookDispatcher::class,
+				RestPostDispatchFilterHookDispatcher::class,
 				RestPreInsertCampaignFilterHookDispatcher::class,
 				RestPrepareCampaignFilterHookDispatcher::class,
 			],
