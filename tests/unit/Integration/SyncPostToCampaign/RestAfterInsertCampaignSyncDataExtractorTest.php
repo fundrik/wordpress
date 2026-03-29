@@ -9,7 +9,7 @@ use Fundrik\WordPress\Integration\Helpers\Meta;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use InvalidArgumentException;
 use Mockery;
@@ -21,7 +21,7 @@ use WP_Post;
 use WP_REST_Request;
 
 #[CoversClass( RestAfterInsertCampaignSyncDataExtractor::class )]
-#[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( RestCampaignSyncData::class )]
 #[UsesClass( Meta::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
@@ -131,7 +131,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		$result = $this->extractor->extract( $post, $this->request );
 
-		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 
 		self::assertSame( 10, $result->id->get_value() );
 		self::assertSame( 'Campaign title', $result->title );
@@ -258,5 +258,6 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		return $post;
 	}
 }
+
 
 

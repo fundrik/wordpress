@@ -10,6 +10,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditor
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPreInsertCampaignFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaignFilterHookDispatcher;
 
@@ -38,6 +39,7 @@ final readonly class HookDispatcherDefinitions {
 			InitActionHookDispatcher::class,
 			RestApiInitActionHookDispatcher::class,
 			RestAfterInsertCampaignActionHookDispatcher::class,
+			RestPostDispatchFilterHookDispatcher::class,
 			RestPreInsertCampaignFilterHookDispatcher::class,
 			RestPrepareCampaignFilterHookDispatcher::class,
 		];

@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -22,7 +22,7 @@ use WP_Error;
 use WP_REST_Request;
 
 #[CoversClass( RestPreInsertCampaignSyncDataExtractor::class )]
-#[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( RestCampaignSyncData::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
@@ -88,7 +88,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
 
-		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 
 		self::assertInstanceOf( EntityId::class, $result->id );
 		self::assertSame( 10, $result->id->get_value() );
@@ -134,7 +134,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
 
-		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 
 		self::assertSame( 15, $result->id->get_value() );
 		self::assertSame( 'Ok', $result->title );
@@ -170,7 +170,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
 
-		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 		self::assertFalse( $result->has_target );
 		self::assertNull( $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
@@ -200,12 +200,13 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
 
-		self::assertInstanceOf( RestCampaignSyncDataDto::class, $result );
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 		self::assertTrue( $result->has_target );
 		self::assertNull( $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
 
 }
+
 
 

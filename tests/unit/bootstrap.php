@@ -17,3 +17,6 @@ define( 'ARRAY_A', 'ARRAY_A' );
 
 require_once __DIR__ . '/stubs/wp-block-type-registry.php';
 require_once __DIR__ . '/stubs/wp-error.php';
+require_once __DIR__ . '/stubs/wp-rest-request.php';
+require_once __DIR__ . '/stubs/wp-rest-response.php';
+require_once __DIR__ . '/stubs/wp-rest-server.php';

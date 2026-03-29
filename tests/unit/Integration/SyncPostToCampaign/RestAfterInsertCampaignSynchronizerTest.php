@@ -22,7 +22,7 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( RestAfterInsertCampaignSynchronizer::class )]
-#[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( RestCampaignSyncData::class )]
 final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
@@ -63,7 +63,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	#[Test]
 	public function sync_creates_campaign_when_post_is_being_created(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Title',
 			version: EntityVersion::create( 999 ),
@@ -106,7 +106,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	#[Test]
 	public function sync_updates_campaign_from_snapshot_when_post_is_being_updated(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 15 ),
 			title: 'Updated title',
 			version: EntityVersion::create( 7 ),
@@ -163,7 +163,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	#[Test]
 	public function sync_updates_campaign_and_clears_target_amount_meta_when_target_is_disabled(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 15 ),
 			title: 'Updated title',
 			version: EntityVersion::create( 7 ),
@@ -223,7 +223,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	#[Test]
 	public function sync_creates_campaign_when_snapshot_campaign_is_missing(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 15 ),
 			title: 'Created from snapshot',
 			version: EntityVersion::create( 7 ),
@@ -284,4 +284,5 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 	}
 }
+
 

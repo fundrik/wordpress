@@ -30,11 +30,10 @@
 		<properties>
 			<property name="excludedParentClasses" type="array">
 				<element value="Throwable"/>
+				<element value="Fundrik\WordPress\Infrastructure\Logger"/>
 				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface"/>
 			</property>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Integration\Boot\BootUnitLogger"/>
-				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger"/>
 				<element value="Fundrik\WordPress\Integration\WordPressContext\WordPressContext"/>
 			</property>
 		</properties>
@@ -44,6 +43,9 @@
 		<properties>
 			<property name="excludedParentClasses" type="array">
 				<element value="Throwable"/>
+			</property>
+			<property name="excludedClasses" type="array">
+				<element value="Fundrik\WordPress\Infrastructure\Logger"/>
 			</property>
 		</properties>
 	</rule>

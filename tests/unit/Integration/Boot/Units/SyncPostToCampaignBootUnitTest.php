@@ -37,7 +37,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
 use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
@@ -69,7 +69,7 @@ use WP_Screen;
 #[UsesClass( RestPreInsertCampaignSyncDataValidator::class )]
 #[UsesClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestAfterInsertCampaignSynchronizer::class )]
-#[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( RestCampaignSyncData::class )]
 #[UsesClass( Meta::class )]
 #[UsesClass( PluginUrl::class )]
 #[UsesClass( PostTypeMetaField::class )]
@@ -887,5 +887,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'get_post_meta' )->never();
 	}
 }
+
 
 

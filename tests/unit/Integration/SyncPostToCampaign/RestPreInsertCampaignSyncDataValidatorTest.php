@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDataValidator;
 use Fundrik\WordPress\Tests\Fixtures\FakeCampaignRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -20,7 +20,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use WP_Error;
 
 #[CoversClass( RestPreInsertCampaignSyncDataValidator::class )]
-#[UsesClass( RestCampaignSyncDataDto::class )]
+#[UsesClass( RestCampaignSyncData::class )]
 final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
@@ -44,7 +44,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_rejects_when_domain_rejects_payload(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: '', // invalid -> CampaignFactoryException
 			version: EntityVersion::create( 3 ),
@@ -66,7 +66,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_rejects_when_target_is_enabled_without_a_positive_amount(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Ok',
 			version: EntityVersion::create( 3 ),
@@ -92,7 +92,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_rejects_when_repository_lookup_fails(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Ok',
 			version: EntityVersion::create( 3 ),
@@ -118,7 +118,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_accepts_when_versions_match(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Ok',
 			version: EntityVersion::create( 5 ),
@@ -150,7 +150,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_rejects_when_versions_do_not_match(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Ok',
 			version: EntityVersion::create( 3 ),
@@ -188,7 +188,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 	#[Test]
 	public function validate_or_error_rejects_when_campaign_is_not_found_and_expected_is_not_initial(): void {
 
-		$data = new RestCampaignSyncDataDto(
+		$data = new RestCampaignSyncData(
 			id: EntityId::create( 10 ),
 			title: 'Ok',
 			version: EntityVersion::create( 2 ),
@@ -214,4 +214,5 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 		self::assertSame( 1, $payload['current_version'] );
 	}
 }
+
 

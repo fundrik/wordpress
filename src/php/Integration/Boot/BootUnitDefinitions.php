@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot;
 
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailuresBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
@@ -30,6 +31,7 @@ final readonly class BootUnitDefinitions {
 
 		return [
 			FilterAllowedBlocksByPostTypeBootUnit::class,
+			LogCreateDonationRestRequestFailuresBootUnit::class,
 			RegisterBlocksBootUnit::class,
 			RegisterPostTypesBootUnit::class,
 			RegisterRestApiRoutesBootUnit::class,

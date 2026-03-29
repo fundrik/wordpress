@@ -6,13 +6,13 @@ namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncDataDto;
+use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass( RestCampaignSyncDataDto::class )]
-final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
+#[CoversClass( RestCampaignSyncData::class )]
+final class RestCampaignSyncDataTest extends FundrikTestCase {
 
 	#[Test]
 	public function constructor_assigns_all_fields(): void {
@@ -20,7 +20,7 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 		$id = EntityId::create( 10 );
 		$version = EntityVersion::create( 3 );
 
-		$dto = new RestCampaignSyncDataDto(
+		$dto = new RestCampaignSyncData(
 			id: $id,
 			title: 'Title',
 			version: $version,
@@ -39,4 +39,5 @@ final class RestCampaignSyncDataDtoTest extends FundrikTestCase {
 		self::assertSame( 'RUB', $dto->target_currency );
 	}
 }
+
 
