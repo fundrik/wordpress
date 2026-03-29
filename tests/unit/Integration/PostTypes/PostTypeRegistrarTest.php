@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
@@ -59,6 +60,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 						&& $args['public'] === true
 						&& $args['menu_icon'] === 'dashicons-heart'
 						&& $args['supports'] === [ 'title', 'editor', 'custom-fields' ]
+						&& $args['show_in_menu'] === AdminPageDefinitions::ROOT_MENU_SLUG
 						&& $args['has_archive'] === true
 						&& $args['show_in_rest'] === true,
 				),
@@ -124,9 +126,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 		Functions\expect( 'register_post_meta' )->never();
 
 		$this->expectException( PostTypeRegistrationException::class );
-		$this->expectExceptionMessage(
-			'Cannot register post type "gamma": Boom.',
-		);
+		$this->expectExceptionMessage( 'Cannot register post type "gamma": Boom.' );
 
 		$this->registrar->register( $config );
 	}
@@ -167,9 +167,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 			->andReturn( false );
 
 		$this->expectException( PostMetaRegistrationException::class );
-		$this->expectExceptionMessage(
-			'Failed to register post meta "gamma_is_open" for post type "gamma".',
-		);
+		$this->expectExceptionMessage( 'Failed to register post meta "gamma_is_open" for post type "gamma".' );
 
 		$this->registrar->register( $config );
 	}

@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Fundrik\WordPress\Tests\Integration\AdminPages\Pages;
+
+use ArrayObject;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
+use Fundrik\WordPress\Integration\AdminPages\Pages\SettingsAdminPage;
+use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Tests\WordPressTestCase;
+use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
+
+#[CoversClass( SettingsAdminPage::class )]
+#[UsesClass( AdminPageDefinitions::class )]
+final class SettingsAdminPageTest extends WordPressTestCase {
+
+	private SettingsAdminPage $admin_page;
+
+	protected function setUp(): void {
+
+		parent::setUp();
+
+		$this->admin_page = new SettingsAdminPage();
+	}
+
+	#[Test]
+	public function register_registers_root_menu_settings_submenu_and_render_callback(): void {
+
+		$page_state = new ArrayObject(
+			[
+				'callback' => null,
+			],
+		);
+
+		Functions\expect( 'add_menu_page' )
+			->once()
+			->with(
+				__( 'Fundrik Settings', 'fundrik' ),
+				__( 'Fundrik', 'fundrik' ),
+				'edit_posts',
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				Mockery::on(
+					static function ( callable $callback ) use ( $page_state ): bool {
+
+						$page_state['callback'] = $callback;
+
+						return true;
+					},
+				),
+				'dashicons-heart',
+			)
+			->andReturn( 'toplevel_page_fundrik' );
+
+		Functions\expect( 'add_submenu_page' )
+			->once()
+			->with(
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				__( 'Fundrik Settings', 'fundrik' ),
+				__( 'Settings', 'fundrik' ),
+				'edit_posts',
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+			)
+			->andReturn( 'fundrik_page_fundrik' );
+
+		Functions\expect( 'admin_url' )
+			->once()
+			->with( sprintf( 'edit.php?post_type=%s', CampaignPostTypeConfig::ID ) )
+			->andReturn( 'http://example.test/wp-admin/edit.php?post_type=fundrik_campaign' );
+
+		$this->admin_page->register();
+
+		self::assertIsCallable( $page_state['callback'] );
+
+		ob_start();
+		( $page_state['callback'] )();
+		$output = (string) ob_get_clean();
+
+		self::assertStringContainsString( '<h1>Settings</h1>', $output );
+		self::assertStringContainsString( 'Fundrik plugin settings will appear here.', $output );
+		self::assertStringContainsString( 'Open Campaigns', $output );
+		self::assertStringContainsString( 'http://example.test/wp-admin/edit.php?post_type=fundrik_campaign', $output );
+	}
+}

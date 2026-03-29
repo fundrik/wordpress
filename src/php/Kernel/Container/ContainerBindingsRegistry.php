@@ -16,6 +16,9 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -117,6 +120,11 @@ final readonly class ContainerBindingsRegistry {
 				HookDispatcherRegistrar::class,
 				HookDispatcherInterface::class,
 				HookDispatcherDefinitions::classes(),
+			),
+			new ContextualBindingDefinition(
+				AdminPageRegistrar::class,
+				AdminPageInterface::class,
+				AdminPageDefinitions::classes(),
 			),
 			new ContextualBindingDefinition(
 				RegisterRestApiRoutesBootUnit::class,

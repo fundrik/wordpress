@@ -16,12 +16,16 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
+use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
+use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
@@ -33,7 +37,6 @@ use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\WordPressOptionsStorage;
-use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContextualBindingDefinition;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
@@ -124,6 +127,11 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 				'consumer' => HookDispatcherRegistrar::class,
 				'dependency' => HookDispatcherInterface::class,
 				'implementation' => HookDispatcherDefinitions::classes(),
+			],
+			[
+				'consumer' => AdminPageRegistrar::class,
+				'dependency' => AdminPageInterface::class,
+				'implementation' => AdminPageDefinitions::classes(),
 			],
 			[
 				'consumer' => RegisterRestApiRoutesBootUnit::class,

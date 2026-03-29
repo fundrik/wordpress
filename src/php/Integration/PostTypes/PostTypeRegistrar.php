@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes;
 
+use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
 use WP_Error;
@@ -65,19 +66,19 @@ final readonly class PostTypeRegistrar {
 		 */
 		$slug = apply_filters( "fundrik_{$id}_post_type_slug", $post_type_config->get_slug() );
 
-		$result = register_post_type(
-			$id,
-			[
-				'labels' => $labels,
-				'public' => true,
-				'menu_icon' => 'dashicons-heart',
-				'supports' => [ 'title', 'editor', 'custom-fields' ],
-				'has_archive' => true,
-				'rewrite' => [ 'slug' => $slug ],
-				'show_in_rest' => true,
-				'template' => $post_type_config->get_block_template(),
-			],
-		);
+		$args = [
+			'labels' => $labels,
+			'public' => true,
+			'menu_icon' => 'dashicons-heart',
+			'supports' => [ 'title', 'editor', 'custom-fields' ],
+			'has_archive' => true,
+			'rewrite' => [ 'slug' => $slug ],
+			'show_in_menu' => AdminPageDefinitions::ROOT_MENU_SLUG,
+			'show_in_rest' => true,
+			'template' => $post_type_config->get_block_template(),
+		];
+
+		$result = register_post_type( $id, $args );
 
 		if ( $result instanceof WP_Error ) {
 

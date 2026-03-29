@@ -147,4 +147,3 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 		);
 	}
 }
-
