@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers;
 
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
@@ -27,6 +28,7 @@ final class HookDispatcherDefinitionsTest extends FundrikTestCase {
 
 		$this->assertSame(
 			[
+				AdminInitActionHookDispatcher::class,
 				AdminMenuActionHookDispatcher::class,
 				AllowedBlockTypesAllFilterHookDispatcher::class,
 				DeletePostActionHookDispatcher::class,
