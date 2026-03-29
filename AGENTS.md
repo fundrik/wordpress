@@ -27,6 +27,7 @@
 
 - When editing files in this repository, preserve Windows line endings (`CRLF`).
 - Do not add runtime no-op code like `unset( $unused )` only to silence linting for fixed callback signatures; prefer a targeted `phpcs:ignore` with a short reason instead.
+- When a method overrides a parent class method or implements an interface method, add the `#[Override]` attribute.
 
 # Docblock Conventions
 
@@ -39,6 +40,7 @@
 - For port interfaces, use the standard summary wording `Provides the <inbound|outbound> port for ...`.
 - In `@param`, `@return`, and `@throws` descriptions, use short noun phrases or outcome phrases, not full explanatory sentences.
 - Do not start `@param`, `@return`, or `@throws` descriptions with `The`; prefer `Campaign ID.` over `The campaign ID.`.
+- Prefer `ID` over `identifier` in docblocks when referring to concrete IDs or HTML `id` attributes.
 - Keep tag descriptions in sentence case and end them with a period.
 - For booleans in `@return`, prefer `True when ...`.
 - For nullable values, prefer explicit endings such as `..., if configured.` or `..., null otherwise.`.
