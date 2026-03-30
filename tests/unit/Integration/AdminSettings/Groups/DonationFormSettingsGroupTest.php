@@ -37,13 +37,13 @@ final class DonationFormSettingsGroupTest extends WordPressTestCase {
 
 		self::assertCount( 2, $settings );
 		self::assertInstanceOf( DefaultDonationAmountSetting::class, $settings[0] );
-		self::assertSame( DefaultDonationAmountSetting::KEY, $settings[0]->get_key() );
+		self::assertSame( 'default_amount', $settings[0]->get_key() );
 		self::assertSame( 'Default donation amount', $settings[0]->get_label() );
-		self::assertSame( DefaultDonationAmountSetting::DEFAULT_VALUE, $settings[0]->get_default_value() );
+		self::assertSame( 10, $settings[0]->get_default_value() );
 		self::assertInstanceOf( DefaultAmountLabelSetting::class, $settings[1] );
-		self::assertSame( DefaultAmountLabelSetting::KEY, $settings[1]->get_key() );
+		self::assertSame( 'default_amount_label', $settings[1]->get_key() );
 		self::assertSame( 'Default amount label', $settings[1]->get_label() );
-		self::assertSame( DefaultAmountLabelSetting::DEFAULT_VALUE, $settings[1]->get_default_value() );
+		self::assertSame( 'Amount', $settings[1]->get_default_value() );
 	}
 
 	#[Test]

@@ -29,13 +29,25 @@ final class GeneralSettingsGroupTest extends WordPressTestCase {
 	public function it_returns_the_expected_currency_setting(): void {
 
 		$settings = $this->settings->get_settings();
+		$currency_setting = $settings[0];
 
 		self::assertCount( 1, $settings );
 		self::assertInstanceOf( CurrencySetting::class, $settings[0] );
-		self::assertSame( CurrencySetting::KEY, $settings[0]->get_key() );
+		self::assertSame( 'currency', $currency_setting->get_key() );
 		self::assertSame( 'Currency', $settings[0]->get_label() );
-		self::assertSame( 'Use a 3-letter ISO 4217 currency code such as RUB or USD.', $settings[0]->get_description() );
-		self::assertSame( CurrencySetting::DEFAULT_VALUE, $settings[0]->get_default_value() );
+		self::assertSame( 'RUB', $currency_setting->get_default_value() );
+
+		ob_start();
+		$currency_setting->render(
+			[
+				'field_name' => 'fundrik_general_settings[currency]',
+				'input_id' => 'fundrik_general_settings_currency',
+				'value' => 'RUB',
+			]
+		);
+		$output = (string) ob_get_clean();
+
+		self::assertStringContainsString( 'Use a 3-letter ISO 4217 currency code such as RUB or USD.', $output );
 	}
 
 	#[Test]

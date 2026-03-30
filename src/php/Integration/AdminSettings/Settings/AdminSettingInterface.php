@@ -32,15 +32,6 @@ interface AdminSettingInterface {
 	public function get_label(): string;
 
 	/**
-	 * Returns the description displayed below the setting control.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string Setting description.
-	 */
-	public function get_description(): string;
-
-	/**
 	 * Returns the default value for the setting.
 	 *
 	 * @since 1.0.0
@@ -50,22 +41,15 @@ interface AdminSettingInterface {
 	public function get_default_value(): bool|float|int|string|null;
 
 	/**
-	 * Returns the validation error message for the setting.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string Validation error message.
-	 */
-	public function get_validation_error_message(): string;
-
-	/**
 	 * Normalizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return bool|float|int|string|null Normalized setting value, null otherwise.
+	 * @return bool|float|int|string|null Normalized setting value.
+	 *
+	 * @throws \InvalidArgumentException When the value is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -78,7 +62,9 @@ interface AdminSettingInterface {
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return bool|float|int|string|null Sanitized setting value, null otherwise.
+	 * @return bool|float|int|string|null Sanitized setting value.
+	 *
+	 * @throws \InvalidArgumentException When the value is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -89,11 +75,13 @@ interface AdminSettingInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array{
+	 * @param array<string, bool|float|int|string|null> $args Rendering arguments.
+	 *
+	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
 	 *     value: bool|float|int|string|null
-	 * } $args Rendering arguments.
+	 * } $args
 	 */
 	public function render( array $args ): void;
 }

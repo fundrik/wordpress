@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
 
+use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use InvalidArgumentException;
 use Override;
 
 /**
@@ -16,9 +18,9 @@ use Override;
  */
 final readonly class DefaultDonationAmountSetting implements AdminSettingInterface {
 
-	public const string KEY = 'default_amount';
+	private const string KEY = 'default_amount';
 
-	public const int DEFAULT_VALUE = 10;
+	private const int DEFAULT_VALUE = 10;
 
 	/**
 	 * Constructor.
@@ -59,19 +61,6 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	}
 
 	/**
-	 * Returns the description displayed below the setting control.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string Setting description.
-	 */
-	#[Override]
-	public function get_description(): string {
-
-		return __( 'Used when the donation form block does not define its own default amount.', 'fundrik' );
-	}
-
-	/**
 	 * Returns the default value for the setting.
 	 *
 	 * @since 1.0.0
@@ -85,31 +74,20 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	}
 
 	/**
-	 * Returns the validation error message for the setting.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string Validation error message.
-	 */
-	#[Override]
-	public function get_validation_error_message(): string {
-
-		return __( 'Default donation amount must be a positive integer.', 'fundrik' );
-	}
-
-	/**
 	 * Normalizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int|null Normalized setting value, null otherwise.
+	 * @return int Normalized setting value.
+	 *
+	 * @throws InvalidArgumentException When the value is not a positive integer.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	#[Override]
-	public function normalize_value( mixed $value ): ?int {
+	public function normalize_value( mixed $value ): int {
 
 		return $this->parse_default_donation_amount( $value );
 	}
@@ -121,12 +99,14 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int|null Sanitized setting value, null otherwise.
+	 * @return int Sanitized setting value.
+	 *
+	 * @throws InvalidArgumentException When the value is not a positive integer.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	#[Override]
-	public function sanitize_value( mixed $value ): ?int {
+	public function sanitize_value( mixed $value ): int {
 
 		return $this->parse_default_donation_amount( $value );
 	}
@@ -136,13 +116,13 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array $args Rendering arguments.
+	 * @param array<string, bool|float|int|string|null> $args Rendering arguments.
 	 *
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
 	 *     value: bool|float|int|string|null
-	 * } $args Rendering arguments.
+	 * } $args
 	 */
 	#[Override]
 	public function render( array $args ): void {
@@ -150,13 +130,15 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 		$this->field_renderer->render_number_field(
 			$args['field_name'],
 			$args['input_id'],
-			is_int( $args['value'] ) ? $args['value'] : 0,
-			1,
-			null,
-			1,
+			$args['value'],
+			min: 1,
+			step: 1,
 		);
 
-		echo '<p class="description">' . esc_html( $this->get_description() ) . '</p>';
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'Used when the donation form block does not define its own default amount.', 'fundrik' ),
+		);
 	}
 
 	/**
@@ -166,26 +148,22 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	 *
 	 * @param mixed $value Amount candidate.
 	 *
-	 * @return int|null Positive integer amount, null otherwise.
+	 * @return int Positive integer amount.
+	 *
+	 * @throws InvalidArgumentException When the value is not a positive integer.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function parse_default_donation_amount( mixed $value ): ?int {
+	private function parse_default_donation_amount( mixed $value ): int {
 
-		$default_amount = filter_var(
-			$value,
-			FILTER_VALIDATE_INT,
-			[
-				'options' => [
-					'min_range' => 1,
-				],
-			],
-		);
+		$default_amount = TypeCaster::to_int( $value );
 
-		if ( $default_amount !== false ) {
+		if ( $default_amount > 0 ) {
 			return $default_amount;
 		}
 
-		return null;
+		throw new InvalidArgumentException(
+			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
+		);
 	}
 }
