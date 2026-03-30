@@ -8,7 +8,6 @@ use ArrayObject;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\SettingsAdminPage;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsDefinitions;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,7 +16,6 @@ use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( SettingsAdminPage::class )]
 #[UsesClass( AdminPageDefinitions::class )]
-#[UsesClass( AdminSettingsDefinitions::class )]
 final class SettingsAdminPageTest extends WordPressTestCase {
 
 	private SettingsAdminPage $admin_page;
@@ -79,7 +77,7 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 
 		Functions\expect( 'settings_fields' )
 			->once()
-			->with( AdminSettingsDefinitions::OPTION_GROUP )
+			->with( AdminPageDefinitions::SETTINGS_PAGE_ID )
 			->andReturnUsing(
 				static function ( string $option_group ): void {
 					echo '<input type="hidden" name="option_page" value="' . esc_attr( $option_group ) . '" />';

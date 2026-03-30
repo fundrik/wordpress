@@ -6,7 +6,6 @@ namespace Fundrik\WordPress\Integration\AdminPages\Pages;
 
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsDefinitions;
 use Override;
 
 /**
@@ -61,7 +60,7 @@ final readonly class SettingsAdminPage implements AdminPageInterface {
 			<?php settings_errors(); ?>
 			<form action="options.php" method="post">
 				<?php
-				settings_fields( AdminSettingsDefinitions::OPTION_GROUP );
+				settings_fields( AdminPageDefinitions::SETTINGS_PAGE_ID );
 				do_settings_sections( AdminPageDefinitions::ROOT_MENU_SLUG );
 				submit_button();
 				?>

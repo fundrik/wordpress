@@ -17,6 +17,8 @@ final readonly class AdminPageDefinitions {
 
 	public const string ROOT_MENU_SLUG = 'fundrik';
 
+	public const string SETTINGS_PAGE_ID = 'fundrik_settings';
+
 	/**
 	 * Returns the configured admin page classes.
 	 *
