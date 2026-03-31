@@ -16,13 +16,13 @@ use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 interface AdminSettingsGroupInterface {
 
 	/**
-	 * Returns the WordPress option name for the settings group.
+	 * Returns the settings group ID.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Settings option name.
+	 * @return string Group ID.
 	 */
-	public function get_option_name(): string;
+	public function get_id(): string;
 
 	/**
 	 * Returns the settings section title.

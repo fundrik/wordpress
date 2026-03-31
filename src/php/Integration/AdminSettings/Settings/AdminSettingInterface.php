@@ -14,13 +14,13 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
 interface AdminSettingInterface {
 
 	/**
-	 * Returns the settings array key.
+	 * Returns the setting ID.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Settings key.
+	 * @return string Setting ID.
 	 */
-	public function get_key(): string;
+	public function get_id(): string;
 
 	/**
 	 * Returns the label displayed for the setting.

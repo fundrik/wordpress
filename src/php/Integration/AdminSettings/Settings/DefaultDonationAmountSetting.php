@@ -18,7 +18,7 @@ use Override;
  */
 final readonly class DefaultDonationAmountSetting implements AdminSettingInterface {
 
-	private const string KEY = 'default_amount';
+	private const string ID = 'default_amount';
 
 	private const int DEFAULT_VALUE = 10;
 
@@ -35,16 +35,16 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	}
 
 	/**
-	 * Returns the settings array key.
+	 * Returns the setting ID.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Settings key.
+	 * @return string Setting ID.
 	 */
 	#[Override]
-	public function get_key(): string {
+	public function get_id(): string {
 
-		return self::KEY;
+		return self::ID;
 	}
 
 	/**

@@ -18,7 +18,7 @@ use Override;
  */
 final readonly class CurrencySetting implements AdminSettingInterface {
 
-	private const string KEY = 'currency';
+	private const string ID = 'currency';
 
 	private const string DEFAULT_VALUE = 'RUB';
 
@@ -35,16 +35,16 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	}
 
 	/**
-	 * Returns the settings array key.
+	 * Returns the setting ID.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Settings key.
+	 * @return string Setting ID.
 	 */
 	#[Override]
-	public function get_key(): string {
+	public function get_id(): string {
 
-		return self::KEY;
+		return self::ID;
 	}
 
 	/**

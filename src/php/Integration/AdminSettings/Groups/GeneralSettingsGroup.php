@@ -18,7 +18,7 @@ use Override;
  */
 final readonly class GeneralSettingsGroup implements AdminSettingsGroupInterface {
 
-	private const string OPTION_NAME = 'fundrik_general_settings';
+	private const string ID = 'fundrik_general_settings';
 
 	/**
 	 * Constructor.
@@ -33,16 +33,16 @@ final readonly class GeneralSettingsGroup implements AdminSettingsGroupInterface
 	}
 
 	/**
-	 * Returns the WordPress option name for the group.
+	 * Returns the group ID.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Settings option name.
+	 * @return string Group ID.
 	 */
 	#[Override]
-	public function get_option_name(): string {
+	public function get_id(): string {
 
-		return self::OPTION_NAME;
+		return self::ID;
 	}
 
 	/**
