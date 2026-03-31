@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
+namespace Fundrik\WordPress\Integration\AdminSettings\Settings\General;
 
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use InvalidArgumentException;
 use Override;
 
@@ -74,25 +75,6 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	}
 
 	/**
-	 * Normalizes the setting value without side effects.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Raw setting value.
-	 *
-	 * @return string Normalized setting value.
-	 *
-	 * @throws InvalidArgumentException When the value is not a valid currency code.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	#[Override]
-	public function normalize_value( mixed $value ): string {
-
-		return $this->parse_currency( $value );
-	}
-
-	/**
 	 * Sanitizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
@@ -108,7 +90,15 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	#[Override]
 	public function sanitize_value( mixed $value ): string {
 
-		return $this->parse_currency( $value );
+		$currency = strtoupper( trim( TypeCaster::to_string( $value ) ) );
+
+		if ( preg_match( '/^[A-Z]{3}$/', $currency ) === 1 ) {
+			return $currency;
+		}
+
+		throw new InvalidArgumentException(
+			sprintf( 'Currency must be a 3-letter ISO 4217 code. Given: %s.', $value ),
+		);
 	}
 
 	/**
@@ -140,29 +130,4 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 		);
 	}
 
-	/**
-	 * Parses a currency code.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Currency candidate.
-	 *
-	 * @return string Normalized currency code.
-	 *
-	 * @throws InvalidArgumentException When the value is not a valid currency code.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function parse_currency( mixed $value ): string {
-
-		$currency = strtoupper( trim( TypeCaster::to_string( $value ) ) );
-
-		if ( preg_match( '/^[A-Z]{3}$/', $currency ) === 1 ) {
-			return $currency;
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Currency must be a 3-letter ISO 4217 code. Given: %s.', $value ),
-		);
-	}
 }

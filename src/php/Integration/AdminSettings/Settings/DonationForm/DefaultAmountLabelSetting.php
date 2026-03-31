@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
+namespace Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm;
 
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use InvalidArgumentException;
 use Override;
 
@@ -74,25 +75,6 @@ final readonly class DefaultAmountLabelSetting implements AdminSettingInterface 
 	}
 
 	/**
-	 * Normalizes the setting value without side effects.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Raw setting value.
-	 *
-	 * @return string Normalized setting value.
-	 *
-	 * @throws InvalidArgumentException When the value is empty.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	#[Override]
-	public function normalize_value( mixed $value ): string {
-
-		return $this->parse_default_amount_label( $value );
-	}
-
-	/**
 	 * Sanitizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
@@ -108,7 +90,15 @@ final readonly class DefaultAmountLabelSetting implements AdminSettingInterface 
 	#[Override]
 	public function sanitize_value( mixed $value ): string {
 
-		return $this->parse_default_amount_label( $value );
+		$default_amount_label = trim( TypeCaster::to_string( $value ) );
+
+		if ( $default_amount_label !== '' ) {
+			return $default_amount_label;
+		}
+
+		throw new InvalidArgumentException(
+			sprintf( 'Default amount label must not be empty. Given: %s.', $value ),
+		);
 	}
 
 	/**
@@ -135,29 +125,4 @@ final readonly class DefaultAmountLabelSetting implements AdminSettingInterface 
 		);
 	}
 
-	/**
-	 * Parses a non-empty default amount label.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Amount label candidate.
-	 *
-	 * @return string Amount label.
-	 *
-	 * @throws InvalidArgumentException When the value is empty.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function parse_default_amount_label( mixed $value ): string {
-
-		$default_amount_label = trim( TypeCaster::to_string( $value ) );
-
-		if ( $default_amount_label !== '' ) {
-			return $default_amount_label;
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Default amount label must not be empty. Given: %s.', $value ),
-		);
-	}
 }

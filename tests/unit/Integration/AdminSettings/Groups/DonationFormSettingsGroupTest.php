@@ -6,8 +6,8 @@ namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultAmountLabelSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultDonationAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultAmountLabelSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultDonationAmountSetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -37,11 +37,11 @@ final class DonationFormSettingsGroupTest extends WordPressTestCase {
 
 		self::assertCount( 2, $settings );
 		self::assertInstanceOf( DefaultDonationAmountSetting::class, $settings[0] );
-		self::assertSame( 'default_amount', $settings[0]->get_key() );
+		self::assertSame( 'default_amount', $settings[0]->get_id() );
 		self::assertSame( 'Default donation amount', $settings[0]->get_label() );
 		self::assertSame( 10, $settings[0]->get_default_value() );
 		self::assertInstanceOf( DefaultAmountLabelSetting::class, $settings[1] );
-		self::assertSame( 'default_amount_label', $settings[1]->get_key() );
+		self::assertSame( 'default_amount_label', $settings[1]->get_id() );
 		self::assertSame( 'Default amount label', $settings[1]->get_label() );
 		self::assertSame( 'Amount', $settings[1]->get_default_value() );
 	}

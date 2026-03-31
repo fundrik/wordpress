@@ -41,21 +41,6 @@ interface AdminSettingInterface {
 	public function get_default_value(): bool|float|int|string|null;
 
 	/**
-	 * Normalizes the setting value without side effects.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Raw setting value.
-	 *
-	 * @return bool|float|int|string|null Normalized setting value.
-	 *
-	 * @throws \InvalidArgumentException When the value is invalid.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	public function normalize_value( mixed $value ): bool|float|int|string|null;
-
-	/**
 	 * Sanitizes the setting value without side effects.
 	 *
 	 * @since 1.0.0

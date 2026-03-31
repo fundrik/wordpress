@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\CurrencySetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Override;
 
 /**
@@ -18,7 +18,7 @@ use Override;
  */
 final readonly class GeneralSettingsGroup implements AdminSettingsGroupInterface {
 
-	private const string ID = 'fundrik_general_settings';
+	private const string ID = 'general';
 
 	/**
 	 * Constructor.

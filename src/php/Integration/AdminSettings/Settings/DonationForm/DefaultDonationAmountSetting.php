@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
+namespace Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm;
 
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use InvalidArgumentException;
 use Override;
 
@@ -74,25 +75,6 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	}
 
 	/**
-	 * Normalizes the setting value without side effects.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Raw setting value.
-	 *
-	 * @return int Normalized setting value.
-	 *
-	 * @throws InvalidArgumentException When the value is not a positive integer.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	#[Override]
-	public function normalize_value( mixed $value ): int {
-
-		return $this->parse_default_donation_amount( $value );
-	}
-
-	/**
 	 * Sanitizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
@@ -108,7 +90,15 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	#[Override]
 	public function sanitize_value( mixed $value ): int {
 
-		return $this->parse_default_donation_amount( $value );
+		$default_amount = TypeCaster::to_int( $value );
+
+		if ( $default_amount > 0 ) {
+			return $default_amount;
+		}
+
+		throw new InvalidArgumentException(
+			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
+		);
 	}
 
 	/**
@@ -141,29 +131,4 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 		);
 	}
 
-	/**
-	 * Parses a positive integer default donation amount.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Amount candidate.
-	 *
-	 * @return int Positive integer amount.
-	 *
-	 * @throws InvalidArgumentException When the value is not a positive integer.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function parse_default_donation_amount( mixed $value ): int {
-
-		$default_amount = TypeCaster::to_int( $value );
-
-		if ( $default_amount > 0 ) {
-			return $default_amount;
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
-		);
-	}
 }

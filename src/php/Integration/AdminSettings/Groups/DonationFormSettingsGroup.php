@@ -6,8 +6,8 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultAmountLabelSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultDonationAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultAmountLabelSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultDonationAmountSetting;
 use Override;
 
 /**
@@ -19,7 +19,7 @@ use Override;
  */
 final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInterface {
 
-	private const string ID = 'fundrik_donation_form_settings';
+	private const string ID = 'donation_form';
 
 	/**
 	 * Constructor.

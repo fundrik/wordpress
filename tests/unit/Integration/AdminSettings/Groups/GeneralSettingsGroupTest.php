@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\CurrencySetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,15 +33,15 @@ final class GeneralSettingsGroupTest extends WordPressTestCase {
 
 		self::assertCount( 1, $settings );
 		self::assertInstanceOf( CurrencySetting::class, $settings[0] );
-		self::assertSame( 'currency', $currency_setting->get_key() );
+		self::assertSame( 'currency', $currency_setting->get_id() );
 		self::assertSame( 'Currency', $settings[0]->get_label() );
 		self::assertSame( 'RUB', $currency_setting->get_default_value() );
 
 		ob_start();
 		$currency_setting->render(
 			[
-				'field_name' => 'fundrik_general_settings[currency]',
-				'input_id' => 'fundrik_general_settings_currency',
+				'field_name' => 'fundrik_general_currency_setting',
+				'input_id' => 'fundrik_general_currency_setting',
 				'value' => 'RUB',
 			]
 		);
