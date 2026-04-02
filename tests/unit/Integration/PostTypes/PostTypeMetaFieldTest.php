@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,16 +16,16 @@ final class PostTypeMetaFieldTest extends FundrikTestCase {
 	#[Test]
 	public function constructor_sets_type_and_default(): void {
 
-		$attribute = new PostTypeMetaField( PostTypeMetaFieldType::Boolean, true );
+		$attribute = new PostTypeMetaField( WpSchemaType::Boolean, true );
 
-		self::assertSame( PostTypeMetaFieldType::Boolean, $attribute->type );
+		self::assertSame( WpSchemaType::Boolean, $attribute->type );
 		self::assertTrue( $attribute->default );
 	}
 
 	#[Test]
 	public function to_array_returns_type_only_when_default_is_null(): void {
 
-		$attribute = new PostTypeMetaField( PostTypeMetaFieldType::Number );
+		$attribute = new PostTypeMetaField( WpSchemaType::Number );
 
 		self::assertSame(
 			[
@@ -38,7 +38,7 @@ final class PostTypeMetaFieldTest extends FundrikTestCase {
 	#[Test]
 	public function to_array_includes_default_when_provided(): void {
 
-		$attribute = new PostTypeMetaField( PostTypeMetaFieldType::Boolean, true );
+		$attribute = new PostTypeMetaField( WpSchemaType::Boolean, true );
 
 		self::assertSame(
 			[

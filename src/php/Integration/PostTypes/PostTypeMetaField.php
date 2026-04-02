@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\PostTypes;
 
 use Attribute;
+use Fundrik\WordPress\Integration\WpSchemaType;
 
 /**
  * Declares a post meta field associated with a post type config constant.
@@ -25,11 +26,11 @@ final readonly class PostTypeMetaField {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param PostTypeMetaFieldType $type The value type of the meta field.
-	 * @param int|string|bool|null $default Optional default value for the meta field.
+	 * @param WpSchemaType $type Value type.
+	 * @param int|string|bool|null $default Optional default value.
 	 */
 	public function __construct(
-		public PostTypeMetaFieldType $type,
+		public WpSchemaType $type,
 		// phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound
 		public int|string|bool|null $default = null,
 	) {}
@@ -42,7 +43,7 @@ final readonly class PostTypeMetaField {
 	 * @return array{
 	 *   type: string,
 	 *   default?: int|string|bool
-	 * } The key-value representation of the meta field configuration.
+	 * } Key-value representation.
 	 */
 	public function to_array(): array {
 

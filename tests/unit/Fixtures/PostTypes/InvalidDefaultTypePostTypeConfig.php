@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Fixtures\PostTypes;
 
+use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
 
 final class InvalidDefaultTypePostTypeConfig implements PostTypeConfigInterface {
 
-	#[PostTypeMetaField( type: PostTypeMetaFieldType::Integer, default: true )]
+	#[PostTypeMetaField( type: WpSchemaType::Integer, default: true )]
 	public const string META_BAD_DEFAULT = 'invalid_default';
 
 	public function get_id(): string {

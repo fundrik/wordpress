@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldType;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -111,7 +111,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_ACCEPTS_DONATIONS',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => PostTypeMetaFieldType::Boolean,
+				'type' => WpSchemaType::Boolean,
 				'default' => true,
 			],
 		);
@@ -121,7 +121,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_HAS_TARGET',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => PostTypeMetaFieldType::Boolean,
+				'type' => WpSchemaType::Boolean,
 				'default' => false,
 			],
 		);
@@ -131,7 +131,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_TARGET_AMOUNT',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => PostTypeMetaFieldType::Integer,
+				'type' => WpSchemaType::Integer,
 				'default' => null,
 			],
 		);
@@ -141,7 +141,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			constant_name: 'META_TARGET_CURRENCY',
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
-				'type' => PostTypeMetaFieldType::String,
+				'type' => WpSchemaType::String,
 				'default' => 'RUB',
 			],
 		);

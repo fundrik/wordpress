@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Integration\RestApi\Routes;
 
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use Override;
 use WP_REST_Server;
 
@@ -75,17 +76,17 @@ final readonly class DonationsRestRoute implements RestRouteInterface {
 				'args' => [
 					'donation_id' => [
 						'required' => true,
-						'type' => 'string',
+						'type' => WpSchemaType::String->value,
 						'format' => 'uuid',
 					],
 					'campaign_id' => [
 						'required' => true,
-						'type' => 'integer',
+						'type' => WpSchemaType::Integer->value,
 						'minimum' => 1,
 					],
 					'amount' => [
 						'required' => true,
-						'type' => 'integer',
+						'type' => WpSchemaType::Integer->value,
 						'minimum' => 1,
 					],
 				],
