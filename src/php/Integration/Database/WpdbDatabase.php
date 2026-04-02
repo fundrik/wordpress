@@ -180,6 +180,41 @@ final readonly class WpdbDatabase implements DatabasePort {
 	}
 
 	/**
+	 * Determines whether the table exists.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table Table name.
+	 *
+	 * @return bool True if the table exists.
+	 *
+	 * @throws WpdbDatabaseException When the query fails.
+	 */
+	#[Override]
+	public function table_exists( string $table ): bool {
+
+		$table = $this->qualify_table_name( $table );
+		$sql = 'SHOW TABLES LIKE %s';
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$query = $this->wpdb->prepare( $sql, $table );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$exists = $this->wpdb->get_var( $query );
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to check table existence for table "%s".',
+					$table,
+				),
+			);
+		}
+
+		return $exists !== null;
+	}
+
+	/**
 	 * Determines whether the table contains a row with the given ID.
 	 *
 	 * @since 1.0.0

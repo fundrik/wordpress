@@ -7,8 +7,11 @@ namespace Fundrik\WordPress\Infrastructure\Migrations;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StorageExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StorageNotFoundExceptionInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use InvalidArgumentException;
 use Override;
 
 /**
@@ -22,7 +25,12 @@ use Override;
  */
 final readonly class MigrationRunner implements MigrationRunnerPort {
 
+	private const string INITIAL_DB_VERSION = '0000_00_00_00';
 	private const string OPTION_KEY = 'fundrik_db_version';
+	private const array PLUGIN_TABLES = [
+		'fundrik_campaigns',
+		'fundrik_donations',
+	];
 
 	/**
 	 * The configured migrations.
@@ -62,7 +70,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	#[Override]
 	public function migrate(): void {
 
-		$from_db_version = $this->get_current_db_version();
+		$from_db_version = $this->resolve_starting_db_version();
 		$target_db_version = $this->get_target_db_version();
 
 		if ( ! $this->should_migrate( $from_db_version, $target_db_version ) ) {
@@ -107,7 +115,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 */
 	private function get_target_db_version(): string {
 
-		$target_db_version = '0000_00_00_00';
+		$target_db_version = self::INITIAL_DB_VERSION;
 
 		foreach ( $this->migrations as $migration ) {
 
@@ -138,6 +146,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 		return version_compare( $target, $current, '>' );
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Applies the given migration when its version is newer than the current version.
 	 *
@@ -170,13 +179,16 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 			throw $e;
 		}
 
-		if ( ! $this->update_current_db_version( $version ) ) {
+		try {
+			$this->update_current_db_version( $version );
+		} catch ( StorageExceptionInterface $e ) {
 			$this->logger->log_db_version_update_failed( $migration::class, $version );
 			throw new MigrationException(
 				sprintf(
 					'Migration "%s" was applied, but updating stored DB version failed.',
 					$version,
 				),
+				previous: $e,
 			);
 		}
 
@@ -184,6 +196,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 
 		return true;
 	}
+	// phpcs:enable
 
 	/**
 	 * Builds the migrations map sorted by version.
@@ -216,15 +229,51 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	}
 
 	/**
-	 * Reads the current schema version from storage.
+	 * Resolves the starting schema version for migration decisions.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string The stored DB version.
+	 * @return string Starting DB version.
+	 *
+	 * @throws MigrationException When resolving the starting DB version fails.
 	 */
-	private function get_current_db_version(): string {
+	private function resolve_starting_db_version(): string {
 
-		return TypeCaster::to_string( $this->storage->get( self::OPTION_KEY, '0000_00_00_00' ) );
+		try {
+			return TypeCaster::to_string( $this->storage->get( self::OPTION_KEY ) );
+		} catch ( StorageNotFoundExceptionInterface $e ) {
+
+			if ( $this->is_fresh_install() ) {
+				return self::INITIAL_DB_VERSION;
+			}
+
+			throw new MigrationException( 'Failed to resolve starting database version.', previous: $e );
+		} catch ( InvalidArgumentException | StorageExceptionInterface $e ) {
+			throw new MigrationException( 'Failed to resolve starting database version.', previous: $e );
+		}
+	}
+
+	/**
+	 * Checks whether the plugin schema is absent and migrations have not run yet.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when this is a fresh install.
+	 *
+	 * @throws MigrationException When determining the install state fails.
+	 */
+	private function is_fresh_install(): bool {
+
+		[ $campaigns_table, $donations_table ] = self::PLUGIN_TABLES;
+
+		try {
+			$has_campaigns_table = $this->database->table_exists( $campaigns_table );
+			$has_donations_table = $this->database->table_exists( $donations_table );
+		} catch ( DatabaseExceptionInterface $e ) {
+			throw new MigrationException( 'Failed to determine whether this is a fresh install.', previous: $e );
+		}
+
+		return ! $has_campaigns_table && ! $has_donations_table;
 	}
 
 	/**
@@ -253,10 +302,10 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 *
 	 * @param string $version Provides the version to store.
 	 *
-	 * @return bool Whether the version was stored.
+	 * @throws StorageExceptionInterface When writing the version fails.
 	 */
-	private function update_current_db_version( string $version ): bool {
+	private function update_current_db_version( string $version ): void {
 
-		return $this->storage->set( self::OPTION_KEY, $version );
+		$this->storage->set( self::OPTION_KEY, $version );
 	}
 }

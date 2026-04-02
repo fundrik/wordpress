@@ -9,9 +9,11 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorageException;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorageNotFoundException;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\DuplicateVersionMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\FailingMigration;
 use Fundrik\WordPress\Tests\Fixtures\Migrations\NewMigration1;
@@ -63,7 +65,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '2400_01_12_01' );
 
 		$this->database->shouldNotReceive( 'get_charset_collate' );
@@ -83,13 +85,89 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '2500_01_01_00' );
 
 		$this->database->shouldNotReceive( 'get_charset_collate' );
 		$this->storage->shouldNotReceive( 'set' );
 
 		$runner->migrate();
+	}
+
+	#[Test]
+	public function it_uses_the_initial_version_when_the_stored_db_version_is_missing(): void {
+
+		TestMigrationTrace::reset();
+		$runner = $this->create_runner( new NewMigration1( $this->database ) );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version' )
+			->andThrow( new FakeStorageNotFoundException( 'Missing.' ) );
+
+		$this->database
+			->shouldReceive( 'table_exists' )
+			->once()
+			->with( 'fundrik_campaigns' )
+			->andReturn( false );
+
+		$this->database
+			->shouldReceive( 'table_exists' )
+			->once()
+			->with( 'fundrik_donations' )
+			->andReturn( false );
+
+		$this->database
+			->shouldReceive( 'get_charset_collate' )
+			->once()
+			->andReturn( 'utf8mb4_unicode_ci' );
+
+		$this->storage
+			->shouldReceive( 'set' )
+			->once()
+			->with( 'fundrik_db_version', NewMigration1::version() )
+			->andReturnNull();
+
+		$this->psr_logger
+			->shouldReceive( 'debug' )
+			->once()
+			->with(
+				'Applying migration succeeded.',
+				Mockery::subset(
+					[
+						'service_class' => MigrationRunnerPort::class,
+						'logger_class' => MigrationRunnerLogger::class,
+						'operation' => 'apply_migration',
+						'outcome' => 'applied',
+						'migration_class' => NewMigration1::class,
+						'migration_version' => NewMigration1::version(),
+					],
+				),
+			);
+
+		$this->psr_logger
+			->shouldReceive( 'info' )
+			->once()
+			->with(
+				'Running migrations completed.',
+				Mockery::subset(
+					[
+						'service_class' => MigrationRunnerPort::class,
+						'logger_class' => MigrationRunnerLogger::class,
+						'operation' => 'migrate',
+						'outcome' => 'applied',
+						'applied' => 1,
+						'from_version' => '0000_00_00_00',
+						'to_version' => NewMigration1::version(),
+						'target_version' => NewMigration1::version(),
+					],
+				),
+			);
+
+		$runner->migrate();
+
+		$this->assertSame( [ NewMigration1::class ], TestMigrationTrace::$calls );
 	}
 
 	// ---------------------------------------------------------------------
@@ -111,7 +189,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '2025_06_14_00' );
 
 		$this->database
@@ -123,13 +201,13 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->shouldReceive( 'set' )
 			->once()
 			->with( 'fundrik_db_version', '2400_01_12_00' )
-			->andReturn( true );
+			->andReturnNull();
 
 		$this->storage
 			->shouldReceive( 'set' )
 			->once()
 			->with( 'fundrik_db_version', '2400_01_12_01' )
-			->andReturn( true );
+			->andReturnNull();
 
 		$this->psr_logger
 			->shouldReceive( 'debug' )
@@ -195,7 +273,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '0000_00_00_00' );
 
 		$this->database
@@ -228,6 +306,106 @@ final class MigrationRunnerTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function it_throws_when_the_current_db_version_cannot_be_read(): void {
+
+		$runner = $this->create_runner( new NewMigration1( $this->database ) );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version' )
+			->andThrow( new FakeStorageException( 'Read failed.' ) );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->database->shouldNotReceive( 'table_exists' );
+		$this->storage->shouldNotReceive( 'set' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage( 'Failed to resolve starting database version.' );
+
+		$runner->migrate();
+	}
+
+	#[Test]
+	public function it_throws_when_the_current_db_version_has_an_invalid_type(): void {
+
+		$runner = $this->create_runner( new NewMigration1( $this->database ) );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version' )
+			->andReturn( 123 );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->database->shouldNotReceive( 'table_exists' );
+		$this->storage->shouldNotReceive( 'set' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage( 'Failed to resolve starting database version.' );
+
+		$runner->migrate();
+	}
+
+	#[Test]
+	public function it_throws_when_the_stored_db_version_is_missing_for_a_non_fresh_install(): void {
+
+		$runner = $this->create_runner( new NewMigration1( $this->database ) );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version' )
+			->andThrow( new FakeStorageNotFoundException( 'Missing.' ) );
+
+		$this->database
+			->shouldReceive( 'table_exists' )
+			->once()
+			->with( 'fundrik_campaigns' )
+			->andReturn( false );
+
+		$this->database
+			->shouldReceive( 'table_exists' )
+			->once()
+			->with( 'fundrik_donations' )
+			->andReturn( true );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->storage->shouldNotReceive( 'set' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage( 'Failed to resolve starting database version.' );
+
+		$runner->migrate();
+	}
+
+	#[Test]
+	public function it_throws_when_it_cannot_determine_whether_this_is_a_fresh_install(): void {
+
+		$runner = $this->create_runner( new NewMigration1( $this->database ) );
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_db_version' )
+			->andThrow( new FakeStorageNotFoundException( 'Missing.' ) );
+
+		$this->database
+			->shouldReceive( 'table_exists' )
+			->once()
+			->with( 'fundrik_campaigns' )
+			->andThrow( new FakeDatabaseException( 'Query failed.' ) );
+
+		$this->database->shouldNotReceive( 'get_charset_collate' );
+		$this->storage->shouldNotReceive( 'set' );
+
+		$this->expectException( MigrationException::class );
+		$this->expectExceptionMessage( 'Failed to determine whether this is a fresh install.' );
+
+		$runner->migrate();
+	}
+
+	#[Test]
 	public function it_logs_and_rethrows_when_migration_application_fails(): void {
 
 		$migration_version = FailingMigration::version();
@@ -236,7 +414,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '0000_00_00_00' );
 
 		$this->database
@@ -280,7 +458,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '0000_00_00_00' );
 
 		$this->database
@@ -292,7 +470,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 			->shouldReceive( 'set' )
 			->once()
 			->with( 'fundrik_db_version', $migration_version )
-			->andReturn( false );
+			->andThrow( new FakeStorageException( 'Write failed.' ) );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -330,7 +508,7 @@ final class MigrationRunnerTest extends MockeryTestCase {
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_db_version', '0000_00_00_00' )
+			->with( 'fundrik_db_version' )
 			->andReturn( '0000_00_00_00' );
 
 		$this->database

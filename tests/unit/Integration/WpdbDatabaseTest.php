@@ -338,6 +338,67 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	// ---------------------------------------------------------------------
+	// table_exists()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function table_exists_returns_true_when_table_exists_and_false_when_not(): void {
+
+		$table = 'table';
+		$sql = 'SHOW TABLES LIKE %s';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->twice()
+			->with( $sql, 'wp_table' )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( 'wp_table' );
+
+		self::assertTrue( $this->db->table_exists( $table ) );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( null );
+
+		self::assertFalse( $this->db->table_exists( $table ) );
+	}
+
+	#[Test]
+	public function table_exists_throws_when_query_fails(): void {
+
+		$table = 'table';
+		$sql = 'SHOW TABLES LIKE %s';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, 'wp_table' )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $query )
+			->andReturn( null );
+
+		$this->wpdb->last_error = 'Boom';
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'Failed to check table existence for table "wp_table".' );
+
+		$this->db->table_exists( $table );
+	}
+
+	// ---------------------------------------------------------------------
 	// exists_by_id()
 	// ---------------------------------------------------------------------
 

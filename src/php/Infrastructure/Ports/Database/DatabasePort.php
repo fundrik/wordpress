@@ -56,6 +56,19 @@ interface DatabasePort {
 	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array;
 
 	/**
+	 * Determines whether the table exists.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table Table name.
+	 *
+	 * @return bool True if the table exists.
+	 *
+	 * @throws DatabaseExceptionInterface When the query fails.
+	 */
+	public function table_exists( string $table ): bool;
+
+	/**
 	 * Determines whether the table contains a row with the given ID.
 	 *
 	 * @since 1.0.0
