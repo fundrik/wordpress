@@ -7,13 +7,13 @@ namespace Fundrik\WordPress\Integration\Helpers;
 use Fundrik\Toolbox\TypeCaster;
 
 /**
- * Provides helpers for safely reading WordPress metadata.
+ * Provides typed reading helpers for WordPress metadata.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class Meta {
+final readonly class MetaReader {
 
 	/**
 	 * Returns the post meta value or null when the meta key does not exist.

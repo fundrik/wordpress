@@ -25,7 +25,7 @@ use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
-use Fundrik\WordPress\Integration\Helpers\Meta;
+use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
@@ -70,7 +70,7 @@ use WP_Screen;
 #[UsesClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestAfterInsertCampaignSynchronizer::class )]
 #[UsesClass( RestCampaignSyncData::class )]
-#[UsesClass( Meta::class )]
+#[UsesClass( MetaReader::class )]
 #[UsesClass( PluginUrl::class )]
 #[UsesClass( PostTypeMetaField::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]

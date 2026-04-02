@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Helpers;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Integration\Helpers\Meta;
+use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass( Meta::class )]
-final class MetaTest extends WordPressTestCase {
+#[CoversClass( MetaReader::class )]
+final class MetaReaderTest extends WordPressTestCase {
 
 	// ---------------------------------------------------------------------
 	// get_post_meta_or_null()
@@ -30,7 +30,7 @@ final class MetaTest extends WordPressTestCase {
 
 		Functions\expect( 'get_post_meta' )->never();
 
-		$result = Meta::get_post_meta_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -52,7 +52,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( $stored_value );
 
-		$result = Meta::get_post_meta_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_or_null( $post_id, $meta_key );
 
 		self::assertSame( $stored_value, $result );
 	}
@@ -73,7 +73,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( null );
 
-		$result = Meta::get_post_meta_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -95,7 +95,7 @@ final class MetaTest extends WordPressTestCase {
 
 		Functions\expect( 'get_post_meta' )->never();
 
-		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_bool_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -116,7 +116,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '' );
 
-		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_bool_or_null( $post_id, $meta_key );
 
 		self::assertFalse( $result );
 	}
@@ -137,7 +137,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '1' );
 
-		$result = Meta::get_post_meta_bool_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_bool_or_null( $post_id, $meta_key );
 
 		self::assertTrue( $result );
 	}
@@ -159,7 +159,7 @@ final class MetaTest extends WordPressTestCase {
 
 		Functions\expect( 'get_post_meta' )->never();
 
-		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_int_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -180,7 +180,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '' );
 
-		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_int_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -201,7 +201,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '1500' );
 
-		$result = Meta::get_post_meta_int_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_int_or_null( $post_id, $meta_key );
 
 		self::assertSame( 1500, $result );
 	}
@@ -223,7 +223,7 @@ final class MetaTest extends WordPressTestCase {
 
 		Functions\expect( 'get_post_meta' )->never();
 
-		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_string_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -244,7 +244,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '' );
 
-		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_string_or_null( $post_id, $meta_key );
 
 		self::assertNull( $result );
 	}
@@ -265,7 +265,7 @@ final class MetaTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( 'RUB' );
 
-		$result = Meta::get_post_meta_string_or_null( $post_id, $meta_key );
+		$result = MetaReader::get_post_meta_string_or_null( $post_id, $meta_key );
 
 		self::assertSame( 'RUB', $result );
 	}
