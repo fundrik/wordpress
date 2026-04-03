@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\PostTypes;
 
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldDefinition;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
@@ -19,6 +21,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( PostTypeMetaFieldReader::class )]
 #[UsesClass( PostTypeMetaField::class )]
+#[UsesClass( PostTypeMetaFieldDefinition::class )]
 final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 
 	#[Test]
@@ -27,12 +30,13 @@ final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 		$reader = new PostTypeMetaFieldReader();
 		$config = new AlphaPostTypeConfig();
 
-		self::assertSame(
+		self::assertEquals(
 			[
-				AlphaPostTypeConfig::META_HAS_NESTED => [
-					'type' => 'boolean',
-					'default' => true,
-				],
+				AlphaPostTypeConfig::META_HAS_NESTED => new PostTypeMetaFieldDefinition(
+					AlphaPostTypeConfig::META_HAS_NESTED,
+					WpSchemaType::Boolean,
+					true,
+				),
 			],
 			$reader->get_meta_fields( $config ),
 		);
@@ -117,15 +121,17 @@ final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 		$reader = new PostTypeMetaFieldReader();
 		$config = new StringMetaWithOptionalDefaultPostTypeConfig();
 
-		self::assertSame(
+		self::assertEquals(
 			[
-				StringMetaWithOptionalDefaultPostTypeConfig::META_TARGET_CURRENCY => [
-					'type' => 'string',
-					'default' => 'RUB',
-				],
-				StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET => [
-					'type' => 'boolean',
-				],
+				StringMetaWithOptionalDefaultPostTypeConfig::META_TARGET_CURRENCY => new PostTypeMetaFieldDefinition(
+					StringMetaWithOptionalDefaultPostTypeConfig::META_TARGET_CURRENCY,
+					WpSchemaType::String,
+					'RUB',
+				),
+				StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET => new PostTypeMetaFieldDefinition(
+					StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET,
+					WpSchemaType::Boolean,
+				),
 			],
 			$reader->get_meta_fields( $config ),
 		);

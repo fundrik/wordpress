@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes;
 
-use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
 use ReflectionClass;
 
@@ -25,7 +25,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param PostTypeConfigInterface $post_type_config The post type config.
 	 *
-	 * @return array<string, array{type: string, default?: int|string|bool}> The declared meta fields.
+	 * @return array<string, PostTypeMetaFieldDefinition> Declared meta fields keyed by meta key.
 	 *
 	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
@@ -51,13 +51,13 @@ final readonly class PostTypeMetaFieldReader {
 
 		$field = $this->get_meta_field_by_config_class( $post_type_config_class, $meta_key );
 
-		if ( $field === null || ! array_key_exists( 'default', $field ) ) {
+		if ( $field?->default_value === null ) {
 			return null;
 		}
 
-		$this->validate_meta_field_default_or_fail( $post_type_config_class, $meta_key, $field );
+		$this->validate_meta_field_default_or_fail( $post_type_config_class, $field );
 
-		return $field['default'];
+		return $field->default_value;
 	}
 
 	/**
@@ -67,7 +67,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param string $post_type_config_class The post type config class name.
 	 *
-	 * @return array<string, array{type: string, default?: int|string|bool}> The declared meta fields.
+	 * @return array<string, PostTypeMetaFieldDefinition> Declared meta fields keyed by meta key.
 	 *
 	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
@@ -86,8 +86,9 @@ final readonly class PostTypeMetaFieldReader {
 		foreach ( $reflection->getReflectionConstants() as $constant ) {
 
 			foreach ( $constant->getAttributes( PostTypeMetaField::class ) as $attribute ) {
+				$meta_key = TypeCaster::to_string( $constant->getValue() );
 
-				$fields[ TypeCaster::to_string( $constant->getValue() ) ] = $attribute->newInstance()->to_array();
+				$fields[ $meta_key ] = $attribute->newInstance()->to_definition( $meta_key );
 			}
 		}
 
@@ -106,9 +107,12 @@ final readonly class PostTypeMetaFieldReader {
 	 * @param string $post_type_config_class The post type config class name.
 	 * @param string $meta_key The post meta key.
 	 *
-	 * @return array{type: string, default?: int|string|bool}|null The meta field definition, or null when missing.
+	 * @return PostTypeMetaFieldDefinition|null Meta field definition, or null when missing.
 	 */
-	private function get_meta_field_by_config_class( string $post_type_config_class, string $meta_key ): ?array {
+	private function get_meta_field_by_config_class(
+		string $post_type_config_class,
+		string $meta_key,
+	): ?PostTypeMetaFieldDefinition {
 
 		$fields = $this->get_meta_fields_by_config_class( $post_type_config_class );
 
@@ -121,19 +125,19 @@ final readonly class PostTypeMetaFieldReader {
 	 * @since 1.0.0
 	 *
 	 * @param string $post_type_config_class The post type config class name.
-	 * @param array<string, array{type: string, default?: int|string|bool}> $fields The declared meta fields.
+	 * @param array<string, PostTypeMetaFieldDefinition> $fields Declared meta fields keyed by meta key.
 	 *
 	 * @throws InvalidArgumentException When a default value does not match the declared type.
 	 */
 	private function validate_meta_field_defaults_or_fail( string $post_type_config_class, array $fields ): void {
 
-		foreach ( $fields as $meta_key => $field ) {
+		foreach ( $fields as $field ) {
 
-			if ( ! array_key_exists( 'default', $field ) ) {
+			if ( $field->default_value === null ) {
 				continue;
 			}
 
-			$this->validate_meta_field_default_or_fail( $post_type_config_class, $meta_key, $field );
+			$this->validate_meta_field_default_or_fail( $post_type_config_class, $field );
 		}
 	}
 
@@ -144,28 +148,25 @@ final readonly class PostTypeMetaFieldReader {
 	 * @since 1.0.0
 	 *
 	 * @param string $post_type_config_class The post type config class name.
-	 * @param string $meta_key The post meta key.
-	 * @param array{type: string, default?: int|string|bool} $field The meta field definition.
+	 * @param PostTypeMetaFieldDefinition $field Meta field definition.
 	 *
 	 * @throws InvalidArgumentException When the default value does not match the declared type.
 	 */
 	private function validate_meta_field_default_or_fail(
 		string $post_type_config_class,
-		string $meta_key,
-		array $field,
+		PostTypeMetaFieldDefinition $field,
 	): void {
 
-		$type = TypeCaster::to_string( $field['type'] ?? '' );
-		$default = $field['default'] ?? null;
+		$default = $field->default_value;
 
 		if ( $default === null ) {
 			return;
 		}
 
-		$is_valid = match ( $type ) {
-			WpSchemaType::Boolean->value => is_bool( $default ),
-			WpSchemaType::Integer->value => is_int( $default ),
-			WpSchemaType::String->value => is_string( $default ),
+		$is_valid = match ( $field->type ) {
+			WpSchemaType::Boolean => is_bool( $default ),
+			WpSchemaType::Integer => is_int( $default ),
+			WpSchemaType::String => is_string( $default ),
 			default => false,
 		};
 
@@ -176,9 +177,9 @@ final readonly class PostTypeMetaFieldReader {
 		throw new InvalidArgumentException(
 			sprintf(
 				'Post meta default for "%s" in "%s" must match "%s". Given: %s.',
-				$meta_key,
+				$field->meta_key,
 				$post_type_config_class,
-				$type,
+				$field->type->value,
 				get_debug_type( $default ),
 			),
 		);

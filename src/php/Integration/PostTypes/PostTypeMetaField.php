@@ -10,10 +10,6 @@ use Fundrik\WordPress\Integration\WpSchemaType;
 /**
  * Declares a post meta field associated with a post type config constant.
  *
- * This attribute is applied to class constants that represent post meta keys.
- * It provides type information and an optional default value, used during
- * post type registration.
- *
  * @since 1.0.0
  *
  * @internal
@@ -36,25 +32,16 @@ final readonly class PostTypeMetaField {
 	) {}
 
 	/**
-	 * Converts the attribute into an associative array.
+	 * Creates a declared post meta field definition.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array{
-	 *   type: string,
-	 *   default?: int|string|bool
-	 * } Key-value representation.
+	 * @param string $meta_key Post meta key.
+	 *
+	 * @return PostTypeMetaFieldDefinition Declared meta field definition.
 	 */
-	public function to_array(): array {
+	public function to_definition( string $meta_key ): PostTypeMetaFieldDefinition {
 
-		$result = [
-			'type' => $this->type->value,
-		];
-
-		if ( $this->default !== null ) {
-			$result['default'] = $this->default;
-		}
-
-		return $result;
+		return new PostTypeMetaFieldDefinition( $meta_key, $this->type, $this->default );
 	}
 }

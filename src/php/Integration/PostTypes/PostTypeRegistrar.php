@@ -106,12 +106,12 @@ final readonly class PostTypeRegistrar {
 
 		$post_type_id = $post_type_config->get_id();
 
-		foreach ( $this->meta_reader->get_meta_fields( $post_type_config ) as $meta_key => $args ) {
+		foreach ( $this->meta_reader->get_meta_fields( $post_type_config ) as $field ) {
 
 			$result = register_post_meta(
 				$post_type_id,
-				$meta_key,
-				$args + [
+				$field->meta_key,
+				$field->to_wp_args() + [
 					'show_in_rest' => true,
 					'single' => true,
 				],
@@ -122,7 +122,7 @@ final readonly class PostTypeRegistrar {
 				throw new PostMetaRegistrationException(
 					sprintf(
 						'Failed to register post meta "%s" for post type "%s".',
-						$meta_key,
+						$field->meta_key,
 						$post_type_id,
 					),
 				);
