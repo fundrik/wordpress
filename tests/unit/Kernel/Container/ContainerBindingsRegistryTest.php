@@ -13,15 +13,16 @@ use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Ports\StoragePort;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsDefinitions;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsInterface;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsRegistrar;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupDefinitions;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -39,7 +40,7 @@ use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
 use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
-use Fundrik\WordPress\Integration\WordPressOptionsStorage;
+use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContextualBindingDefinition;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
@@ -137,9 +138,14 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 				'implementation' => AdminPageDefinitions::classes(),
 			],
 			[
-				'consumer' => AdminSettingsRegistrar::class,
-				'dependency' => AdminSettingsInterface::class,
-				'implementation' => AdminSettingsDefinitions::classes(),
+				'consumer' => AdminSettingsReader::class,
+				'dependency' => AdminSettingsGroupInterface::class,
+				'implementation' => AdminSettingsGroupDefinitions::classes(),
+			],
+			[
+				'consumer' => AdminSettingsGroupRegistrar::class,
+				'dependency' => AdminSettingsGroupInterface::class,
+				'implementation' => AdminSettingsGroupDefinitions::classes(),
 			],
 			[
 				'consumer' => RegisterRestApiRoutesBootUnit::class,

@@ -94,7 +94,7 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 			return $response;
 		}
 
-		if ( ! $this->is_validation_error_code( $data['code'] ) ) {
+		if ( ! $this->is_validation_error_code( $data->error_code ) ) {
 			return $response;
 		}
 
@@ -104,9 +104,9 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 				'route' => $request->get_route(),
 				'method' => $request->get_method(),
 				'status' => $response->get_status(),
-				'error_code' => $data['code'],
-				'error_message' => $data['message'],
-				'invalid_params' => $data['invalid_params'],
+				'error_code' => $data->error_code,
+				'error_message' => $data->error_message,
+				'invalid_params' => $data->invalid_params,
 			],
 		);
 
@@ -138,13 +138,11 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 	 *
 	 * @param mixed $response_data REST response data.
 	 *
-	 * @return array<string, mixed>|null Loggable response data, null otherwise.
-	 *
-	 * @phpstan-return array{code: string, message: string|null, invalid_params: list<string>}|null
+	 * @return RestValidationFailure|null Loggable response data, null otherwise.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function extract_response_data( mixed $response_data ): ?array {
+	private function extract_response_data( mixed $response_data ): ?RestValidationFailure {
 
 		if ( ! is_array( $response_data ) ) {
 			return null;
@@ -158,11 +156,11 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 
 		$error_message = $response_data['message'] ?? null;
 
-		return [
-			'code' => $error_code,
-			'message' => is_string( $error_message ) ? $error_message : null,
-			'invalid_params' => $this->extract_invalid_params( $response_data ),
-		];
+		return new RestValidationFailure(
+			$error_code,
+			is_string( $error_message ) ? $error_message : null,
+			$this->extract_invalid_params( $response_data ),
+		);
 	}
 
 	/**

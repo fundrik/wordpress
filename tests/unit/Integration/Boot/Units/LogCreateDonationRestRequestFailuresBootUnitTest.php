@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 use Closure;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailuresBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\RestValidationFailure;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
@@ -25,6 +26,7 @@ use WP_REST_Server;
 #[UsesClass( BootUnitLogger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( RestPostDispatchFilterHookDispatcher::class )]
+#[UsesClass( RestValidationFailure::class )]
 final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTestCase {
 
 	use DispatcherTestHelpers;
