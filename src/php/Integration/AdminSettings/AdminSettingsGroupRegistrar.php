@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Integration\AdminSettings;
 
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use InvalidArgumentException;
 
 /**
@@ -45,255 +46,142 @@ final readonly class AdminSettingsGroupRegistrar {
 
 		foreach ( $this->groups as $group ) {
 
-			$group_id = $group->get_id();
-			$settings = $group->get_settings();
-			$setting_states = $this->get_group_setting_states( $group_id, $settings );
-			$default_settings = $this->get_setting_value_map( $setting_states, 'default_value' );
+			$this->register_section( $group );
 
-			register_setting(
-				AdminPageDefinitions::SETTINGS_PAGE_ID,
-				$group_id,
-				[
-					'type' => 'array',
-					'sanitize_callback' => fn ( mixed $value ): array => $this->filter_settings(
-						$group_id,
-						$setting_states,
-						$value,
-						true,
-					),
-					'default' => $default_settings,
-				],
-			);
+			foreach ( $group->get_settings() as $setting ) {
 
-			add_settings_section(
-				$group_id,
-				$group->get_section_title(),
-				$group->render_section_description( ... ),
-				AdminPageDefinitions::ROOT_MENU_SLUG,
-			);
+				$registration = $this->prepare_setting_registration( $group, $setting );
 
-			foreach ( $setting_states as $setting_state ) {
-
-				$setting = $setting_state['setting'];
-
-				$setting_id = $this->get_setting_id( $group_id, $setting );
-
-				add_settings_field(
-					$setting_id,
-					$setting->get_label(),
-					$setting->render( ... ),
-					AdminPageDefinitions::ROOT_MENU_SLUG,
-					$group_id,
-					[
-						'field_name' => $this->get_setting_name( $group_id, $setting ),
-						'input_id' => $setting_id,
-						'value' => $setting_state['current_value'],
-						'label_for' => $setting_id,
-					],
-				);
+				$this->register_setting_field( $registration );
+				$this->register_setting_option( $registration );
 			}
 		}
 	}
 
 	/**
-	 * Returns the settings state for a group.
+	 * Registers an admin settings section.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param AdminSettingsGroupInterface $group Settings group definition.
-	 *
-	 * @return list<array{
-	 *     setting: AdminSettingInterface,
-	 *     default_value: bool|float|int|string|null,
-	 *     current_value: bool|float|int|string|null
-	 * }> Settings state.
 	 */
-	private function get_group_setting_states( string $group_id, array $settings ): array {
+	private function register_section( AdminSettingsGroupInterface $group ): void {
 
-		$default_settings = $this->get_default_settings( $settings );
-		$current_settings = $this->get_current_settings( $group_id, $settings, $default_settings );
-		$setting_states = [];
-
-		foreach ( $settings as $setting ) {
-
-			$setting_id = $setting->get_id();
-
-			$setting_states[] = [
-				'setting' => $setting,
-				'default_value' => $default_settings[ $setting_id ],
-				'current_value' => $current_settings[ $setting_id ],
-			];
-		}
-
-		return $setting_states;
-	}
-
-	/**
-	 * Returns the current normalized settings values.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $group_id Settings group ID.
-	 * @param list<AdminSettingInterface> $settings Setting definitions.
-	 * @param array<string, bool|float|int|string|null> $default_settings Default settings values.
-	 *
-	 * @return array<string, bool|float|int|string|null> Normalized settings values.
-	 */
-	private function get_current_settings( string $group_id, array $settings, array $default_settings, ): array {
-
-		$setting_states = [];
-
-		foreach ( $settings as $setting ) {
-
-			$setting_id = $setting->get_id();
-
-			$setting_states[] = [
-				'setting' => $setting,
-				'default_value' => $default_settings[ $setting_id ],
-				'current_value' => $default_settings[ $setting_id ],
-			];
-		}
-
-		return $this->filter_settings(
-			$group_id,
-			$setting_states,
-			get_option( $group_id, $default_settings ),
-			false,
+		add_settings_section(
+			$group->get_id(),
+			$group->get_section_title(),
+			$group->render_section_description( ... ),
+			AdminPageDefinitions::ROOT_MENU_SLUG,
 		);
 	}
 
 	/**
-	 * Returns the default settings values for a group.
+	 * Prepares registration data for an admin setting.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<AdminSettingInterface> $settings Setting definitions.
+	 * @param AdminSettingsGroupInterface $group Settings group definition.
+	 * @param AdminSettingInterface $setting Setting definition.
 	 *
-	 * @return array<string, bool|float|int|string|null> Default settings values.
+	 * @return AdminSettingRegistration Prepared registration data.
 	 */
-	private function get_default_settings( array $settings ): array {
+	private function prepare_setting_registration(
+		AdminSettingsGroupInterface $group,
+		AdminSettingInterface $setting,
+	): AdminSettingRegistration {
 
-		$default_settings = [];
+		$group_id = $group->get_id();
+		$option_name = sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
 
-		foreach ( $settings as $setting ) {
-			$default_settings[ $setting->get_id() ] = $setting->get_default_value();
-		}
+		$current_value = OptionReader::get_option_or_default(
+			$option_name,
+			$setting->get_value_type(),
+			$setting->get_default_value(),
+		);
 
-		return $default_settings;
+		return new AdminSettingRegistration(
+			group_id: $group_id,
+			option_name: $option_name,
+			setting: $setting,
+			current_value: $current_value,
+		);
 	}
 
 	/**
-	 * Returns a value map for the given setting states.
+	 * Registers an admin settings field.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<array{
-	 *     setting: AdminSettingInterface,
-	 *     default_value: bool|float|int|string|null,
-	 *     current_value: bool|float|int|string|null
-	 * }> $setting_states Settings state.
-	 * @param 'default_value'|'current_value' $value_key Value key.
-	 *
-	 * @return array<string, bool|float|int|string|null> Value map.
+	 * @param AdminSettingRegistration $registration Prepared registration data.
 	 */
-	private function get_setting_value_map( array $setting_states, string $value_key ): array {
+	private function register_setting_field( AdminSettingRegistration $registration ): void {
 
-		$setting_values = [];
-
-		foreach ( $setting_states as $setting_state ) {
-
-			$setting_values[ $setting_state['setting']->get_id() ] = $setting_state[ $value_key ];
-		}
-
-		return $setting_values;
+		add_settings_field(
+			$registration->option_name,
+			$registration->setting->get_label(),
+			$registration->setting->render( ... ),
+			AdminPageDefinitions::ROOT_MENU_SLUG,
+			$registration->group_id,
+			[
+				'field_name' => $registration->option_name,
+				'input_id' => $registration->option_name,
+				'value' => $registration->current_value,
+				'label_for' => $registration->option_name,
+			],
+		);
 	}
 
 	/**
-	 * Filters raw settings values.
+	 * Registers an admin setting option.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $group_id Settings group ID.
-	 * @param list<array{
-	 *     setting: AdminSettingInterface,
-	 *     default_value: bool|float|int|string|null,
-	 *     current_value: bool|float|int|string|null
-	 * }> $setting_states Settings state.
-	 * @param mixed $value Raw settings value.
-	 * @param bool $register_errors True when invalid values should register settings errors.
+	 * @param AdminSettingRegistration $registration Prepared registration data.
+	 */
+	private function register_setting_option( AdminSettingRegistration $registration ): void {
+
+		register_setting(
+			AdminPageDefinitions::SETTINGS_PAGE_ID,
+			$registration->option_name,
+			[
+				'type' => $registration->setting->get_value_type()->value,
+				'sanitize_callback' => fn ( mixed $value ): int|string => $this->sanitize_registered_setting_value(
+					$registration,
+					$value,
+				),
+				'default' => $registration->setting->get_default_value(),
+			],
+		);
+	}
+
+	/**
+	 * Sanitizes a registered setting value.
 	 *
-	 * @return array<string, bool|float|int|string|null> Filtered settings values.
+	 * @since 1.0.0
+	 *
+	 * @param AdminSettingRegistration $registration Prepared registration data.
+	 * @param mixed $value Raw setting value.
+	 *
+	 * @return int|string Sanitized setting value.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function filter_settings(
-		string $group_id,
-		array $setting_states,
+	private function sanitize_registered_setting_value(
+		AdminSettingRegistration $registration,
 		mixed $value,
-		bool $register_errors,
-	): array {
+	): int|string {
 
-		$raw_settings = is_array( $value ) ? $value : [];
-		$filtered_settings = [];
+		try {
+			return $registration->setting->sanitize_value( $value );
+		} catch ( InvalidArgumentException $exception ) {
+			add_settings_error(
+				$registration->option_name,
+				$registration->option_name . '_invalid',
+				$exception->getMessage(),
+			);
 
-		foreach ( $setting_states as $setting_state ) {
-
-			$setting = $setting_state['setting'];
-			$raw_value = $raw_settings[ $setting->get_id() ] ?? null;
-
-			try {
-				$filtered_value = $register_errors
-					? $setting->sanitize_value( $raw_value )
-					: $setting->normalize_value( $raw_value );
-			} catch ( InvalidArgumentException $exception ) {
-
-				if ( $register_errors ) {
-					add_settings_error(
-						$group_id,
-						$group_id . '_' . $setting->get_id() . '_invalid',
-						$exception->getMessage(),
-					);
-				}
-
-				$filtered_value = $register_errors
-					? $setting_state['current_value']
-					: $setting_state['default_value'];
-			}
-
-			$filtered_settings[ $setting->get_id() ] = $filtered_value;
+			return $registration->current_value;
 		}
-
-		return $filtered_settings;
-	}
-
-	/**
-	 * Returns the HTML form field name for a setting.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $group_id Settings group ID.
-	 * @param AdminSettingInterface $setting Setting definition.
-	 *
-	 * @return string HTML form field name.
-	 */
-	private function get_setting_name( string $group_id, AdminSettingInterface $setting, ): string {
-
-		return sprintf( '%s[%s]', $group_id, $setting->get_id() );
-	}
-
-	/**
-	 * Returns the generated setting ID for a settings key.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $group_id Settings group ID.
-	 * @param AdminSettingInterface $setting Setting definition.
-	 *
-	 * @return string Generated setting ID.
-	 */
-	private function get_setting_id( string $group_id, AdminSettingInterface $setting, ): string {
-
-		return sprintf( '%s_%s', $group_id, $setting->get_id() );
 	}
 
 	/**

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
+use Brain\Monkey\Functions;
 use Closure;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsInterface;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsRegistrar;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\InitializeFundrikAdminBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
@@ -28,7 +29,7 @@ use RuntimeException;
 #[UsesClass( AdminInitActionHookDispatcher::class )]
 #[UsesClass( AdminMenuActionHookDispatcher::class )]
 #[UsesClass( AdminPageRegistrar::class )]
-#[UsesClass( AdminSettingsRegistrar::class )]
+#[UsesClass( AdminSettingsGroupRegistrar::class )]
 #[UsesClass( BootUnitLogger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
@@ -74,23 +75,31 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 
 		$this->expect_failure_message_never();
 
+		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
+		Functions\expect( 'add_settings_field' )->never();
+		Functions\expect( 'register_setting' )->never();
+
 		$first_page = Mockery::mock( AdminPageInterface::class );
 		$first_page->shouldReceive( 'register' )->once()->ordered();
 
 		$second_page = Mockery::mock( AdminPageInterface::class );
 		$second_page->shouldReceive( 'register' )->once()->ordered();
 
-		$first_settings = Mockery::mock( AdminSettingsInterface::class );
-		$first_settings->shouldReceive( 'register' )->once()->ordered();
+		$first_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$first_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'general' );
+		$first_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
+		$first_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
 
-		$second_settings = Mockery::mock( AdminSettingsInterface::class );
-		$second_settings->shouldReceive( 'register' )->once()->ordered();
+		$second_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$second_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'donation_form' );
+		$second_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Donation Form' );
+		$second_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
 
 		$boot_unit = new InitializeFundrikAdminBootUnit(
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsRegistrar( $first_settings, $second_settings ),
+			new AdminSettingsGroupRegistrar( $first_settings_group, $second_settings_group ),
 			$this->logger,
 		);
 
@@ -147,7 +156,7 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsRegistrar(),
+			new AdminSettingsGroupRegistrar(),
 			$this->logger,
 		);
 
@@ -161,14 +170,21 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 
 		$this->expect_failure_message_once();
 
-		$first_settings = Mockery::mock( AdminSettingsInterface::class );
-		$first_settings->shouldReceive( 'register' )->once()->ordered();
+		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
+		Functions\expect( 'add_settings_field' )->never();
+		Functions\expect( 'register_setting' )->never();
 
-		$second_settings = Mockery::mock( AdminSettingsInterface::class );
-		$second_settings
-			->shouldReceive( 'register' )
+		$first_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$first_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'general' );
+		$first_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
+		$first_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
+
+		$second_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$second_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'donation_form' );
+		$second_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Donation Form' );
+		$second_settings_group
+			->shouldReceive( 'get_settings' )
 			->once()
-			->ordered()
 			->andThrow( new RuntimeException( 'Boom' ) );
 
 		$this->psr_logger
@@ -203,7 +219,7 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar(),
-			new AdminSettingsRegistrar( $first_settings, $second_settings ),
+			new AdminSettingsGroupRegistrar( $first_settings_group, $second_settings_group ),
 			$this->logger,
 		);
 

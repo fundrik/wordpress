@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot\Units;
 
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsRegistrar;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
@@ -30,14 +30,14 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 	 * @param AdminMenuActionHookDispatcher $admin_menu_hook Dispatches the WordPress 'admin_menu' action.
 	 * @param AdminInitActionHookDispatcher $admin_init_hook Dispatches the WordPress 'admin_init' action.
 	 * @param AdminPageRegistrar $admin_page_registrar Registers configured admin pages.
-	 * @param AdminSettingsRegistrar $admin_settings_registrar Registers configured admin settings.
+	 * @param AdminSettingsGroupRegistrar $admin_settings_registrar Registers configured admin settings groups.
 	 * @param BootUnitLogger $logger Writes structured log entries.
 	 */
 	public function __construct(
 		private AdminMenuActionHookDispatcher $admin_menu_hook,
 		private AdminInitActionHookDispatcher $admin_init_hook,
 		private AdminPageRegistrar $admin_page_registrar,
-		private AdminSettingsRegistrar $admin_settings_registrar,
+		private AdminSettingsGroupRegistrar $admin_settings_registrar,
 		private BootUnitLogger $logger,
 	) {
 

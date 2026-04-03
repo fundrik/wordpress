@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Integration\Helpers\Meta;
+use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
@@ -22,7 +22,7 @@ use WP_REST_Request;
 
 #[CoversClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestCampaignSyncData::class )]
-#[UsesClass( Meta::class )]
+#[UsesClass( MetaReader::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 

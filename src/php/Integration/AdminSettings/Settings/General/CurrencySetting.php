@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Settings\General;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
 use Override;
 
@@ -75,6 +76,19 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	}
 
 	/**
+	 * Returns the expected value type for the setting.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return WpSchemaType Setting value type.
+	 */
+	#[Override]
+	public function get_value_type(): WpSchemaType {
+
+		return WpSchemaType::String;
+	}
+
+	/**
 	 * Sanitizes the setting value without side effects.
 	 *
 	 * @since 1.0.0
@@ -106,12 +120,12 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, bool|float|int|string|null> $args Rendering arguments.
+	 * @param array<string, int|string> $args Rendering arguments.
 	 *
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: bool|float|int|string|null
+	 *     value: int|string
 	 * } $args
 	 */
 	#[Override]
