@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Helpers;
 
 use Fundrik\Toolbox\TypeCaster;
+use InvalidArgumentException;
+use UnexpectedValueException;
 
 /**
  * Provides typed reading helpers for WordPress metadata.
@@ -16,7 +18,80 @@ use Fundrik\Toolbox\TypeCaster;
 final readonly class MetaReader {
 
 	/**
-	 * Returns the post meta value or null when the meta key does not exist.
+	 * Finds the post meta value as a boolean.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
+	 *
+	 * @return bool|null The stored boolean value, or null when the meta key does not exist.
+	 *
+	 * @throws UnexpectedValueException When the stored value cannot be cast to a boolean.
+	 */
+	public static function find_post_meta_bool( int $post_id, string $meta_key ): ?bool {
+
+		$value = self::find_post_meta( $post_id, $meta_key );
+
+		if ( $value === null ) {
+			return null;
+		}
+
+		if ( $value === '' ) {
+			return false;
+		}
+
+		return self::cast_meta_value( $meta_key, 'bool', $value, TypeCaster::to_bool( ... ) );
+	}
+
+	/**
+	 * Finds the post meta value as an integer.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
+	 *
+	 * @return int|null The stored integer value, or null when the meta key does not exist.
+	 *
+	 * @throws UnexpectedValueException When the stored value cannot be cast to an integer.
+	 */
+	public static function find_post_meta_int( int $post_id, string $meta_key ): ?int {
+
+		$value = self::find_post_meta( $post_id, $meta_key );
+
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
+
+		return self::cast_meta_value( $meta_key, 'int', $value, TypeCaster::to_int( ... ) );
+	}
+
+	/**
+	 * Finds the post meta value as a string.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id The post ID to read meta from.
+	 * @param string $meta_key The meta key to read.
+	 *
+	 * @return string|null The stored string value, or null when the meta key does not exist.
+	 *
+	 * @throws UnexpectedValueException When the stored value cannot be cast to a string.
+	 */
+	public static function find_post_meta_string( int $post_id, string $meta_key ): ?string {
+
+		$value = self::find_post_meta( $post_id, $meta_key );
+
+		if ( $value === null || $value === '' ) {
+			return null;
+		}
+
+		return self::cast_meta_value( $meta_key, 'string', $value, TypeCaster::to_string( ... ) );
+	}
+
+	/**
+	 * Finds the post meta value by key.
 	 *
 	 * @since 1.0.0
 	 *
@@ -27,7 +102,7 @@ final readonly class MetaReader {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public static function get_post_meta_or_null( int $post_id, string $meta_key ): mixed {
+	private static function find_post_meta( int $post_id, string $meta_key ): mixed {
 
 		if ( ! metadata_exists( 'post', $post_id, $meta_key ) ) {
 			return null;
@@ -37,69 +112,44 @@ final readonly class MetaReader {
 	}
 
 	/**
-	 * Returns the post meta value as a boolean or null when the meta key does not exist.
+	 * Casts a stored post meta value and wraps cast failures with meta context.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $post_id The post ID to read meta from.
-	 * @param string $meta_key The meta key to read.
+	 * @template T of bool|int|string
 	 *
-	 * @return bool|null The stored boolean value, or null when the meta key does not exist.
+	 * @param string $meta_key Meta key.
+	 * @param string $expected_type Expected scalar type.
+	 * @param mixed $value Stored meta value.
+	 * @param callable $caster Value caster.
+	 *
+	 * @phpstan-param callable(mixed): T $caster
+	 *
+	 * @return T Cast value.
+	 *
+	 * @throws UnexpectedValueException When the stored value cannot be cast.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public static function get_post_meta_bool_or_null( int $post_id, string $meta_key ): ?bool {
+	private static function cast_meta_value(
+		string $meta_key,
+		string $expected_type,
+		mixed $value,
+		callable $caster,
+	): bool|int|string {
 
-		$value = self::get_post_meta_or_null( $post_id, $meta_key );
-
-		if ( $value === null ) {
-			return null;
+		try {
+			return $caster( $value );
+		} catch ( InvalidArgumentException $e ) {
+			throw new UnexpectedValueException(
+				sprintf(
+					'Post meta "%s" must be %s. Given: %s.',
+					$meta_key,
+					$expected_type,
+					get_debug_type( $value ),
+				),
+				previous: $e,
+			);
 		}
-
-		if ( $value === '' ) {
-			return false;
-		}
-
-		return TypeCaster::to_bool( $value );
-	}
-
-	/**
-	 * Returns the post meta value as an integer or null when the meta key does not exist.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param int $post_id The post ID to read meta from.
-	 * @param string $meta_key The meta key to read.
-	 *
-	 * @return int|null The stored integer value, or null when the meta key does not exist.
-	 */
-	public static function get_post_meta_int_or_null( int $post_id, string $meta_key ): ?int {
-
-		$value = self::get_post_meta_or_null( $post_id, $meta_key );
-
-		if ( $value === null || $value === '' ) {
-			return null;
-		}
-
-		return TypeCaster::to_int( $value );
-	}
-
-	/**
-	 * Returns the post meta value as a string or null when the meta key does not exist.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param int $post_id The post ID to read meta from.
-	 * @param string $meta_key The meta key to read.
-	 *
-	 * @return string|null The stored string value, or null when the meta key does not exist.
-	 */
-	public static function get_post_meta_string_or_null( int $post_id, string $meta_key ): ?string {
-
-		$value = self::get_post_meta_or_null( $post_id, $meta_key );
-
-		if ( $value === null || $value === '' ) {
-			return null;
-		}
-
-		return TypeCaster::to_string( $value );
 	}
 }
