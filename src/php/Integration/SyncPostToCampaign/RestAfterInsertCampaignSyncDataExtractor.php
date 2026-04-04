@@ -12,6 +12,7 @@ use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use InvalidArgumentException;
+use UnexpectedValueException;
 use WP_Post;
 use WP_REST_Request;
 
@@ -47,6 +48,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 * @return RestCampaignSyncData The normalized data.
 	 *
 	 * @throws InvalidArgumentException When the payload is not usable.
+	 * @throws UnexpectedValueException When stored post meta has an unexpected value.
 	 */
 	public function extract( WP_Post $post, WP_REST_Request $request ): RestCampaignSyncData {
 
@@ -57,9 +59,9 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		$title = TypeCaster::to_string( $post->post_title );
 
 		// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
-		$default_accepts_donations = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
-		$default_has_target = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_HAS_TARGET );
-		$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
+		$default_accepts_donations = $this->get_meta_default_bool( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
+		$default_has_target = $this->get_meta_default_bool( CampaignPostTypeConfig::META_HAS_TARGET );
+		$default_target_currency = $this->get_meta_default_string( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 
 		$accepts_donations = MetaReader::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
 		$has_target = MetaReader::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
@@ -91,7 +93,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 *
 	 * @return bool The boolean default value.
 	 */
-	private function get_meta_default_bool_or_fail( string $meta_key ): bool {
+	private function get_meta_default_bool( string $meta_key ): bool {
 
 		$default = $this->meta_field_reader->get_meta_default_by_config_class(
 			CampaignPostTypeConfig::class,
@@ -116,7 +118,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 *
 	 * @return string The string default value.
 	 */
-	private function get_meta_default_string_or_fail( string $meta_key ): string {
+	private function get_meta_default_string( string $meta_key ): string {
 
 		$default = $this->meta_field_reader->get_meta_default_by_config_class(
 			CampaignPostTypeConfig::class,

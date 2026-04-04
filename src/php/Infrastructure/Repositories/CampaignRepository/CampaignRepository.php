@@ -60,7 +60,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	#[Override]
 	public function find_by_id( EntityId $id ): ?Campaign {
 
-		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int( $id );
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_int );
@@ -75,7 +75,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			return null;
 		}
 
-		return $this->map_row_to_campaign_or_fail( $row );
+		return $this->map_row_to_campaign( $row );
 	}
 
 	/**
@@ -92,7 +92,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
 
-		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int( $id );
 
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_int );
@@ -120,7 +120,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	public function insert( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
-		$campaign_id_int = $this->get_campaign_id_as_int_or_fail( $campaign_entity_id );
+		$campaign_id_int = $this->get_campaign_id_as_int( $campaign_entity_id );
 		$version = $campaign->get_version();
 
 		if ( ! $version->equals( EntityVersion::initial() ) ) {
@@ -176,7 +176,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	public function update( Campaign $campaign ): Campaign {
 
 		$campaign_entity_id = $campaign->get_id();
-		$campaign_id_int = $this->get_campaign_id_as_int_or_fail( $campaign_entity_id );
+		$campaign_id_int = $this->get_campaign_id_as_int( $campaign_entity_id );
 
 		$expected_version = $campaign->get_version();
 		$new_version = $expected_version->next();
@@ -239,7 +239,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	#[Override]
 	public function delete( EntityId $id ): void {
 
-		$id_int = $this->get_campaign_id_as_int_or_fail( $id );
+		$id_int = $this->get_campaign_id_as_int( $id );
 
 		if ( ! $this->exists_by_id( $id ) ) {
 			throw new CampaignNotFoundException( $id_int, 'delete' );
@@ -266,7 +266,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @throws CampaignRepositoryExceptionInterface When the ID cannot be represented as int.
 	 */
-	private function get_campaign_id_as_int_or_fail( EntityId $id ): int {
+	private function get_campaign_id_as_int( EntityId $id ): int {
 
 		try {
 			return $id->get_as_int();
@@ -294,7 +294,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function map_row_to_campaign_or_fail( array $row ): Campaign {
+	private function map_row_to_campaign( array $row ): Campaign {
 
 		try {
 			return $this->campaign_factory->create_from_primitives(

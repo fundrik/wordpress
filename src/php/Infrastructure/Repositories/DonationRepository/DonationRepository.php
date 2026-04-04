@@ -60,7 +60,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function find_by_id( EntityId $id ): ?Donation {
 
-		$id_value = $this->get_donation_id_as_uuid_or_fail( $id );
+		$id_value = $this->get_donation_id_as_uuid( $id );
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_value );
@@ -75,7 +75,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			return null;
 		}
 
-		return $this->map_row_to_donation_or_fail( $row );
+		return $this->map_row_to_donation( $row );
 	}
 
 	/**
@@ -92,7 +92,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function exists_by_campaign_id( EntityId $campaign_id ): bool {
 
-		$campaign_id_value = $this->get_campaign_id_as_int_or_fail( $campaign_id );
+		$campaign_id_value = $this->get_campaign_id_as_int( $campaign_id );
 
 		try {
 			return $this->db->exists_by_column( self::TABLE_NAME, 'campaign_id', $campaign_id_value );
@@ -118,7 +118,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
 
-		$id_value = $this->get_donation_id_as_uuid_or_fail( $id );
+		$id_value = $this->get_donation_id_as_uuid( $id );
 
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_value );
@@ -145,7 +145,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function insert( Donation $donation ): Donation {
 
-		$donation_id = $this->get_donation_id_as_uuid_or_fail( $donation->get_id() );
+		$donation_id = $this->get_donation_id_as_uuid( $donation->get_id() );
 		$version = $donation->get_version();
 
 		if ( ! $version->equals( EntityVersion::initial() ) ) {
@@ -197,7 +197,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function update( Donation $donation ): Donation {
 
-		$donation_id = $this->get_donation_id_as_uuid_or_fail( $donation->get_id() );
+		$donation_id = $this->get_donation_id_as_uuid( $donation->get_id() );
 
 		$expected_version = $donation->get_version();
 		$new_version = $expected_version->next();
@@ -257,7 +257,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function map_row_to_donation_or_fail( array $row ): Donation {
+	private function map_row_to_donation( array $row ): Donation {
 
 		try {
 			return $this->donation_factory->create_from_primitives(
@@ -294,9 +294,9 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		$created_at = $this->current_utc_timestamp();
 
 		return [
-			'id' => $this->get_donation_id_as_uuid_or_fail( $donation->get_id() ),
+			'id' => $this->get_donation_id_as_uuid( $donation->get_id() ),
 			'version' => $donation->get_version()->get_value(),
-			'campaign_id' => $this->get_campaign_id_as_int_or_fail( $donation->get_campaign_id() ),
+			'campaign_id' => $this->get_campaign_id_as_int( $donation->get_campaign_id() ),
 			'amount' => $donation->get_money()->get_amount()->get_value(),
 			'currency_code' => $donation->get_money()->get_currency()->get_code(),
 			'status' => $donation->get_status()->value,
@@ -345,7 +345,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as UUID.
 	 */
-	private function get_donation_id_as_uuid_or_fail( EntityId $id ): string {
+	private function get_donation_id_as_uuid( EntityId $id ): string {
 
 		try {
 			return $id->get_as_uuid();
@@ -372,7 +372,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as int.
 	 */
-	private function get_campaign_id_as_int_or_fail( EntityId $id ): int {
+	private function get_campaign_id_as_int( EntityId $id ): int {
 
 		try {
 			return $id->get_as_int();

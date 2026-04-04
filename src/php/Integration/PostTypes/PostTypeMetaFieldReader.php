@@ -55,7 +55,7 @@ final readonly class PostTypeMetaFieldReader {
 			return null;
 		}
 
-		$this->validate_meta_field_default_or_fail( $post_type_config_class, $field );
+		$this->validate_meta_field_default( $post_type_config_class, $field );
 
 		return $field->default_value;
 	}
@@ -92,7 +92,7 @@ final readonly class PostTypeMetaFieldReader {
 			}
 		}
 
-		$this->validate_meta_field_defaults_or_fail( $post_type_config_class, $fields );
+		$this->validate_meta_field_defaults( $post_type_config_class, $fields );
 
 		$cache[ $post_type_config_class ] = $fields;
 
@@ -129,7 +129,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @throws InvalidArgumentException When a default value does not match the declared type.
 	 */
-	private function validate_meta_field_defaults_or_fail( string $post_type_config_class, array $fields ): void {
+	private function validate_meta_field_defaults( string $post_type_config_class, array $fields ): void {
 
 		foreach ( $fields as $field ) {
 
@@ -137,7 +137,7 @@ final readonly class PostTypeMetaFieldReader {
 				continue;
 			}
 
-			$this->validate_meta_field_default_or_fail( $post_type_config_class, $field );
+			$this->validate_meta_field_default( $post_type_config_class, $field );
 		}
 	}
 
@@ -152,7 +152,7 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @throws InvalidArgumentException When the default value does not match the declared type.
 	 */
-	private function validate_meta_field_default_or_fail(
+	private function validate_meta_field_default(
 		string $post_type_config_class,
 		PostTypeMetaFieldDefinition $field,
 	): void {

@@ -64,9 +64,9 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
-			$default_accepts_donations = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
-			$default_has_target = $this->get_meta_default_bool_or_fail( CampaignPostTypeConfig::META_HAS_TARGET );
-			$default_target_currency = $this->get_meta_default_string_or_fail( CampaignPostTypeConfig::META_TARGET_CURRENCY );
+			$default_accepts_donations = $this->get_meta_default_bool( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
+			$default_has_target = $this->get_meta_default_bool( CampaignPostTypeConfig::META_HAS_TARGET );
+			$default_target_currency = $this->get_meta_default_string( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 			$has_target = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
 
 			return new RestCampaignSyncData(
@@ -100,7 +100,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @return bool The boolean default value.
 	 */
-	private function get_meta_default_bool_or_fail( string $meta_key ): bool {
+	private function get_meta_default_bool( string $meta_key ): bool {
 
 		$default = $this->meta_field_reader->get_meta_default_by_config_class(
 			CampaignPostTypeConfig::class,
@@ -125,7 +125,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @return string The string default value.
 	 */
-	private function get_meta_default_string_or_fail( string $meta_key ): string {
+	private function get_meta_default_string( string $meta_key ): string {
 
 		$default = $this->meta_field_reader->get_meta_default_by_config_class(
 			CampaignPostTypeConfig::class,
