@@ -60,7 +60,7 @@ final readonly class MetaReader {
 
 		$value = self::find_post_meta( $post_id, $meta_key );
 
-		if ( $value === null || $value === '' ) {
+		if ( $value === null ) {
 			return null;
 		}
 
@@ -83,7 +83,7 @@ final readonly class MetaReader {
 
 		$value = self::find_post_meta( $post_id, $meta_key );
 
-		if ( $value === null || $value === '' ) {
+		if ( $value === null ) {
 			return null;
 		}
 

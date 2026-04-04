@@ -101,7 +101,7 @@ final class MetaReaderTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function find_post_meta_int_returns_null_when_meta_is_empty_string(): void {
+	public function find_post_meta_int_throws_when_meta_is_empty_string(): void {
 
 		$post_id = 123;
 		$meta_key = 'fundrik_key';
@@ -116,9 +116,10 @@ final class MetaReaderTest extends WordPressTestCase {
 			->with( $post_id, $meta_key, true )
 			->andReturn( '' );
 
-		$result = MetaReader::find_post_meta_int( $post_id, $meta_key );
+		$this->expectException( UnexpectedValueException::class );
+		$this->expectExceptionMessage( 'Post meta "fundrik_key" must be int. Given: string.' );
 
-		self::assertNull( $result );
+		MetaReader::find_post_meta_int( $post_id, $meta_key );
 	}
 
 	#[Test]
@@ -187,7 +188,7 @@ final class MetaReaderTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function find_post_meta_string_returns_null_when_meta_is_empty_string(): void {
+	public function find_post_meta_string_returns_empty_string_when_meta_is_empty_string(): void {
 
 		$post_id = 123;
 		$meta_key = 'fundrik_key';
@@ -204,7 +205,7 @@ final class MetaReaderTest extends WordPressTestCase {
 
 		$result = MetaReader::find_post_meta_string( $post_id, $meta_key );
 
-		self::assertNull( $result );
+		self::assertSame( '', $result );
 	}
 
 	#[Test]
