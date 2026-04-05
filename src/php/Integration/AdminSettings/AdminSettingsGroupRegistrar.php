@@ -99,7 +99,7 @@ final readonly class AdminSettingsGroupRegistrar {
 		$group_id = $group->get_id();
 		$option_name = sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
 
-		// Keep the admin settings UI usable when the stored option is missing or invalid.
+		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			$current_value = match ( $setting->get_value_type() ) {
 				WpSchemaType::Integer => $this->option_reader->find_int_option( $option_name ),

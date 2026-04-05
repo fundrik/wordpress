@@ -6,8 +6,8 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultAmountLabelSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DefaultDonationAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Override;
 
 /**
@@ -26,12 +26,12 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DefaultDonationAmountSetting $default_donation_amount_setting Provides default donation amount setting.
-	 * @param DefaultAmountLabelSetting $default_amount_label_setting Provides default amount label setting.
+	 * @param DonationFormDefaultAmountSetting $default_donation_amount_setting Provides default donation amount setting.
+	 * @param DonationFormDefaultAmountLabelSetting $default_amount_label_setting Provides default amount label setting.
 	 */
 	public function __construct(
-		private DefaultDonationAmountSetting $default_donation_amount_setting,
-		private DefaultAmountLabelSetting $default_amount_label_setting,
+		private DonationFormDefaultAmountSetting $default_donation_amount_setting,
+		private DonationFormDefaultAmountLabelSetting $default_amount_label_setting,
 	) {
 	}
 

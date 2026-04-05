@@ -9,9 +9,12 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -20,6 +23,15 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( AdminPageDefinitions::class )]
 #[UsesClass( AdminSettingInterface::class )]
 final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
+
+	private StoragePort&MockInterface $storage;
+
+	protected function setUp(): void {
+
+		parent::setUp();
+
+		$this->storage = Mockery::mock( StoragePort::class );
+	}
 
 	#[Test]
 	public function it_registers_all_admin_settings_groups(): void {
@@ -61,23 +73,30 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			],
 		);
 
-		Functions\expect( 'get_option' )
+		$this->storage
+			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_general_currency_setting', 'RUB' )
+			->with( 'fundrik_general_currency_setting' )
 			->andReturn( 'USD' );
-		Functions\expect( 'get_option' )
+		$this->storage
+			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_donation_form_default_amount_setting', 10 )
+			->with( 'fundrik_donation_form_default_amount_setting' )
 			->andReturn( 10 );
-		Functions\expect( 'get_option' )
+		$this->storage
+			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_donation_form_default_amount_label_setting', 'Amount' )
+			->with( 'fundrik_donation_form_default_amount_label_setting' )
 			->andReturn( 'Amount' );
 		Functions\expect( 'register_setting' )->times( 3 )->andReturnTrue();
 		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
 		Functions\expect( 'add_settings_field' )->times( 3 )->andReturnTrue();
 
-		$registrar = new AdminSettingsGroupRegistrar( $first_settings_group, $second_settings_group );
+		$registrar = new AdminSettingsGroupRegistrar(
+			new OptionReader( $this->storage ),
+			$first_settings_group,
+			$second_settings_group,
+		);
 
 		$registrar->register_all();
 	}
@@ -99,9 +118,10 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		);
 		$settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [ $currency_setting ] );
 
-		Functions\expect( 'get_option' )
+		$this->storage
+			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_general_currency_setting', 'RUB' )
+			->with( 'fundrik_general_currency_setting' )
 			->andReturn( 'USD' );
 		Functions\expect( 'register_setting' )
 			->once()
@@ -127,7 +147,10 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 				'Currency must be a 3-letter ISO 4217 code. Given: bool.',
 			);
 
-		$registrar = new AdminSettingsGroupRegistrar( $settings_group );
+		$registrar = new AdminSettingsGroupRegistrar(
+			new OptionReader( $this->storage ),
+			$settings_group,
+		);
 
 		$registrar->register_all();
 	}
@@ -136,6 +159,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 	public function it_returns_the_count_of_configured_admin_settings_groups(): void {
 
 		$registrar = new AdminSettingsGroupRegistrar(
+			new OptionReader( $this->storage ),
 			Mockery::mock( AdminSettingsGroupInterface::class ),
 			Mockery::mock( AdminSettingsGroupInterface::class ),
 		);

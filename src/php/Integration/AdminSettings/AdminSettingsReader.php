@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings;
 
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\CurrencySetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultAmountLabelSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DefaultDonationAmountSetting;
-use InvalidArgumentException;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use LogicException;
+use UnexpectedValueException;
 
 /**
  * Provides access to registered admin settings values.
@@ -18,7 +19,7 @@ use LogicException;
  *
  * @internal
  */
-class AdminSettingsReader {
+final readonly class AdminSettingsReader {
 
 	/**
 	 * The configured admin settings groups.
@@ -28,53 +29,28 @@ class AdminSettingsReader {
 	private array $admin_setting_groups;
 
 	/**
-	 * The indexed settings group positions keyed by setting class.
+	 * The indexed settings keyed by setting class.
 	 *
-	 * @var array<class-string<AdminSettingInterface>, int>
+	 * @var array<class-string<AdminSettingInterface>, array{group_id: string, setting: AdminSettingInterface}>
 	 */
-	private array $setting_group_indexes = [];
-
-	/**
-	 * The resolved settings values keyed by group position and setting class.
-	 *
-	 * @var array<int, array<class-string<AdminSettingInterface>, bool|float|int|string|null>>
-	 */
-	private array $group_settings_values = [];
+	private array $setting_configs;
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param OptionReader $option_reader Provides typed reading helpers for WordPress options.
 	 * @param AdminSettingsGroupInterface ...$admin_setting_groups Registered admin settings groups.
 	 */
-	public function __construct( AdminSettingsGroupInterface ...$admin_setting_groups ) {
+	public function __construct(
+		private OptionReader $option_reader,
+		AdminSettingsGroupInterface ...$admin_setting_groups,
+	) {
 
 		$this->admin_setting_groups = $admin_setting_groups;
+
 		$this->index_settings();
-	}
-
-	/**
-	 * Returns the resolved value for a registered setting class.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param class-string<AdminSettingInterface> $setting_class Setting class.
-	 *
-	 * @return bool|float|int|string|null Resolved setting value.
-	 */
-	private function get( string $setting_class ): bool|float|int|string|null {
-
-		if ( ! isset( $this->setting_group_indexes[ $setting_class ] ) ) {
-			throw new InvalidArgumentException(
-				sprintf( 'Unknown admin setting "%s".', $setting_class ),
-			);
-		}
-
-		$group_index = $this->setting_group_indexes[ $setting_class ];
-		$this->load_group_settings_values( $group_index );
-
-		return $this->group_settings_values[ $group_index ][ $setting_class ];
 	}
 
 	/**
@@ -90,29 +66,30 @@ class AdminSettingsReader {
 	}
 
 	/**
-	 * Returns the configured default donation amount.
+	 * Returns the configured donation form default amount.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int Default donation amount.
+	 * @return int Donation form default amount.
 	 */
-	public function get_default_donation_amount(): int {
+	public function get_donation_form_default_amount(): int {
 
-		return $this->get_int_setting( DefaultDonationAmountSetting::class );
+		return $this->get_int_setting( DonationFormDefaultAmountSetting::class );
 	}
 
 	/**
-	 * Returns the configured default amount label.
+	 * Returns the configured donation form default amount label.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return string Default amount label.
+	 * @return string Donation form default amount label.
 	 */
-	public function get_default_amount_label(): string {
+	public function get_donation_form_default_amount_label(): string {
 
-		return $this->get_string_setting( DefaultAmountLabelSetting::class );
+		return $this->get_string_setting( DonationFormDefaultAmountLabelSetting::class );
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
 	/**
 	 * Indexes all registered setting classes by settings group position.
 	 *
@@ -120,100 +97,55 @@ class AdminSettingsReader {
 	 */
 	private function index_settings(): void {
 
-		foreach ( $this->admin_setting_groups as $group_index => $admin_setting_group ) {
+		$setting_configs = [];
+
+		foreach ( $this->admin_setting_groups as $admin_setting_group ) {
 
 			foreach ( $admin_setting_group->get_settings() as $setting ) {
+
 				$setting_class = $setting::class;
 
-				if ( isset( $this->setting_group_indexes[ $setting_class ] ) ) {
+				if ( isset( $setting_configs[ $setting_class ] ) ) {
 					throw new LogicException(
 						sprintf( 'Admin setting "%s" was registered twice.', $setting_class ),
 					);
 				}
 
-				$this->setting_group_indexes[ $setting_class ] = $group_index;
+				$setting_configs[ $setting_class ] = [
+					'group_id' => $admin_setting_group->get_id(),
+					'setting' => $setting,
+				];
 			}
 		}
+
+		$this->setting_configs = $setting_configs;
 	}
-
-	/**
-	 * Loads the resolved values for a settings group.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param int $group_index Settings group position.
-	 */
-	private function load_group_settings_values( int $group_index ): void {
-
-		if ( isset( $this->group_settings_values[ $group_index ] ) ) {
-			return;
-		}
-
-		$admin_setting_group = $this->admin_setting_groups[ $group_index ];
-		$settings = $admin_setting_group->get_settings();
-		$default_settings = $this->get_default_settings( $settings );
-		$stored_settings = get_option( $admin_setting_group->get_id(), $default_settings );
-		$raw_settings = is_array( $stored_settings ) ? $stored_settings : [];
-		$group_settings_values = [];
-
-		foreach ( $settings as $setting ) {
-			$raw_value = $raw_settings[ $setting->get_id() ] ?? null;
-			try {
-				$resolved_value = $setting->normalize_value( $raw_value );
-			} catch ( InvalidArgumentException ) {
-				$resolved_value = null;
-			}
-
-			if ( $resolved_value === null ) {
-				$resolved_value = $default_settings[ $setting->get_id() ];
-			}
-
-			$group_settings_values[ $setting::class ] = $resolved_value;
-		}
-
-		$this->group_settings_values[ $group_index ] = $group_settings_values;
-	}
-
-	/**
-	 * Returns the default settings values for a settings group.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param list<AdminSettingInterface> $settings Setting definitions.
-	 *
-	 * @return array<string, bool|float|int|string|null> Default settings values.
-	 */
-	private function get_default_settings( array $settings ): array {
-
-		$default_settings = [];
-
-		foreach ( $settings as $setting ) {
-			$default_settings[ $setting->get_id() ] = $setting->get_default_value();
-		}
-
-		return $default_settings;
-	}
+	// phpcs:enable
 
 	/**
 	 * Returns a string setting value.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param class-string<AdminSettingInterface> $setting_class Setting class.
+	 * @param string $setting_class Setting class.
+	 *
+	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
 	 *
 	 * @return string Setting value.
 	 */
 	private function get_string_setting( string $setting_class ): string {
 
-		$setting_value = $this->get( $setting_class );
+		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
+		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$default_value = $setting->get_default_value();
 
-		if ( ! is_string( $setting_value ) ) {
-			throw new LogicException(
-				sprintf( 'Admin setting "%s" returned an invalid string value.', $setting_class ),
-			);
+		// Fall back to the setting default when the stored option is missing or invalid.
+		try {
+			return $this->option_reader->find_string_option( $option_name ) ?? $default_value;
+		} catch ( UnexpectedValueException ) {
+			return $default_value;
 		}
-
-		return $setting_value;
 	}
 
 	/**
@@ -221,20 +153,39 @@ class AdminSettingsReader {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param class-string<AdminSettingInterface> $setting_class Setting class.
+	 * @param string $setting_class Setting class.
+	 *
+	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
 	 *
 	 * @return int Setting value.
 	 */
 	private function get_int_setting( string $setting_class ): int {
 
-		$setting_value = $this->get( $setting_class );
+		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
+		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$default_value = $setting->get_default_value();
 
-		if ( ! is_int( $setting_value ) ) {
-			throw new LogicException(
-				sprintf( 'Admin setting "%s" returned an invalid integer value.', $setting_class ),
-			);
+		// Fall back to the setting default when the stored option is missing or invalid.
+		try {
+			return $this->option_reader->find_int_option( $option_name ) ?? $default_value;
+		} catch ( UnexpectedValueException ) {
+			return $default_value;
 		}
+	}
 
-		return $setting_value;
+	/**
+	 * Returns the setting option name.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $group_id Settings group ID.
+	 * @param AdminSettingInterface $setting Setting definition.
+	 *
+	 * @return string Setting option name.
+	 */
+	private function get_setting_option_name( string $group_id, AdminSettingInterface $setting ): string {
+
+		return sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
 	}
 }

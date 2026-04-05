@@ -10,11 +10,13 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\InitializeFundrikAdminBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
 use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
@@ -99,7 +101,11 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsGroupRegistrar( $first_settings_group, $second_settings_group ),
+			new AdminSettingsGroupRegistrar(
+				new OptionReader( new WordPressOptionsStorage() ),
+				$first_settings_group,
+				$second_settings_group,
+			),
 			$this->logger,
 		);
 
@@ -156,7 +162,7 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsGroupRegistrar(),
+			new AdminSettingsGroupRegistrar( new OptionReader( new WordPressOptionsStorage() ) ),
 			$this->logger,
 		);
 
@@ -219,7 +225,11 @@ final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 			$this->admin_menu_hook,
 			$this->admin_init_hook,
 			new AdminPageRegistrar(),
-			new AdminSettingsGroupRegistrar( $first_settings_group, $second_settings_group ),
+			new AdminSettingsGroupRegistrar(
+				new OptionReader( new WordPressOptionsStorage() ),
+				$first_settings_group,
+				$second_settings_group,
+			),
 			$this->logger,
 		);
 

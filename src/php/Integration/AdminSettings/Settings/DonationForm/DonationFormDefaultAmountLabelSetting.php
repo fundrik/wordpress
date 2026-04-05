@@ -12,17 +12,17 @@ use InvalidArgumentException;
 use Override;
 
 /**
- * Represents the admin setting for the default donation amount.
+ * Represents the admin setting for the default amount label.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class DefaultDonationAmountSetting implements AdminSettingInterface {
+final readonly class DonationFormDefaultAmountLabelSetting implements AdminSettingInterface {
 
-	private const string ID = 'default_amount';
+	private const string ID = 'default_amount_label';
 
-	private const int DEFAULT_VALUE = 10;
+	private const string DEFAULT_VALUE = 'Amount';
 
 	/**
 	 * Constructor.
@@ -59,7 +59,7 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	#[Override]
 	public function get_label(): string {
 
-		return __( 'Default donation amount', 'fundrik' );
+		return __( 'Default amount label', 'fundrik' );
 	}
 
 	/**
@@ -67,10 +67,10 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int Default setting value.
+	 * @return string Default setting value.
 	 */
 	#[Override]
-	public function get_default_value(): int {
+	public function get_default_value(): string {
 
 		return self::DEFAULT_VALUE;
 	}
@@ -85,7 +85,7 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	#[Override]
 	public function get_value_type(): WpSchemaType {
 
-		return WpSchemaType::Integer;
+		return WpSchemaType::String;
 	}
 
 	/**
@@ -95,23 +95,23 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int Sanitized setting value.
+	 * @return string Sanitized setting value.
 	 *
-	 * @throws InvalidArgumentException When the value is not a positive integer.
+	 * @throws InvalidArgumentException When the value is empty.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	#[Override]
-	public function sanitize_value( mixed $value ): int {
+	public function sanitize_value( mixed $value ): string {
 
-		$default_amount = TypeCaster::to_int( $value );
+		$default_amount_label = trim( TypeCaster::to_string( $value ) );
 
-		if ( $default_amount > 0 ) {
-			return $default_amount;
+		if ( $default_amount_label !== '' ) {
+			return $default_amount_label;
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
+			sprintf( 'Default amount label must not be empty. Given: %s.', $value ),
 		);
 	}
 
@@ -131,18 +131,11 @@ final readonly class DefaultDonationAmountSetting implements AdminSettingInterfa
 	#[Override]
 	public function render( array $args ): void {
 
-		$this->field_renderer->render_number_field(
-			$args['field_name'],
-			$args['input_id'],
-			$args['value'],
-			min: 1,
-			step: 1,
-		);
+		$this->field_renderer->render_text_field( $args['field_name'], $args['input_id'], $args['value'] );
 
 		printf(
 			'<p class="description">%s</p>',
-			esc_html__( 'Used when the donation form block does not define its own default amount.', 'fundrik' ),
+			esc_html__( 'Used when the donation form block does not define its own amount label.', 'fundrik' ),
 		);
 	}
-
 }
