@@ -58,25 +58,31 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 
 			// phpcs:disable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 			$id = ArrayExtractor::extract_int_required( $params, 'id' );
-			$title = $this->resolve_title_or_fallback( $params, $id );
+			$title = $this->resolve_title( $params, $id );
 
 			/** @var array<string, mixed> $meta */
 			$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
+			// The client must send the current entity version for optimistic locking.
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
 			$default_accepts_donations = $this->get_meta_default_bool( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
 			$default_has_target = $this->get_meta_default_bool( CampaignPostTypeConfig::META_HAS_TARGET );
 			$default_target_currency = $this->get_meta_default_string( CampaignPostTypeConfig::META_TARGET_CURRENCY );
+
+			// The REST payload may omit unchanged optional meta fields.
+			$accepts_donations = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
 			$has_target = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
+			$target_amount = $has_target ? $this->extract_target_amount( $meta ) : null;
+			$target_currency = ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
 
 			return new RestCampaignSyncData(
 				id: EntityId::create( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),
-				accepts_donations: ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations,
+				accepts_donations: $accepts_donations,
 				has_target: $has_target,
-				target_amount: $has_target ? $this->extract_target_amount_or_null( $meta ) : null,
-				target_currency: ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency,
+				target_amount: $target_amount,
+				target_currency: $target_currency,
 			);
 			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 
@@ -154,7 +160,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function extract_target_amount_or_null( array $meta ): ?int {
+	private function extract_target_amount( array $meta ): ?int {
 
 		if ( ! array_key_exists( CampaignPostTypeConfig::META_TARGET_AMOUNT, $meta ) ) {
 			return null;
@@ -163,6 +169,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		$value = $meta[ CampaignPostTypeConfig::META_TARGET_AMOUNT ];
 
 		if ( $value === '' ) {
+			// Treat a cleared form field as an omitted target amount in the REST payload.
 			return null;
 		}
 
@@ -181,7 +188,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function resolve_title_or_fallback( array $params, int $post_id ): string {
+	private function resolve_title( array $params, int $post_id ): string {
 
 		$title = ArrayExtractor::extract_string_optional( $params, 'title' );
 
@@ -189,6 +196,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			return $title;
 		}
 
+		// Reuse the persisted title when the REST payload omits it during partial updates.
 		$persisted_title = get_post_field( 'post_title', $post_id, 'raw' );
 
 		return TypeCaster::to_string( $persisted_title );

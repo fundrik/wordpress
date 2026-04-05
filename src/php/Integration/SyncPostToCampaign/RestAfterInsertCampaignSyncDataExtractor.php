@@ -49,6 +49,8 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 *
 	 * @throws InvalidArgumentException When the payload is not usable.
 	 * @throws UnexpectedValueException When stored post meta has an unexpected value.
+	 *
+	 * @see SyncPostToCampaignBootUnit::attach_campaign_version_for_sync()
 	 */
 	public function extract( WP_Post $post, WP_REST_Request $request ): RestCampaignSyncData {
 
@@ -63,14 +65,16 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		$default_has_target = $this->get_meta_default_bool( CampaignPostTypeConfig::META_HAS_TARGET );
 		$default_target_currency = $this->get_meta_default_string( CampaignPostTypeConfig::META_TARGET_CURRENCY );
 
-		$accepts_donations = MetaReader::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
-		$has_target = MetaReader::get_post_meta_bool_or_null( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
-		$target_amount = $has_target ? MetaReader::get_post_meta_int_or_null( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
-		$target_currency = MetaReader::get_post_meta_string_or_null( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
+		// WordPress/Gutenberg can persist partial meta updates, so optional meta keys may remain unset.
+		$accepts_donations = MetaReader::find_post_meta_bool( $id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
+		$has_target = MetaReader::find_post_meta_bool( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
+		$target_amount = $has_target ? MetaReader::find_post_meta_int( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
+		$target_currency = MetaReader::find_post_meta_string( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
 		// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 
 		/** @var array<string, mixed> $meta */
 		$meta = ArrayExtractor::extract_array_required( $params, 'meta' );
+		// The client must send the current entity version for optimistic locking.
 		$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
 		return new RestCampaignSyncData(

@@ -29,6 +29,7 @@ use Fundrik\WordPress\Integration\SyncPostToCampaign\RestPreInsertCampaignSyncDa
 use InvalidArgumentException;
 use Override;
 use stdClass;
+use UnexpectedValueException;
 use WP_Error;
 use WP_Post;
 use WP_REST_Request;
@@ -170,10 +171,14 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 				],
 			);
 
+			// Keep the REST response usable when version lookup fails; the failure is logged above.
 			return $response;
 		}
 
-		$version = $campaign === null ? EntityVersion::initial() : $campaign->get_version();
+		// Treat a missing synchronized campaign as an unsaved snapshot and expose the initial version.
+		$version = $campaign === null
+			? EntityVersion::initial()
+			: $campaign->get_version();
 
 		$data = $response->get_data();
 		$data = is_array( $data ) ? $data : [];
@@ -241,7 +246,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 
 			$data = $this->after_insert_extractor->extract( $post, $request );
 
-		} catch ( InvalidArgumentException $e ) {
+		} catch ( InvalidArgumentException | UnexpectedValueException $e ) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after REST save failed: payload is not usable.',

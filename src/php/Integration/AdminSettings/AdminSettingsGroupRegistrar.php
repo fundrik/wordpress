@@ -7,7 +7,9 @@ namespace Fundrik\WordPress\Integration\AdminSettings;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
+use UnexpectedValueException;
 
 /**
  * Registers all configured admin settings groups in WordPress.
@@ -30,9 +32,13 @@ final readonly class AdminSettingsGroupRegistrar {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param OptionReader $option_reader Provides typed reading helpers for WordPress options.
 	 * @param AdminSettingsGroupInterface ...$groups Admin settings groups to register.
 	 */
-	public function __construct( AdminSettingsGroupInterface ...$groups ) {
+	public function __construct(
+		private OptionReader $option_reader,
+		AdminSettingsGroupInterface ...$groups,
+	) {
 
 		$this->groups = $groups;
 	}
@@ -93,11 +99,15 @@ final readonly class AdminSettingsGroupRegistrar {
 		$group_id = $group->get_id();
 		$option_name = sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
 
-		$current_value = OptionReader::get_option_or_default(
-			$option_name,
-			$setting->get_value_type(),
-			$setting->get_default_value(),
-		);
+		// Keep the admin settings UI usable when the stored option is missing or invalid.
+		try {
+			$current_value = match ( $setting->get_value_type() ) {
+				WpSchemaType::Integer => $this->option_reader->find_int_option( $option_name ),
+				WpSchemaType::String => $this->option_reader->find_string_option( $option_name ),
+			} ?? $setting->get_default_value();
+		} catch ( UnexpectedValueException ) {
+			$current_value = $setting->get_default_value();
+		}
 
 		return new AdminSettingRegistration(
 			group_id: $group_id,
@@ -174,12 +184,14 @@ final readonly class AdminSettingsGroupRegistrar {
 		try {
 			return $registration->setting->sanitize_value( $value );
 		} catch ( InvalidArgumentException $exception ) {
+
 			add_settings_error(
 				$registration->option_name,
 				$registration->option_name . '_invalid',
 				$exception->getMessage(),
 			);
 
+			// Preserve the last usable value after reporting the validation error.
 			return $registration->current_value;
 		}
 	}
