@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings;
 
 use Fundrik\WordPress\Integration\WpSchemaType;
+use InvalidArgumentException;
 
 /**
  * Represents a single setting exposed within an admin settings group.
@@ -38,9 +39,9 @@ interface AdminSettingInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int|string Default setting value.
+	 * @return int|string|bool Default setting value.
 	 */
-	public function get_default_value(): int|string;
+	public function get_default_value(): int|string|bool;
 
 	/**
 	 * Returns the expected value type for the setting.
@@ -58,25 +59,25 @@ interface AdminSettingInterface {
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int|string Sanitized setting value.
+	 * @return int|string|bool Sanitized setting value.
 	 *
-	 * @throws \InvalidArgumentException When the value is invalid.
+	 * @throws InvalidArgumentException When the value is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	public function sanitize_value( mixed $value ): int|string;
+	public function sanitize_value( mixed $value ): int|string|bool;
 
 	/**
 	 * Renders the setting control.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, int|string> $args Rendering arguments.
+	 * @param array<string, int|string|bool> $args Rendering arguments.
 	 *
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: int|string
+	 *     value: int|string|bool
 	 * } $args
 	 */
 	public function render( array $args ): void;

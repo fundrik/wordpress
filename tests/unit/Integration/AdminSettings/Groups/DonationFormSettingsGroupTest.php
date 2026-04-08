@@ -54,7 +54,7 @@ final class DonationFormSettingsGroupTest extends WordPressTestCase {
 		$output = (string) ob_get_clean();
 
 		self::assertStringContainsString(
-			'Configure the defaults used by donation form blocks when a block does not override them.',
+			'Configure the defaults used by donation form blocks.',
 			$output,
 		);
 	}

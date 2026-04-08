@@ -112,7 +112,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => WpSchemaType::Boolean,
-				'default' => true,
+				'default' => null,
 			],
 		);
 
@@ -122,7 +122,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => WpSchemaType::Boolean,
-				'default' => false,
+				'default' => null,
 			],
 		);
 
@@ -142,7 +142,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 			attribute_class: PostTypeMetaField::class,
 			expected_values: [
 				'type' => WpSchemaType::String,
-				'default' => 'RUB',
+				'default' => null,
 			],
 		);
 	}

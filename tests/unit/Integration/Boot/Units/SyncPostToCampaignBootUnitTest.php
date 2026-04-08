@@ -23,9 +23,15 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
@@ -34,7 +40,9 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaig
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
@@ -70,10 +78,15 @@ use WP_Screen;
 #[UsesClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestAfterInsertCampaignSynchronizer::class )]
 #[UsesClass( RestCampaignSyncData::class )]
+#[UsesClass( AdminSettingsReader::class )]
+#[UsesClass( CampaignSettingsGroup::class )]
+#[UsesClass( GeneralSettingsGroup::class )]
+#[UsesClass( CampaignDefaultAcceptsDonationsSetting::class )]
+#[UsesClass( CampaignDefaultHasTargetSetting::class )]
+#[UsesClass( CurrencySetting::class )]
 #[UsesClass( MetaReader::class )]
 #[UsesClass( PluginUrl::class )]
 #[UsesClass( PostTypeMetaField::class )]
-#[UsesClass( PostTypeMetaFieldReader::class )]
 final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 	use DispatcherTestHelpers;
@@ -172,14 +185,17 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->event_bus,
 		);
 
-		$meta_field_reader = new PostTypeMetaFieldReader();
-		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $meta_field_reader );
+		$settings_reader = $this->create_settings_reader();
+		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $settings_reader );
 		$this->pre_insert_validator = new RestPreInsertCampaignSyncDataValidator(
 			$this->campaign_factory,
 			$this->validator_campaign_repository,
 		);
-		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor( $meta_field_reader );
-		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer( $this->campaign_command );
+		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor( $settings_reader );
+		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer(
+			$this->campaign_command,
+			$this->synchronizer_campaign_repository,
+		);
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
 
@@ -659,21 +675,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->synchronizer_campaign_repository->shouldNotReceive( 'update' );
 		$this->event_bus->shouldNotReceive( 'publish' );
 
-		$this->psr_logger
-			->shouldReceive( 'error' )
-			->once()
-			->with(
-				'Campaign synchronization after REST save failed: payload is not usable.',
-				Mockery::subset(
-					[
-						'service_class' => SyncPostToCampaignBootUnit::class,
-						'component' => 'boot_units',
-						'post_id' => 21,
-						'creating' => true,
-					],
-				),
-			);
-
 		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
 			->with( Mockery::type( 'string' ) );
@@ -708,6 +709,12 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		);
 
 		$this->synchronizer_campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( true );
+
+		$this->synchronizer_campaign_repository
 			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
@@ -720,43 +727,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->andThrow( new FakeCampaignRepositoryException( 'DB failed.' ) );
 
 		$this->event_bus->shouldNotReceive( 'publish' );
-
-		$this->psr_logger
-			->shouldReceive( 'error' )
-			->once()
-			->with(
-				'Campaign synchronization after REST save failed.',
-				Mockery::on(
-					static function ( array $context ): bool {
-
-						if ( ( $context['service_class'] ?? null ) !== SyncPostToCampaignBootUnit::class ) {
-							return false;
-						}
-
-						if ( ( $context['component'] ?? null ) !== 'boot_units' ) {
-							return false;
-						}
-
-						if ( ( $context['post_id'] ?? null ) !== 22 ) {
-							return false;
-						}
-
-						if ( ( $context['entity_id'] ?? null ) !== 22 ) {
-							return false;
-						}
-
-						if ( ( $context['version'] ?? null ) !== 3 ) {
-							return false;
-						}
-
-						if ( ( $context['creating'] ?? null ) !== false ) {
-							return false;
-						}
-
-						return ( $context['exception'] ?? null ) instanceof SyncCampaignFromSnapshotException;
-					},
-				),
-			);
 
 		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
@@ -782,6 +752,12 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->expect_after_insert_meta_defaults( 23 );
 
+		$this->synchronizer_campaign_repository
+			->shouldReceive( 'exists_by_id' )
+			->once()
+			->with( Mockery::type( EntityId::class ) )
+			->andReturn( false );
+
 		$this->synchronizer_campaign_repository->shouldNotReceive( 'find_by_id' );
 
 		$this->synchronizer_campaign_repository
@@ -801,8 +777,9 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 
 		$this->synchronizer_campaign_repository->shouldNotReceive( 'update' );
 		$this->event_bus->shouldReceive( 'publish' )->once();
-
-		Functions\expect( 'fundrik_set_failure_message' )->never();
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( Mockery::type( 'string' ) );
 
 		$this->boot_unit->boot();
 
@@ -885,6 +862,43 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			->andReturn( false );
 
 		Functions\expect( 'get_post_meta' )->never();
+	}
+
+	private function create_settings_reader(
+		bool $default_accepts_donations = true,
+		bool $default_has_target = false,
+		string $currency = 'RUB',
+	): AdminSettingsReader {
+
+		$storage = Mockery::mock( StoragePort::class );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_general_currency_setting' )
+			->andReturn( $currency );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_campaign_default_accepts_donations_setting' )
+			->andReturn( $default_accepts_donations );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_campaign_default_has_target_setting' )
+			->andReturn( $default_has_target );
+
+		$field_renderer = new AdminSettingsFieldRenderer();
+
+		return new AdminSettingsReader(
+			new OptionReader( $storage ),
+			new GeneralSettingsGroup(
+				new CurrencySetting( $field_renderer ),
+			),
+			new CampaignSettingsGroup(
+				new CampaignDefaultAcceptsDonationsSetting( $field_renderer ),
+				new CampaignDefaultHasTargetSetting( $field_renderer ),
+			),
+		);
 	}
 }
 

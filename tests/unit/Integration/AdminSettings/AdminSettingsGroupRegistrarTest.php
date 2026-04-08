@@ -73,6 +73,31 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			],
 		);
 
+		$third_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$third_settings_group->shouldReceive( 'get_id' )->times( 3 )->andReturn( 'campaign' );
+		$third_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Campaign' );
+
+		$accepts_donations_setting = Mockery::mock( AdminSettingInterface::class );
+		$accepts_donations_setting->shouldReceive( 'get_id' )->andReturn( 'default_accepts_donations' );
+		$accepts_donations_setting->shouldReceive( 'get_default_value' )->andReturn( true );
+		$accepts_donations_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::Boolean );
+		$accepts_donations_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default accepts donations' );
+		$accepts_donations_setting->shouldReceive( 'sanitize_value' )->never();
+
+		$has_target_setting = Mockery::mock( AdminSettingInterface::class );
+		$has_target_setting->shouldReceive( 'get_id' )->andReturn( 'default_has_target' );
+		$has_target_setting->shouldReceive( 'get_default_value' )->andReturn( false );
+		$has_target_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::Boolean );
+		$has_target_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default has target' );
+		$has_target_setting->shouldReceive( 'sanitize_value' )->never();
+
+		$third_settings_group->shouldReceive( 'get_settings' )->once()->andReturn(
+			[
+				$accepts_donations_setting,
+				$has_target_setting,
+			],
+		);
+
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
@@ -88,14 +113,25 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->once()
 			->with( 'fundrik_donation_form_default_amount_label_setting' )
 			->andReturn( 'Amount' );
-		Functions\expect( 'register_setting' )->times( 3 )->andReturnTrue();
-		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
-		Functions\expect( 'add_settings_field' )->times( 3 )->andReturnTrue();
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_campaign_default_accepts_donations_setting' )
+			->andReturn( true );
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( 'fundrik_campaign_default_has_target_setting' )
+			->andReturn( false );
+		Functions\expect( 'register_setting' )->times( 5 )->andReturnTrue();
+		Functions\expect( 'add_settings_section' )->times( 3 )->andReturnTrue();
+		Functions\expect( 'add_settings_field' )->times( 5 )->andReturnTrue();
 
 		$registrar = new AdminSettingsGroupRegistrar(
 			new OptionReader( $this->storage ),
 			$first_settings_group,
 			$second_settings_group,
+			$third_settings_group,
 		);
 
 		$registrar->register_all();

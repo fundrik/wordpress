@@ -23,13 +23,13 @@ final readonly class AdminSettingRegistration {
 	 * @param string $group_id Settings group ID.
 	 * @param string $option_name Setting option name.
 	 * @param AdminSettingInterface $setting Setting definition.
-	 * @param int|string $current_value Current setting value.
+	 * @param int|string|bool $current_value Current setting value.
 	 */
 	public function __construct(
 		public string $group_id,
 		public string $option_name,
 		public AdminSettingInterface $setting,
-		public int|string $current_value,
+		public int|string|bool $current_value,
 	) {
 	}
 }

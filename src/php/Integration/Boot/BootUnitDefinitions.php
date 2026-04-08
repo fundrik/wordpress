@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Boot;
 
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\ExposeDonationFormEditorSettingsBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\InitializeFundrikAdminBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailuresBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
@@ -31,6 +32,7 @@ final readonly class BootUnitDefinitions {
 	public static function classes(): array {
 
 		return [
+			ExposeDonationFormEditorSettingsBootUnit::class,
 			FilterAllowedBlocksByPostTypeBootUnit::class,
 			InitializeFundrikAdminBootUnit::class,
 			LogCreateDonationRestRequestFailuresBootUnit::class,

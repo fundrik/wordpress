@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
 use Fundrik\WordPress\Tests\MockeryTestCase;
@@ -22,8 +30,13 @@ use WP_REST_Request;
 
 #[CoversClass( RestAfterInsertCampaignSyncDataExtractor::class )]
 #[UsesClass( RestCampaignSyncData::class )]
+#[UsesClass( AdminSettingsReader::class )]
+#[UsesClass( CampaignSettingsGroup::class )]
+#[UsesClass( GeneralSettingsGroup::class )]
+#[UsesClass( CampaignDefaultAcceptsDonationsSetting::class )]
+#[UsesClass( CampaignDefaultHasTargetSetting::class )]
 #[UsesClass( MetaReader::class )]
-#[UsesClass( PostTypeMetaFieldReader::class )]
+#[UsesClass( CurrencySetting::class )]
 final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 	private WP_REST_Request&MockInterface $request;
@@ -37,7 +50,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		$this->request = Mockery::mock( WP_REST_Request::class );
 
 		$this->extractor = new RestAfterInsertCampaignSyncDataExtractor(
-			new PostTypeMetaFieldReader(),
+			$this->create_settings_reader(),
 		);
 	}
 
@@ -185,13 +198,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertTrue( $result->accepts_donations );
 		self::assertFalse( $result->has_target );
 		self::assertNull( $result->target_amount );
-		self::assertSame(
-			( new PostTypeMetaFieldReader() )->get_meta_default_by_config_class(
-				CampaignPostTypeConfig::class,
-				CampaignPostTypeConfig::META_TARGET_CURRENCY,
-			),
-			$result->target_currency,
-		);
+		self::assertSame( 'RUB', $result->target_currency );
 	}
 
 	#[Test]
@@ -256,6 +263,43 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		$post->post_status = $status;
 
 		return $post;
+	}
+
+	private function create_settings_reader(
+		bool $default_accepts_donations = true,
+		bool $default_has_target = false,
+		string $currency = 'RUB',
+	): AdminSettingsReader {
+
+		$storage = Mockery::mock( StoragePort::class );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_general_currency_setting' )
+			->andReturn( $currency );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_campaign_default_accepts_donations_setting' )
+			->andReturn( $default_accepts_donations );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_campaign_default_has_target_setting' )
+			->andReturn( $default_has_target );
+
+		$field_renderer = new AdminSettingsFieldRenderer();
+
+		return new AdminSettingsReader(
+			new OptionReader( $storage ),
+			new GeneralSettingsGroup(
+				new CurrencySetting( $field_renderer ),
+			),
+			new CampaignSettingsGroup(
+				new CampaignDefaultAcceptsDonationsSetting( $field_renderer ),
+				new CampaignDefaultHasTargetSetting( $field_renderer ),
+			),
+		);
 	}
 }
 

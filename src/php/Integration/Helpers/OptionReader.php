@@ -75,6 +75,28 @@ final readonly class OptionReader {
 	}
 
 	/**
+	 * Finds the option value as a boolean.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $option_name Option name.
+	 *
+	 * @return bool|null Option value, or null when the option does not exist.
+	 *
+	 * @throws UnexpectedValueException When the stored value cannot be cast to a boolean.
+	 */
+	public function find_bool_option( string $option_name ): ?bool {
+
+		$value = $this->find_option( $option_name );
+
+		if ( $value === null ) {
+			return null;
+		}
+
+		return $this->cast_option_value( $option_name, 'bool', $value, TypeCaster::to_bool( ... ) );
+	}
+
+	/**
 	 * Finds the option value by name.
 	 *
 	 * @since 1.0.0

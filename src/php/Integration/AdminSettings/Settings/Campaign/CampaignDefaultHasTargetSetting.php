@@ -2,27 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm;
+namespace Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign;
 
-use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\WpSchemaType;
-use InvalidArgumentException;
 use Override;
 
 /**
- * Represents the admin setting for the default donation amount.
+ * Represents the admin setting for the default has target value.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class DonationFormDefaultAmountSetting implements AdminSettingInterface {
+final readonly class CampaignDefaultHasTargetSetting implements AdminSettingInterface {
 
-	private const string ID = 'default_amount';
+	private const string ID = 'default_has_target';
 
-	private const int DEFAULT_VALUE = 10;
+	private const bool DEFAULT_VALUE = false;
 
 	/**
 	 * Constructor.
@@ -59,7 +57,7 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	#[Override]
 	public function get_label(): string {
 
-		return __( 'Default donation amount', 'fundrik' );
+		return __( 'Default has target', 'fundrik' );
 	}
 
 	/**
@@ -67,10 +65,10 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int Default setting value.
+	 * @return bool Default setting value.
 	 */
 	#[Override]
-	public function get_default_value(): int {
+	public function get_default_value(): bool {
 
 		return self::DEFAULT_VALUE;
 	}
@@ -85,7 +83,7 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	#[Override]
 	public function get_value_type(): WpSchemaType {
 
-		return WpSchemaType::Integer;
+		return WpSchemaType::Boolean;
 	}
 
 	/**
@@ -95,24 +93,12 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int Sanitized setting value.
-	 *
-	 * @throws InvalidArgumentException When the value is not a positive integer.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 * @return bool Sanitized setting value.
 	 */
 	#[Override]
-	public function sanitize_value( mixed $value ): int {
+	public function sanitize_value( mixed $value ): bool {
 
-		$default_amount = TypeCaster::to_int( $value );
-
-		if ( $default_amount > 0 ) {
-			return $default_amount;
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
-		);
+		return (bool) $value;
 	}
 
 	/**
@@ -120,23 +106,22 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, int|string> $args Rendering arguments.
+	 * @param array<string, int|string|bool> $args Rendering arguments.
 	 *
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: int|string
+	 *     value: int|string|bool
 	 * } $args
 	 */
 	#[Override]
 	public function render( array $args ): void {
 
-		$this->field_renderer->render_number_field(
+		$this->field_renderer->render_checkbox_field(
 			$args['field_name'],
 			$args['input_id'],
-			$args['value'],
-			min: 1,
-			step: 1,
+			(bool) $args['value'],
+			__( 'New campaigns have a target.', 'fundrik' ),
 		);
 	}
 }

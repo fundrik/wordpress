@@ -132,10 +132,5 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 	public function render( array $args ): void {
 
 		$this->field_renderer->render_text_field( $args['field_name'], $args['input_id'], $args['value'] );
-
-		printf(
-			'<p class="description">%s</p>',
-			esc_html__( 'Used when the donation form block does not define its own amount label.', 'fundrik' ),
-		);
 	}
 }

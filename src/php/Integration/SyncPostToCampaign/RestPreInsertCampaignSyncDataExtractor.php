@@ -9,8 +9,8 @@ use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use InvalidArgumentException;
 use stdClass;
 use WP_Error;
@@ -30,10 +30,10 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param PostTypeMetaFieldReader $meta_field_reader Reads post meta defaults from attributes.
+	 * @param AdminSettingsReader $settings_reader Reads campaign defaults from admin settings.
 	 */
 	public function __construct(
-		private PostTypeMetaFieldReader $meta_field_reader,
+		private AdminSettingsReader $settings_reader,
 	) {}
 
 	// phpcs:disable Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint, SlevomatCodingStandard.Files.LineLength.LineTooLong
@@ -65,9 +65,9 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			// The client must send the current entity version for optimistic locking.
 			$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
-			$default_accepts_donations = $this->get_meta_default_bool( CampaignPostTypeConfig::META_ACCEPTS_DONATIONS );
-			$default_has_target = $this->get_meta_default_bool( CampaignPostTypeConfig::META_HAS_TARGET );
-			$default_target_currency = $this->get_meta_default_string( CampaignPostTypeConfig::META_TARGET_CURRENCY );
+			$default_accepts_donations = $this->settings_reader->get_campaign_default_accepts_donations();
+			$default_has_target = $this->settings_reader->get_campaign_default_has_target();
+			$default_target_currency = $this->settings_reader->get_currency();
 
 			// The REST payload may omit unchanged optional meta fields.
 			$accepts_donations = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
@@ -96,56 +96,6 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 		}
 	}
 	// phpcs:enable
-
-	/**
-	 * Returns a boolean default for the given campaign meta key.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $meta_key The campaign post meta key.
-	 *
-	 * @return bool The boolean default value.
-	 */
-	private function get_meta_default_bool( string $meta_key ): bool {
-
-		$default = $this->meta_field_reader->get_meta_default_by_config_class(
-			CampaignPostTypeConfig::class,
-			$meta_key,
-		);
-
-		if ( $default !== null ) {
-			return TypeCaster::to_bool( $default );
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
-		);
-	}
-
-	/**
-	 * Returns a string default for the given campaign meta key.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $meta_key The campaign post meta key.
-	 *
-	 * @return string The string default value.
-	 */
-	private function get_meta_default_string( string $meta_key ): string {
-
-		$default = $this->meta_field_reader->get_meta_default_by_config_class(
-			CampaignPostTypeConfig::class,
-			$meta_key,
-		);
-
-		if ( $default !== null ) {
-			return TypeCaster::to_string( $default );
-		}
-
-		throw new InvalidArgumentException(
-			sprintf( 'Campaign post meta default must exist. Given: %s.', $meta_key ),
-		);
-	}
 
 	/**
 	 * Returns the target amount from meta, treating an empty string as null.

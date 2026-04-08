@@ -102,6 +102,7 @@ final readonly class AdminSettingsGroupRegistrar {
 		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			$current_value = match ( $setting->get_value_type() ) {
+				WpSchemaType::Boolean => $this->option_reader->find_bool_option( $option_name ),
 				WpSchemaType::Integer => $this->option_reader->find_int_option( $option_name ),
 				WpSchemaType::String => $this->option_reader->find_string_option( $option_name ),
 			} ?? $setting->get_default_value();
@@ -155,7 +156,7 @@ final readonly class AdminSettingsGroupRegistrar {
 			$registration->option_name,
 			[
 				'type' => $registration->setting->get_value_type()->value,
-				'sanitize_callback' => fn ( mixed $value ): int|string => $this->sanitize_registered_setting_value(
+				'sanitize_callback' => fn ( mixed $value ): bool|int|string => $this->sanitize_registered_setting_value(
 					$registration,
 					$value,
 				),
@@ -172,14 +173,14 @@ final readonly class AdminSettingsGroupRegistrar {
 	 * @param AdminSettingRegistration $registration Prepared registration data.
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int|string Sanitized setting value.
+	 * @return bool|int|string Sanitized setting value.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function sanitize_registered_setting_value(
 		AdminSettingRegistration $registration,
 		mixed $value,
-	): int|string {
+	): bool|int|string {
 
 		try {
 			return $registration->setting->sanitize_value( $value );

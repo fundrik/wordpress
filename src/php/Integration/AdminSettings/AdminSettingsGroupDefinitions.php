@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\AdminSettings;
 
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 
@@ -27,6 +28,7 @@ final readonly class AdminSettingsGroupDefinitions {
 
 		return [
 			GeneralSettingsGroup::class,
+			CampaignSettingsGroup::class,
 			DonationFormSettingsGroup::class,
 		];
 	}

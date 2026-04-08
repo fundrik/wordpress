@@ -6,32 +6,32 @@ namespace Fundrik\WordPress\Integration\AdminSettings\Groups;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
 use Override;
 
 /**
- * Represents the donation form settings group registered for the Fundrik plugin.
+ * Represents the campaign settings group registered for the Fundrik plugin.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInterface {
+final readonly class CampaignSettingsGroup implements AdminSettingsGroupInterface {
 
-	private const string ID = 'donation_form';
+	private const string ID = 'campaign';
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DonationFormDefaultAmountSetting $default_donation_amount_setting Provides default donation amount setting.
-	 * @param DonationFormDefaultAmountLabelSetting $default_amount_label_setting Provides default amount label setting.
+	 * @param CampaignDefaultAcceptsDonationsSetting $default_accepts_donations_setting Provides the default accepts donations setting.
+	 * @param CampaignDefaultHasTargetSetting $default_has_target_setting Provides the default has target setting.
 	 */
 	public function __construct(
-		private DonationFormDefaultAmountSetting $default_donation_amount_setting,
-		private DonationFormDefaultAmountLabelSetting $default_amount_label_setting,
+		private CampaignDefaultAcceptsDonationsSetting $default_accepts_donations_setting,
+		private CampaignDefaultHasTargetSetting $default_has_target_setting,
 	) {
 	}
 
@@ -58,7 +58,7 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 	#[Override]
 	public function get_section_title(): string {
 
-		return __( 'Donation Form', 'fundrik' );
+		return __( 'Campaign', 'fundrik' );
 	}
 
 	/**
@@ -69,10 +69,7 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 	#[Override]
 	public function render_section_description(): void {
 
-		echo '<p>' . esc_html__(
-			'Configure the defaults used by donation form blocks.',
-			'fundrik',
-		) . '</p>';
+		echo '<p>' . esc_html__( 'Configure the defaults used for new campaigns.', 'fundrik' ) . '</p>';
 	}
 
 	/**
@@ -86,8 +83,8 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 	public function get_settings(): array {
 
 		return [
-			$this->default_donation_amount_setting,
-			$this->default_amount_label_setting,
+			$this->default_accepts_donations_setting,
+			$this->default_has_target_setting,
 		];
 	}
 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings;
 
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
@@ -63,6 +65,30 @@ final readonly class AdminSettingsReader {
 	public function get_currency(): string {
 
 		return $this->get_string_setting( CurrencySetting::class );
+	}
+
+	/**
+	 * Returns the configured default accepts donations value for new campaigns.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Default accepts donations value.
+	 */
+	public function get_campaign_default_accepts_donations(): bool {
+
+		return $this->get_bool_setting( CampaignDefaultAcceptsDonationsSetting::class );
+	}
+
+	/**
+	 * Returns the configured default has target value for new campaigns.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Default has target value.
+	 */
+	public function get_campaign_default_has_target(): bool {
+
+		return $this->get_bool_setting( CampaignDefaultHasTargetSetting::class );
 	}
 
 	/**
@@ -143,6 +169,32 @@ final readonly class AdminSettingsReader {
 		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			return $this->option_reader->find_string_option( $option_name ) ?? $default_value;
+		} catch ( UnexpectedValueException ) {
+			return $default_value;
+		}
+	}
+
+	/**
+	 * Returns a boolean setting value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $setting_class Setting class.
+	 *
+	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
+	 *
+	 * @return bool Setting value.
+	 */
+	private function get_bool_setting( string $setting_class ): bool {
+
+		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
+		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$default_value = $setting->get_default_value();
+
+		// Fall back to the setting default when the stored option is missing or invalid.
+		try {
+			return $this->option_reader->find_bool_option( $option_name ) ?? $default_value;
 		} catch ( UnexpectedValueException ) {
 			return $default_value;
 		}

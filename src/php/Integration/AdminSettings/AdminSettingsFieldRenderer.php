@@ -78,6 +78,30 @@ final readonly class AdminSettingsFieldRenderer {
 	}
 
 	/**
+	 * Renders a checkbox field.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $field_name HTML field name.
+	 * @param string $input_id HTML input ID.
+	 * @param bool $checked Whether the checkbox is checked.
+	 * @param string $label Checkbox label.
+	 */
+	public function render_checkbox_field( string $field_name, string $input_id, bool $checked, string $label, ): void {
+
+		printf(
+			'<input type="hidden" name="%1$s" value="0">'
+			. '<label for="%2$s">'
+			. '<input type="checkbox" name="%1$s" id="%2$s" value="1"%3$s> %4$s'
+			. '</label>',
+			esc_attr( $field_name ),
+			esc_attr( $input_id ),
+			checked( $checked, true, false ),
+			esc_html( $label ),
+		);
+	}
+
+	/**
 	 * Builds optional HTML attributes for a number input field.
 	 *
 	 * @since 1.0.0
