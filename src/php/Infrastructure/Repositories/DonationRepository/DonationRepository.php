@@ -12,10 +12,13 @@ use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Donations\Domain\Exceptions\DonationFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
+use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
+use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
+use Fundrik\WordPress\Infrastructure\Ids\DonationId;
+use Fundrik\WordPress\Infrastructure\Ids\DonationIdException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -51,16 +54,16 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $id The donation ID to retrieve.
+	 * @param EntityId $id Donation ID.
 	 *
-	 * @return Donation|null The donation if found, null otherwise.
+	 * @return Donation|null Donation if found, null otherwise.
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
 	 */
 	#[Override]
 	public function find_by_id( EntityId $id ): ?Donation {
 
-		$id_value = $this->get_donation_id_as_uuid( $id );
+		$id_value = $this->require_donation_id( $id );
 
 		try {
 			$row = $this->db->get_by_id( self::TABLE_NAME, $id_value );
@@ -83,7 +86,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $campaign_id The campaign ID to check.
+	 * @param EntityId $campaign_id Campaign ID.
 	 *
 	 * @return bool True when at least one donation exists for the campaign.
 	 *
@@ -92,7 +95,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function exists_by_campaign_id( EntityId $campaign_id ): bool {
 
-		$campaign_id_value = $this->get_campaign_id_as_int( $campaign_id );
+		$campaign_id_value = $this->require_campaign_id( $campaign_id );
 
 		try {
 			return $this->db->exists_by_column( self::TABLE_NAME, 'campaign_id', $campaign_id_value );
@@ -109,7 +112,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $id The donation ID to check.
+	 * @param EntityId $id Donation ID.
 	 *
 	 * @return bool True if the donation exists.
 	 *
@@ -118,7 +121,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
 
-		$id_value = $this->get_donation_id_as_uuid( $id );
+		$id_value = $this->require_donation_id( $id );
 
 		try {
 			return $this->db->exists_by_id( self::TABLE_NAME, $id_value );
@@ -136,16 +139,16 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param Donation $donation The donation to insert.
+	 * @param Donation $donation Donation entity.
 	 *
-	 * @return Donation The persisted donation snapshot.
+	 * @return Donation Persisted donation snapshot.
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the insert fails.
 	 */
 	#[Override]
 	public function insert( Donation $donation ): Donation {
 
-		$donation_id = $this->get_donation_id_as_uuid( $donation->get_id() );
+		$donation_id = $this->require_donation_id( $donation->get_id() );
 		$version = $donation->get_version();
 
 		if ( ! $version->equals( EntityVersion::initial() ) ) {
@@ -187,9 +190,9 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param Donation $donation The donation to update.
+	 * @param Donation $donation Donation entity.
 	 *
-	 * @return Donation The persisted donation snapshot.
+	 * @return Donation Persisted donation snapshot.
 	 *
 	 * @throws DonationNotFoundExceptionInterface When the donation does not exist.
 	 * @throws DonationRepositoryExceptionInterface When the update fails for another reason.
@@ -197,7 +200,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	#[Override]
 	public function update( Donation $donation ): Donation {
 
-		$donation_id = $this->get_donation_id_as_uuid( $donation->get_id() );
+		$donation_id = $this->require_donation_id( $donation->get_id() );
 
 		$expected_version = $donation->get_version();
 		$new_version = $expected_version->next();
@@ -249,9 +252,9 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $row The persistence row.
+	 * @param array<string, mixed> $row Persistence row.
 	 *
-	 * @return Donation The mapped donation entity.
+	 * @return Donation Mapped donation entity.
 	 *
 	 * @throws DonationRepositoryExceptionInterface When the row cannot be mapped.
 	 *
@@ -285,18 +288,18 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param Donation $donation The donation to convert.
+	 * @param Donation $donation Donation entity.
 	 *
-	 * @return array<string, int|string|bool|null> The persistence row data.
+	 * @return array<string, int|string|bool|null> Persistence row data.
 	 */
 	private function map_donation_to_insert_row( Donation $donation ): array {
 
 		$created_at = $this->current_utc_timestamp();
 
 		return [
-			'id' => $this->get_donation_id_as_uuid( $donation->get_id() ),
+			'id' => $this->require_donation_id( $donation->get_id() ),
 			'version' => $donation->get_version()->get_value(),
-			'campaign_id' => $this->get_campaign_id_as_int( $donation->get_campaign_id() ),
+			'campaign_id' => $this->require_campaign_id( $donation->get_campaign_id() ),
 			'amount' => $donation->get_money()->get_amount()->get_value(),
 			'currency_code' => $donation->get_money()->get_currency()->get_code(),
 			'status' => $donation->get_status()->value,
@@ -306,13 +309,13 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	}
 
 	/**
-	 * Converts a Donation entity into persistence fields that are controlled by the domain model.
+	 * Returns persistence fields for a donation update.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param Donation $donation The donation to convert.
+	 * @param Donation $donation Donation entity.
 	 *
-	 * @return array<string, int|string|bool|null> The persistence row data.
+	 * @return array<string, int|string|bool|null> Persistence row data.
 	 */
 	private function map_donation_to_update_row( Donation $donation ): array {
 
@@ -335,56 +338,42 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	}
 
 	/**
-	 * Converts a donation ID to UUID string.
+	 * Returns donation ID as a UUID string.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $id The donation ID to convert.
+	 * @param EntityId $id Donation ID.
 	 *
-	 * @return string The UUID value.
+	 * @return string Donation ID.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as UUID.
+	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a valid UUID.
 	 */
-	private function get_donation_id_as_uuid( EntityId $id ): string {
+	private function require_donation_id( EntityId $id ): string {
 
 		try {
-			return $id->get_as_uuid();
-		} catch ( InvalidEntityIdException $e ) {
-
-			throw new DonationRepositoryException(
-				sprintf(
-					'Donation ID must be UUID-compatible. Given: %s.',
-					(string) $id->get_value(),
-				),
-				previous: $e,
-			);
+			return DonationId::from_entity_id( $id )->get_value();
+		} catch ( DonationIdException $e ) {
+			throw new DonationRepositoryException( $e->getMessage(), previous: $e );
 		}
 	}
 
 	/**
-	 * Converts a campaign ID to integer campaign ID.
+	 * Returns campaign ID as an integer.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $id The campaign ID to convert.
+	 * @param EntityId $id Campaign ID.
 	 *
-	 * @return int The integer campaign ID.
+	 * @return int Campaign ID.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as int.
+	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a positive integer.
 	 */
-	private function get_campaign_id_as_int( EntityId $id ): int {
+	private function require_campaign_id( EntityId $id ): int {
 
 		try {
-			return $id->get_as_int();
-		} catch ( InvalidEntityIdException $e ) {
-
-			throw new DonationRepositoryException(
-				sprintf(
-					'Campaign ID must be int-compatible. Given: %s.',
-					(string) $id->get_value(),
-				),
-				previous: $e,
-			);
+			return CampaignId::from_entity_id( $id )->get_value();
+		} catch ( CampaignIdException $e ) {
+			throw new DonationRepositoryException( $e->getMessage(), previous: $e );
 		}
 	}
 }

@@ -101,7 +101,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->find_by_id( $id );
@@ -235,7 +235,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->insert( $campaign );
@@ -373,7 +373,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->update( $campaign );
@@ -534,7 +534,7 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Campaign ID must be int-compatible. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
+			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
 		);
 
 		$this->repository->delete( $id );
@@ -656,4 +656,3 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			&& ! array_key_exists( 'currency_code', $row );
 	}
 }
-

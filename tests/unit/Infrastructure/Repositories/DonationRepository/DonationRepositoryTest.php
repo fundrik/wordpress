@@ -67,7 +67,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		self::assertSame( 77, $result?->get_campaign_id()->get_value() );
 		self::assertSame( 1_000, $result?->get_money()->get_amount()->get_value() );
 		self::assertSame( 'USD', $result?->get_money()->get_currency()->get_code() );
-		self::assertSame( 'captured', $result?->get_status()->value );
+		self::assertSame( 'succeeded', $result?->get_status()->value );
 	}
 
 	#[Test]
@@ -109,7 +109,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( DonationRepositoryException::class );
-		$this->expectExceptionMessage( 'Donation ID must be UUID-compatible. Given: 7.' );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: 7.' );
 
 		$this->repository->find_by_id( $id );
 	}
@@ -176,7 +176,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		$this->expectException( DonationRepositoryException::class );
 		$this->expectExceptionMessage(
-			'Campaign ID must be int-compatible. Given: 01956b66-c80b-7f0e-b8d4-4c4f9f7d5599.',
+			'Campaign ID must be a positive integer. Given: 01956b66-c80b-7f0e-b8d4-4c4f9f7d5599.',
 		);
 
 		$this->repository->exists_by_campaign_id( $campaign_id );
@@ -459,7 +459,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			'campaign_id' => '77',
 			'amount' => '1000',
 			'currency_code' => 'USD',
-			'status' => 'captured',
+			'status' => 'succeeded',
 			'created_at' => '2026-01-01 10:00:00.000000',
 			'updated_at' => '2026-01-01 11:00:00.000000',
 		];
