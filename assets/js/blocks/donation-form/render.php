@@ -2,14 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * Provides server-side rendering for the donation form block.
- *
- * @since 1.0.0
- *
- * @internal
- */
-return static function (): string {
+use Fundrik\WordPress\Integration\BlockRenderers\DonationFormBlockRenderer;
 
-	return '<div>&#1060;&#1086;&#1088;&#1084;&#1072;</div>';
-};
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup is escaped inside the renderer.
+echo ( new DonationFormBlockRenderer() )->render();

@@ -40,12 +40,30 @@ return array(
 		'title' => 'Donation Form',
 		'category' => 'widgets',
 		'icon' => 'heart',
-		'description' => 'Donation form.',
+		'description' => 'Displays the donation form for the current campaign when the campaign accepts donations.',
 		'supports' => array(
-			'html' => false
+			'html' => false,
+			'inserter' => false,
+			'multiple' => false,
+			'reusable' => false,
+			'lock' => false
+		),
+		'attributes' => array(
+			'lock' => array(
+				'type' => 'object',
+				'default' => array(
+					'move' => false,
+					'remove' => true
+				)
+			)
 		),
 		'textdomain' => 'fundrik',
 		'editorScript' => 'file:./index.js',
+		'usesContext' => array(
+			'postType'
+		),
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js',
 		'render' => 'file:./render.php'
 	)
 );

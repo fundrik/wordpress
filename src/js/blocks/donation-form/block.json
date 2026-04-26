@@ -5,11 +5,29 @@
 	"title": "Donation Form",
 	"category": "widgets",
 	"icon": "heart",
-	"description": "Donation form.",
+	"description": "Displays the donation form for the current campaign when the campaign accepts donations.",
 	"supports": {
-		"html": false
+		"html": false,
+		"inserter": false,
+		"multiple": false,
+		"reusable": false,
+		"lock": false
+	},
+	"attributes": {
+		"lock": {
+			"type": "object",
+			"default": {
+				"move": false,
+				"remove": true
+			}
+		}
 	},
 	"textdomain": "fundrik",
 	"editorScript": "file:./index.js",
+	"usesContext": [
+		"postType"
+	],
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js",
 	"render": "file:./render.php"
 }

@@ -9,13 +9,12 @@ use Closure;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\ChangeCampaignTargetHandler;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\EnableCampaignDonations\EnableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\RenameCampaign\RenameCampaignHandler;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotHandler;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
@@ -28,8 +27,12 @@ use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
+use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
@@ -40,9 +43,6 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPrepareCampaig
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSyncDataExtractor;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
@@ -84,6 +84,7 @@ use WP_Screen;
 #[UsesClass( CampaignDefaultAcceptsDonationsSetting::class )]
 #[UsesClass( CampaignDefaultHasTargetSetting::class )]
 #[UsesClass( CurrencySetting::class )]
+#[UsesClass( CurrentScreen::class )]
 #[UsesClass( MetaReader::class )]
 #[UsesClass( PluginUrl::class )]
 #[UsesClass( PostTypeMetaField::class )]
@@ -901,6 +902,3 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		);
 	}
 }
-
-
-

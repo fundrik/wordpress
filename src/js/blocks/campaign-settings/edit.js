@@ -1,33 +1,53 @@
-import { usePostMetaField } from '../../hooks/usePostMetaField';
 import { useBlockProps } from '@wordpress/block-editor';
 import { ToggleControl, TextControl } from '@wordpress/components';
+import { getCampaignEditorSettings } from '../shared/campaignEditorSettings';
+import { usePostMetaFieldWithDefault } from '../../hooks/usePostMetaFieldWithDefault';
 
-export default function Edit({
+export default function Edit( {
 	context: { postType },
-}) {
+} ) {
 
-	const [acceptsDonations, setAcceptsDonations] = usePostMetaField(postType, 'fundrik_campaign_accepts_donations');
-	const [hasTarget, setHasTarget] = usePostMetaField(postType, 'fundrik_campaign_has_target');
-	const [targetAmount, setTargetAmount] = usePostMetaField(postType, 'fundrik_campaign_target_amount');
+	const {
+		defaultAcceptsDonations,
+		defaultHasTarget,
+	} = getCampaignEditorSettings();
+
+	const [ acceptsDonations, setAcceptsDonations ] = usePostMetaFieldWithDefault(
+		postType,
+		'fundrik_campaign_accepts_donations',
+		defaultAcceptsDonations,
+	);
+
+	const [ hasTarget, setHasTarget ] = usePostMetaFieldWithDefault(
+		postType,
+		'fundrik_campaign_has_target',
+		defaultHasTarget,
+	);
+	
+	const [ targetAmount, setTargetAmount ] = usePostMetaFieldWithDefault(
+		postType,
+		'fundrik_campaign_target_amount',
+		'',
+	);
 
 	return (
-		<div {...useBlockProps()}>
+		<div { ...useBlockProps() }>
 			<ToggleControl
 				label="Accepts Donations"
-				checked={acceptsDonations}
-				onChange={setAcceptsDonations}
+				checked={ acceptsDonations }
+				onChange={ setAcceptsDonations }
 			/>
 			<ToggleControl
 				label="Has Target"
-				checked={hasTarget}
-				onChange={setHasTarget}
+				checked={ hasTarget }
+				onChange={ setHasTarget }
 			/>
 			{ hasTarget ? (
 				<TextControl
 					label="Target Amount"
 					type="number"
-					value={targetAmount}
-					onChange={setTargetAmount}
+					value={ targetAmount }
+					onChange={ setTargetAmount }
 				/>
 			) : (
 				<p className="fundrik-campaign-settings__hint">
@@ -37,4 +57,3 @@ export default function Edit({
 		</div>
 	);
 }
-

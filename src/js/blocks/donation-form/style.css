@@ -1,0 +1,51 @@
+.wp-block-fundrik-donation-form .fundrik-donation-form {
+	display: grid;
+	gap: 0.75rem;
+	max-width: 22rem;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__label {
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__amount {
+	min-height: 2.5rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #6b7280;
+	border-radius: 0.375rem;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__submit {
+	min-height: 2.5rem;
+	padding: 0.5rem 0.875rem;
+	border: 0;
+	border-radius: 0.375rem;
+	font-weight: 600;
+	color: #fff;
+	background: #0f766e;
+	cursor: pointer;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form.is-busy .fundrik-donation-form__submit {
+	opacity: 0.7;
+	cursor: wait;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__message {
+	margin: 0;
+	min-height: 1.25rem;
+	font-size: 0.9rem;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__message[data-state='pending'] {
+	color: #6b7280;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__message[data-state='success'] {
+	color: #047857;
+}
+
+.wp-block-fundrik-donation-form .fundrik-donation-form__message[data-state='error'] {
+	color: #b91c1c;
+}

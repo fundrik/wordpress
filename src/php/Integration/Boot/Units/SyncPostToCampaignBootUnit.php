@@ -16,6 +16,7 @@ use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
+use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
@@ -34,7 +35,6 @@ use WP_Error;
 use WP_Post;
 use WP_REST_Request;
 use WP_REST_Response;
-use WP_Screen;
 
 /**
  * Synchronizes the campaign post state between WordPress and the Campaign domain model.
@@ -202,13 +202,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 */
 	private function enqueue_block_editor_script(): void {
 
-		$screen = get_current_screen();
-
-		if ( ! $screen instanceof WP_Screen ) {
-			return;
-		}
-
-		if ( $screen->post_type !== CampaignPostTypeConfig::ID ) {
+		if ( ! CurrentScreen::is_post_type( CampaignPostTypeConfig::ID ) ) {
 			return;
 		}
 

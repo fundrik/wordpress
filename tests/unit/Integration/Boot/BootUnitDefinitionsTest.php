@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot;
 
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
-use Fundrik\WordPress\Integration\Boot\Units\ExposeDonationFormEditorSettingsBootUnit;
+use Fundrik\WordPress\Integration\Boot\Units\ExposeCampaignEditorSettingsBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\InitializeFundrikAdminBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailuresBootUnit;
@@ -25,7 +25,7 @@ final class BootUnitDefinitionsTest extends FundrikTestCase {
 
 		$this->assertSame(
 			[
-				ExposeDonationFormEditorSettingsBootUnit::class,
+				ExposeCampaignEditorSettingsBootUnit::class,
 				FilterAllowedBlocksByPostTypeBootUnit::class,
 				InitializeFundrikAdminBootUnit::class,
 				LogCreateDonationRestRequestFailuresBootUnit::class,
