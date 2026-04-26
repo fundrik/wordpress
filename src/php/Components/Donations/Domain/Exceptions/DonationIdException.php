@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Ids;
+namespace Fundrik\WordPress\Components\Donations\Domain\Exceptions;
 
 use InvalidArgumentException;
 

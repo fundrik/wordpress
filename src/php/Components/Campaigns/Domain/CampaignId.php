@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Ids;
+namespace Fundrik\WordPress\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignIdException;
 
 /**
- * Represents a campaign ID.
+ * Represents a WordPress campaign ID.
  *
  * @since 1.0.0
  *
@@ -21,10 +22,10 @@ final readonly class CampaignId {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $value Campaign ID.
+	 * @param EntityId $entity_id Wrapped campaign EntityId.
 	 */
 	private function __construct(
-		private int $value,
+		private EntityId $entity_id,
 	) {}
 
 	/**
@@ -41,7 +42,9 @@ final readonly class CampaignId {
 	public static function from_entity_id( EntityId $id ): self {
 
 		try {
-			return new self( $id->get_as_int() );
+			$id->get_as_int();
+
+			return new self( $id );
 		} catch ( InvalidEntityIdException $e ) {
 			throw new CampaignIdException(
 				sprintf(
@@ -67,7 +70,7 @@ final readonly class CampaignId {
 	public static function from_value( int|string $value ): self {
 
 		try {
-			$entity_id = EntityId::create( $value );
+			return self::from_entity_id( EntityId::create( $value ) );
 		} catch ( InvalidEntityIdException $e ) {
 			throw new CampaignIdException(
 				sprintf(
@@ -77,8 +80,6 @@ final readonly class CampaignId {
 				previous: $e,
 			);
 		}
-
-		return self::from_entity_id( $entity_id );
 	}
 
 	/**
@@ -90,6 +91,19 @@ final readonly class CampaignId {
 	 */
 	public function get_value(): int {
 
-		return $this->value;
+		// from_entity_id() already rejects non-integer EntityId values.
+		return $this->entity_id->get_as_int();
+	}
+
+	/**
+	 * Returns the campaign ID as EntityId.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return EntityId Campaign EntityId.
+	 */
+	public function to_entity_id(): EntityId {
+
+		return $this->entity_id;
 	}
 }

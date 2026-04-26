@@ -13,8 +13,9 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignSynchronizedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
-use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
+use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
+use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
 use Override;
 use Psr\Log\LoggerInterface;
 
@@ -46,7 +47,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param ApplicationEventInterface $event The application event.
+	 * @param ApplicationEventInterface $event Application event.
 	 */
 	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
@@ -71,8 +72,8 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		}
 
 		try {
-			$campaign_id = $event->get_campaign_id()->get_as_int();
-		} catch ( InvalidEntityIdException ) {
+			$campaign_id = CampaignId::from_entity_id( $event->get_campaign_id() )->get_value();
+		} catch ( CampaignIdException ) {
 			$this->log_invalid_campaign_id( $event, 'campaign_id_not_int' );
 			return;
 		}
@@ -86,7 +87,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_created( int $campaign_id ): void {
 
@@ -95,7 +96,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_created', $campaign_id );
 	}
@@ -105,7 +106,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_donations_enabled( int $campaign_id ): void {
 
@@ -114,7 +115,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_donations_enabled', $campaign_id );
 	}
@@ -124,7 +125,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_donations_disabled( int $campaign_id ): void {
 
@@ -133,7 +134,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_donations_disabled', $campaign_id );
 	}
@@ -143,7 +144,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_renamed( int $campaign_id ): void {
 
@@ -152,7 +153,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_renamed', $campaign_id );
 	}
@@ -162,7 +163,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_target_changed( int $campaign_id ): void {
 
@@ -171,7 +172,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_target_changed', $campaign_id );
 	}
@@ -181,7 +182,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_synchronized( int $campaign_id ): void {
 
@@ -190,7 +191,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_synchronized', $campaign_id );
 	}
@@ -200,7 +201,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int $campaign_id The campaign ID.
+	 * @param int $campaign_id Campaign ID.
 	 */
 	private function publish_campaign_deleted( int $campaign_id ): void {
 
@@ -209,7 +210,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param int $campaign_id The campaign ID.
+		 * @param int $campaign_id Campaign ID.
 		 */
 		do_action( 'fundrik_campaign_deleted', $campaign_id );
 	}
@@ -219,7 +220,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param ApplicationEventInterface $event The application event.
+	 * @param ApplicationEventInterface $event Application event.
 	 * @param string $reason Machine-readable reason for resolution failure.
 	 */
 	private function log_invalid_campaign_id( ApplicationEventInterface $event, string $reason ): void {
@@ -244,7 +245,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @param array<string,mixed> $extra Additional context entries.
 	 *
-	 * @return array<string,mixed> The structured context payload.
+	 * @return array<string,mixed> Structured context payload.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

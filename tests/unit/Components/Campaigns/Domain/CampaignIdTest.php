@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Ids;
+namespace Fundrik\WordPress\Tests\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignIdException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,6 +29,14 @@ final class CampaignIdTest extends FundrikTestCase {
 		$id = CampaignId::from_value( 24 );
 
 		self::assertSame( 24, $id->get_value() );
+	}
+
+	#[Test]
+	public function to_entity_id_returns_wrapped_entity_id(): void {
+
+		$id = CampaignId::from_value( 24 );
+
+		self::assertEquals( EntityId::create( 24 ), $id->to_entity_id() );
 	}
 
 	#[Test]

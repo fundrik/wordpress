@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Ids;
+namespace Fundrik\WordPress\Components\Donations\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\DonationIdException;
 
 /**
- * Represents a donation ID.
+ * Represents a WordPress donation ID.
  *
  * @since 1.0.0
  *
@@ -21,10 +22,10 @@ final readonly class DonationId {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $value Donation ID.
+	 * @param EntityId $entity_id Wrapped donation EntityId.
 	 */
 	private function __construct(
-		private string $value,
+		private EntityId $entity_id,
 	) {}
 
 	/**
@@ -41,7 +42,9 @@ final readonly class DonationId {
 	public static function from_entity_id( EntityId $id ): self {
 
 		try {
-			return new self( $id->get_as_uuid() );
+			$id->get_as_uuid();
+
+			return new self( $id );
 		} catch ( InvalidEntityIdException $e ) {
 			throw new DonationIdException(
 				sprintf(
@@ -88,6 +91,19 @@ final readonly class DonationId {
 	 */
 	public function get_value(): string {
 
-		return $this->value;
+		// from_entity_id() already rejects non-UUID EntityId values.
+		return $this->entity_id->get_as_uuid();
+	}
+
+	/**
+	 * Returns the donation ID as EntityId.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return EntityId Donation EntityId.
+	 */
+	public function to_entity_id(): EntityId {
+
+		return $this->entity_id;
 	}
 }
