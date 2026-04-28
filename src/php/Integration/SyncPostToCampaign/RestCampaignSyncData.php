@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 
 /**
  * Carries the normalized campaign synchronization data for REST-based requests.
@@ -21,7 +21,7 @@ final readonly class RestCampaignSyncData {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $id The campaign ID.
+	 * @param CampaignId $id Campaign ID.
 	 * @param string $title The campaign title.
 	 * @param EntityVersion $version The campaign version.
 	 * @param bool $accepts_donations Whether the campaign accepts donations.
@@ -30,7 +30,7 @@ final readonly class RestCampaignSyncData {
 	 * @param string $target_currency The fundraising target currency (ISO 4217).
 	 */
 	public function __construct(
-		public EntityId $id,
+		public CampaignId $id,
 		public string $title,
 		public EntityVersion $version,
 		public bool $accepts_donations,

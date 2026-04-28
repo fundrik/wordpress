@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
@@ -103,7 +103,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		self::assertInstanceOf( RestCampaignSyncData::class, $result );
 
-		self::assertInstanceOf( EntityId::class, $result->id );
+		self::assertInstanceOf( CampaignId::class, $result->id );
 		self::assertSame( 10, $result->id->get_value() );
 
 		self::assertSame( 'Persisted title', $result->title );
@@ -151,6 +151,32 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertTrue( $result->has_target );
 		self::assertSame( 123, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
+	}
+
+	#[Test]
+	public function extract_or_error_returns_wp_error_when_entity_version_is_non_positive(): void {
+
+		$prepared_post = new stdClass();
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'id' => 15,
+					'title' => 'Ok',
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 0,
+					],
+				],
+			);
+
+		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'fundrik_campaign_invalid_payload', $result->get_error_code() );
+		self::assertSame( 'Entity version must be a positive integer. Given: 0.', $result->get_error_message() );
+		self::assertSame( 422, $result->get_error_data()['status'] );
 	}
 
 	#[Test]

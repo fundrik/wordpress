@@ -98,7 +98,7 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 		try {
 
 			$this->campaign_factory->create_from_primitives(
-				id: $data->id->get_value(),
+				id: $data->id->to_entity_id(),
 				version: $data->version->get_value(),
 				title: $data->title,
 				accepts_donations: $data->accepts_donations,
@@ -131,7 +131,7 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	private function validate_version_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		try {
-			$persisted = $this->campaign_repository->find_by_id( $data->id );
+			$persisted = $this->campaign_repository->find_by_id( $data->id->to_entity_id() );
 		} catch ( CampaignRepositoryExceptionInterface $e ) {
 
 			return new WP_Error(

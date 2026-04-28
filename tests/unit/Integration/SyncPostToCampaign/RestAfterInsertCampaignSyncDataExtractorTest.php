@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Brain\Monkey\Functions;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
@@ -145,6 +146,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		$result = $this->extractor->extract( $post, $this->request );
 
 		self::assertInstanceOf( RestCampaignSyncData::class, $result );
+		self::assertInstanceOf( CampaignId::class, $result->id );
 
 		self::assertSame( 10, $result->id->get_value() );
 		self::assertSame( 'Campaign title', $result->title );

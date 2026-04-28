@@ -47,7 +47,7 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	 */
 	public function sync( RestCampaignSyncData $data ): void {
 
-		if ( ! $this->campaign_repository->exists_by_id( $data->id ) ) {
+		if ( ! $this->campaign_repository->exists_by_id( $data->id->to_entity_id() ) ) {
 			$this->campaign_command->create( $this->new_create_command( $data ) );
 		} else {
 			$this->campaign_command->sync_from_snapshot( $this->new_sync_command( $data ) );
@@ -72,7 +72,7 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	private function new_create_command( RestCampaignSyncData $data ): CreateCampaignCommand {
 
 		return new CreateCampaignCommand(
-			id: $data->id,
+			id: $data->id->to_entity_id(),
 			title: $data->title,
 			accepts_donations: $data->accepts_donations,
 			currency_code: $data->target_currency,
@@ -92,7 +92,7 @@ final readonly class RestAfterInsertCampaignSynchronizer {
 	private function new_sync_command( RestCampaignSyncData $data ): SyncCampaignFromSnapshotCommand {
 
 		return new SyncCampaignFromSnapshotCommand(
-			id: $data->id,
+			id: $data->id->to_entity_id(),
 			expected_version: $data->version->get_value(),
 			title: $data->title,
 			accepts_donations: $data->accepts_donations,

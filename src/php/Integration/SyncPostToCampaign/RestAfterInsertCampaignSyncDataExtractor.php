@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
@@ -47,6 +48,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 	 *
 	 * @return RestCampaignSyncData The normalized data.
 	 *
+	 * @throws FundrikDomainException When the saved post ID or request version cannot be normalized.
 	 * @throws InvalidArgumentException When the payload is not usable.
 	 * @throws UnexpectedValueException When stored post meta has an unexpected value.
 	 *
@@ -78,7 +80,7 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		$version = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME );
 
 		return new RestCampaignSyncData(
-			id: EntityId::create( $id ),
+			id: CampaignId::from_value( $id ),
 			title: $title,
 			version: EntityVersion::create( $version ),
 			accepts_donations: $accepts_donations,

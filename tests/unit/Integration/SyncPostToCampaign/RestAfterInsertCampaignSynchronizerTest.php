@@ -20,6 +20,7 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestAfterInsertCampaignSynchronizer;
 use Fundrik\WordPress\Integration\SyncPostToCampaign\RestCampaignSyncData;
@@ -64,7 +65,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	public function sync_creates_campaign_when_post_is_being_created(): void {
 
 		$data = new RestCampaignSyncData(
-			id: EntityId::create( 10 ),
+			id: CampaignId::from_value( 10 ),
 			title: 'Title',
 			version: EntityVersion::create( 999 ),
 			accepts_donations: true,
@@ -107,7 +108,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	public function sync_updates_campaign_from_snapshot_when_post_is_being_updated(): void {
 
 		$data = new RestCampaignSyncData(
-			id: EntityId::create( 15 ),
+			id: CampaignId::from_value( 15 ),
 			title: 'Updated title',
 			version: EntityVersion::create( 7 ),
 			accepts_donations: false,
@@ -164,7 +165,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	public function sync_updates_campaign_and_clears_target_amount_meta_when_target_is_disabled(): void {
 
 		$data = new RestCampaignSyncData(
-			id: EntityId::create( 15 ),
+			id: CampaignId::from_value( 15 ),
 			title: 'Updated title',
 			version: EntityVersion::create( 7 ),
 			accepts_donations: false,
@@ -224,7 +225,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	public function sync_creates_campaign_when_snapshot_campaign_is_missing(): void {
 
 		$data = new RestCampaignSyncData(
-			id: EntityId::create( 15 ),
+			id: CampaignId::from_value( 15 ),
 			title: 'Created from snapshot',
 			version: EntityVersion::create( 7 ),
 			accepts_donations: false,

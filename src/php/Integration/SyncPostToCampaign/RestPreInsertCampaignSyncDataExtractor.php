@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use InvalidArgumentException;
@@ -76,7 +77,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			$target_currency = ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
 
 			return new RestCampaignSyncData(
-				id: EntityId::create( $id ),
+				id: CampaignId::from_value( $id ),
 				title: $title,
 				version: EntityVersion::create( $version ),
 				accepts_donations: $accepts_donations,
@@ -86,7 +87,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			);
 			// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong
 
-		} catch ( ArrayExtractionException | InvalidArgumentException $e ) {
+		} catch ( ArrayExtractionException | FundrikDomainException | InvalidArgumentException $e ) {
 
 			return new WP_Error(
 				'fundrik_campaign_invalid_payload',
