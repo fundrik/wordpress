@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
-use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
+use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
 use LogicException;
@@ -59,7 +59,7 @@ final readonly class ExposeCampaignEditorSettingsBootUnit implements BootUnitInt
 	 */
 	private function expose_editor_settings(): void {
 
-		if ( ! CurrentScreen::is_post_type( CampaignPostTypeConfig::ID ) ) {
+		if ( ! CurrentAdminScreen::is_post_type( CampaignPostTypeConfig::ID ) ) {
 			return;
 		}
 

@@ -19,7 +19,7 @@ use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFo
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\ExposeCampaignEditorSettingsBootUnit;
-use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
+use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
@@ -47,7 +47,7 @@ use WP_Screen;
 #[UsesClass( DonationFormDefaultAmountSetting::class )]
 #[UsesClass( DonationFormDefaultAmountLabelSetting::class )]
 #[UsesClass( CurrencySetting::class )]
-#[UsesClass( CurrentScreen::class )]
+#[UsesClass( CurrentAdminScreen::class )]
 #[UsesClass( OptionReader::class )]
 #[UsesClass( CampaignPostTypeConfig::class )]
 final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {

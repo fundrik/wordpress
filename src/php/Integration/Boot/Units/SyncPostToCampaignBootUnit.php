@@ -10,13 +10,14 @@ use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandServic
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
-use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
-use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
+use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
@@ -155,18 +156,19 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		WP_REST_Request $request,
 	): WP_REST_Response {
 
+		// REST hooks pass a persisted WP_Post, so its ID is expected to be a positive integer.
 		$post_id = TypeCaster::to_int( $post->ID );
-		$entity_id = EntityId::create( $post_id );
+		$campaign_id = CampaignId::from_value( $post_id );
 
 		try {
-			$campaign = $this->campaign_repository->find_by_id( $entity_id );
+			$campaign = $this->campaign_repository->find_by_id( $campaign_id->to_entity_id() );
 		} catch ( CampaignRepositoryExceptionInterface $e ) {
 
 			$this->logger->log_error(
 				'Failed to resolve campaign version for REST response.',
 				[
 					'post_id' => $post_id,
-					'entity_id' => $entity_id->get_value(),
+					'campaign_id' => $campaign_id->get_value(),
 					'exception' => $e,
 				],
 			);
@@ -202,7 +204,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 */
 	private function enqueue_block_editor_script(): void {
 
-		if ( ! CurrentScreen::is_post_type( CampaignPostTypeConfig::ID ) ) {
+		if ( ! CurrentAdminScreen::is_post_type( CampaignPostTypeConfig::ID ) ) {
 			return;
 		}
 
@@ -234,13 +236,14 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 */
 	private function sync_campaign_after_rest_save( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
 
+		// REST hooks pass a persisted WP_Post, so its ID is expected to be a positive integer.
 		$post_id = TypeCaster::to_int( $post->ID );
 
 		try {
 
 			$data = $this->after_insert_extractor->extract( $post, $request );
 
-		} catch ( InvalidArgumentException | UnexpectedValueException $e ) {
+		} catch ( FundrikDomainException | InvalidArgumentException | UnexpectedValueException $e ) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after REST save failed: payload is not usable.',
@@ -266,7 +269,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 				'Campaign synchronization after REST save failed.',
 				[
 					'post_id' => $post_id,
-					'entity_id' => $data->id->get_value(),
+					'campaign_id' => $data->id->get_value(),
 					'version' => $data->version->get_value(),
 					'exception' => $e,
 				],
@@ -291,17 +294,18 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 			return;
 		}
 
-		$entity_id = EntityId::create( $post_id );
+		// The validated delete_post hook input is expected to carry a positive campaign post ID.
+		$campaign_id = CampaignId::from_value( $post_id );
 
 		try {
-			$this->campaign_command->delete( $entity_id );
+			$this->campaign_command->delete( $campaign_id->to_entity_id() );
 		} catch ( DeleteCampaignException $e ) {
 
 			$this->logger->log_error(
 				'Campaign synchronization after post delete failed.',
 				[
 					'post_id' => $post_id,
-					'entity_id' => $entity_id->get_value(),
+					'campaign_id' => $campaign_id->get_value(),
 					'post_type' => $post->post_type,
 					'exception' => $e,
 				],

@@ -32,7 +32,7 @@ use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaul
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\SyncPostToCampaignBootUnit;
-use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
+use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
@@ -84,7 +84,7 @@ use WP_Screen;
 #[UsesClass( CampaignDefaultAcceptsDonationsSetting::class )]
 #[UsesClass( CampaignDefaultHasTargetSetting::class )]
 #[UsesClass( CurrencySetting::class )]
-#[UsesClass( CurrentScreen::class )]
+#[UsesClass( CurrentAdminScreen::class )]
 #[UsesClass( MetaReader::class )]
 #[UsesClass( PluginUrl::class )]
 #[UsesClass( PostTypeMetaField::class )]
@@ -462,7 +462,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 							return false;
 						}
 
-						if ( ( $context['entity_id'] ?? null ) !== 44 ) {
+						if ( ( $context['campaign_id'] ?? null ) !== 44 ) {
 							return false;
 						}
 
@@ -642,7 +642,7 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 							return false;
 						}
 
-						if ( ( $context['entity_id'] ?? null ) !== 33 ) {
+						if ( ( $context['campaign_id'] ?? null ) !== 33 ) {
 							return false;
 						}
 
