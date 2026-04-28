@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Helpers;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Integration\Helpers\CurrentScreen;
+use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use WP_Screen;
 
-#[CoversClass( CurrentScreen::class )]
-final class CurrentScreenTest extends WordPressTestCase {
+#[CoversClass( CurrentAdminScreen::class )]
+final class CurrentAdminScreenTest extends WordPressTestCase {
 
 	#[Test]
 	public function is_post_type_returns_false_when_current_screen_is_missing(): void {
@@ -22,7 +22,7 @@ final class CurrentScreenTest extends WordPressTestCase {
 			->once()
 			->andReturn( null );
 
-		self::assertFalse( CurrentScreen::is_post_type( 'fundrik_campaign' ) );
+		self::assertFalse( CurrentAdminScreen::is_post_type( 'fundrik_campaign' ) );
 	}
 
 	#[Test]
@@ -32,7 +32,7 @@ final class CurrentScreenTest extends WordPressTestCase {
 			->once()
 			->andReturn( new \stdClass() );
 
-		self::assertFalse( CurrentScreen::is_post_type( 'fundrik_campaign' ) );
+		self::assertFalse( CurrentAdminScreen::is_post_type( 'fundrik_campaign' ) );
 	}
 
 	#[Test]
@@ -45,7 +45,7 @@ final class CurrentScreenTest extends WordPressTestCase {
 			->once()
 			->andReturn( $screen );
 
-		self::assertFalse( CurrentScreen::is_post_type( 'fundrik_campaign' ) );
+		self::assertFalse( CurrentAdminScreen::is_post_type( 'fundrik_campaign' ) );
 	}
 
 	#[Test]
@@ -58,6 +58,6 @@ final class CurrentScreenTest extends WordPressTestCase {
 			->once()
 			->andReturn( $screen );
 
-		self::assertTrue( CurrentScreen::is_post_type( 'fundrik_campaign' ) );
+		self::assertTrue( CurrentAdminScreen::is_post_type( 'fundrik_campaign' ) );
 	}
 }

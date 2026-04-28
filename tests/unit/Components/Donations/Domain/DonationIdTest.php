@@ -6,13 +6,13 @@ namespace Fundrik\WordPress\Tests\Components\Donations\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
-use Fundrik\WordPress\Components\Donations\Domain\Exceptions\DonationIdException;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass( DonationId::class )]
-#[CoversClass( DonationIdException::class )]
+#[CoversClass( InvalidDonationIdException::class )]
 final class DonationIdTest extends FundrikTestCase {
 
 	#[Test]
@@ -44,7 +44,7 @@ final class DonationIdTest extends FundrikTestCase {
 	#[Test]
 	public function from_entity_id_throws_for_integer_entity_id(): void {
 
-		$this->expectException( DonationIdException::class );
+		$this->expectException( InvalidDonationIdException::class );
 		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: 42.' );
 
 		DonationId::from_entity_id( EntityId::create( 42 ) );
@@ -53,7 +53,7 @@ final class DonationIdTest extends FundrikTestCase {
 	#[Test]
 	public function from_value_throws_for_invalid_uuid_string(): void {
 
-		$this->expectException( DonationIdException::class );
+		$this->expectException( InvalidDonationIdException::class );
 		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: abc.' );
 
 		DonationId::from_value( 'abc' );

@@ -6,13 +6,13 @@ namespace Fundrik\WordPress\Tests\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
-use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass( CampaignId::class )]
-#[CoversClass( CampaignIdException::class )]
+#[CoversClass( InvalidCampaignIdException::class )]
 final class CampaignIdTest extends FundrikTestCase {
 
 	#[Test]
@@ -42,7 +42,7 @@ final class CampaignIdTest extends FundrikTestCase {
 	#[Test]
 	public function from_entity_id_throws_for_uuid_entity_id(): void {
 
-		$this->expectException( CampaignIdException::class );
+		$this->expectException( InvalidCampaignIdException::class );
 		$this->expectExceptionMessage(
 			'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
 		);
@@ -53,11 +53,11 @@ final class CampaignIdTest extends FundrikTestCase {
 	}
 
 	#[Test]
-	public function from_value_throws_for_non_integer_value(): void {
+	public function from_value_throws_for_non_positive_integer(): void {
 
-		$this->expectException( CampaignIdException::class );
-		$this->expectExceptionMessage( 'Campaign ID must be a positive integer. Given: abc.' );
+		$this->expectException( InvalidCampaignIdException::class );
+		$this->expectExceptionMessage( 'Campaign ID must be a positive integer. Given: 0.' );
 
-		CampaignId::from_value( 'abc' );
+		CampaignId::from_value( 0 );
 	}
 }

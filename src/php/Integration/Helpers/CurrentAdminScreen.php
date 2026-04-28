@@ -13,7 +13,7 @@ use WP_Screen;
  *
  * @internal
  */
-final readonly class CurrentScreen {
+final readonly class CurrentAdminScreen {
 
 	/**
 	 * Checks whether the current admin screen matches the given post type.

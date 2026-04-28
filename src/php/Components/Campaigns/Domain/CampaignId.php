@@ -6,10 +6,10 @@ namespace Fundrik\WordPress\Components\Campaigns\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
-use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\CampaignIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 
 /**
- * Represents a WordPress campaign ID.
+ * Represents a campaign ID.
  *
  * @since 1.0.0
  *
@@ -37,7 +37,7 @@ final readonly class CampaignId {
 	 *
 	 * @return self Campaign ID.
 	 *
-	 * @throws CampaignIdException When the EntityId cannot be represented as a positive integer.
+	 * @throws InvalidCampaignIdException When the EntityId cannot be represented as a positive integer.
 	 */
 	public static function from_entity_id( EntityId $id ): self {
 
@@ -46,7 +46,7 @@ final readonly class CampaignId {
 
 			return new self( $id );
 		} catch ( InvalidEntityIdException $e ) {
-			throw new CampaignIdException(
+			throw new InvalidCampaignIdException(
 				sprintf(
 					'Campaign ID must be a positive integer. Given: %s.',
 					(string) $id->get_value(),
@@ -61,18 +61,18 @@ final readonly class CampaignId {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param int|string $value Raw campaign ID value.
+	 * @param int $value Raw campaign ID value.
 	 *
 	 * @return self Campaign ID.
 	 *
-	 * @throws CampaignIdException When the value cannot be represented as a positive integer.
+	 * @throws InvalidCampaignIdException When the value cannot be represented as a positive integer.
 	 */
-	public static function from_value( int|string $value ): self {
+	public static function from_value( int $value ): self {
 
 		try {
 			return self::from_entity_id( EntityId::create( $value ) );
 		} catch ( InvalidEntityIdException $e ) {
-			throw new CampaignIdException(
+			throw new InvalidCampaignIdException(
 				sprintf(
 					'Campaign ID must be a positive integer. Given: %s.',
 					(string) $value,

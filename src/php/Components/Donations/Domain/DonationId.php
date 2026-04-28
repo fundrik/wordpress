@@ -6,10 +6,10 @@ namespace Fundrik\WordPress\Components\Donations\Domain;
 
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
-use Fundrik\WordPress\Components\Donations\Domain\Exceptions\DonationIdException;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
 
 /**
- * Represents a WordPress donation ID.
+ * Represents a donation ID.
  *
  * @since 1.0.0
  *
@@ -37,7 +37,7 @@ final readonly class DonationId {
 	 *
 	 * @return self Donation ID.
 	 *
-	 * @throws DonationIdException When the EntityId cannot be represented as a valid UUID.
+	 * @throws InvalidDonationIdException When the EntityId cannot be represented as a valid UUID.
 	 */
 	public static function from_entity_id( EntityId $id ): self {
 
@@ -46,7 +46,7 @@ final readonly class DonationId {
 
 			return new self( $id );
 		} catch ( InvalidEntityIdException $e ) {
-			throw new DonationIdException(
+			throw new InvalidDonationIdException(
 				sprintf(
 					'Donation ID must be a valid UUID. Given: %s.',
 					(string) $id->get_value(),
@@ -65,14 +65,14 @@ final readonly class DonationId {
 	 *
 	 * @return self Donation ID.
 	 *
-	 * @throws DonationIdException When the value cannot be represented as a valid UUID.
+	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUID.
 	 */
 	public static function from_value( string $value ): self {
 
 		try {
 			return self::from_entity_id( EntityId::create( $value ) );
 		} catch ( InvalidEntityIdException $e ) {
-			throw new DonationIdException(
+			throw new InvalidDonationIdException(
 				sprintf(
 					'Donation ID must be a valid UUID. Given: %s.',
 					$value,
