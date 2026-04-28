@@ -13,9 +13,9 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignSynchronizedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
 use Override;
 use Psr\Log\LoggerInterface;
 
@@ -73,7 +73,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 
 		try {
 			$campaign_id = CampaignId::from_entity_id( $event->get_campaign_id() )->get_value();
-		} catch ( CampaignIdException ) {
+		} catch ( InvalidCampaignIdException ) {
 			$this->log_invalid_campaign_id( $event, 'campaign_id_not_int' );
 			return;
 		}

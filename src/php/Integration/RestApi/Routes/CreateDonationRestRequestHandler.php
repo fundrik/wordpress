@@ -11,10 +11,11 @@ use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationIdempot
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationIdempotently\CreateDonationIdempotentlyHandler;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Shared\Domain\Amount;
-use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidAmountException;
-use Fundrik\Core\Components\Shared\Domain\Exceptions\InvalidEntityIdException;
 use Fundrik\Toolbox\TypeCaster;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
 use InvalidArgumentException;
 use Throwable;
@@ -23,7 +24,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 /**
- * Handles the donation creation REST request lifecycle.
+ * Handles the donation creation REST request lifecycle for route-validated payloads.
  *
  * @since 1.0.0
  *
@@ -52,7 +53,7 @@ final readonly class CreateDonationRestRequestHandler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param WP_REST_Request $request The incoming REST request.
+	 * @param WP_REST_Request $request Incoming REST request.
 	 *
 	 * @return WP_REST_Response|WP_Error Created donation payload or error details.
 	 */
@@ -60,11 +61,11 @@ final readonly class CreateDonationRestRequestHandler {
 
 		try {
 			$payload = new CreateDonationRestRequestData(
-				donation_id: EntityId::create( TypeCaster::to_string( $request->get_param( 'donation_id' ) ) ),
-				campaign_id: EntityId::create( TypeCaster::to_int( $request->get_param( 'campaign_id' ) ) ),
+				donation_id: DonationId::from_value( TypeCaster::to_string( $request->get_param( 'donation_id' ) ) ),
+				campaign_id: CampaignId::from_value( TypeCaster::to_int( $request->get_param( 'campaign_id' ) ) ),
 				amount: TypeCaster::to_int( $request->get_param( 'amount' ) ),
 			);
-		} catch ( InvalidArgumentException | InvalidEntityIdException $e ) {
+		} catch ( FundrikDomainException | InvalidArgumentException $e ) {
 			return $this->build_invalid_request_error( $e );
 		}
 
@@ -84,8 +85,8 @@ final readonly class CreateDonationRestRequestHandler {
 
 		try {
 			$data = new DonationCreationData(
-				donation_id: $payload->donation_id,
-				campaign_id: $payload->campaign_id,
+				donation_id: $payload->donation_id->to_entity_id(),
+				campaign_id: $payload->campaign_id->to_entity_id(),
 				amount: Amount::create( $payload->amount ),
 			);
 		} catch ( InvalidAmountException $e ) {
@@ -138,7 +139,7 @@ final readonly class CreateDonationRestRequestHandler {
 		CreateDonationException $exception,
 	): WP_Error {
 
-		$campaign_id = $payload->campaign_id->get_as_int();
+		$campaign_id = $payload->campaign_id->get_value();
 		$reason = $exception->get_reason();
 
 		if ( $reason === CreateDonationPreconditionReason::CampaignNotFound ) {
@@ -161,14 +162,14 @@ final readonly class CreateDonationRestRequestHandler {
 	 *
 	 * @param Donation $donation Created or replayed donation.
 	 *
-	 * @return WP_REST_Response The created response payload.
+	 * @return WP_REST_Response Created response payload.
 	 */
 	private function build_created_response( Donation $donation ): WP_REST_Response {
 
 		return new WP_REST_Response(
 			[
-				'id' => (string) $donation->get_id()->get_value(),
-				'campaign_id' => $donation->get_campaign_id()->get_as_int(),
+				'id' => DonationId::from_entity_id( $donation->get_id() )->get_value(),
+				'campaign_id' => CampaignId::from_entity_id( $donation->get_campaign_id() )->get_value(),
 				'amount' => $donation->get_money()->get_amount()->get_value(),
 				'status' => $donation->get_status()->value,
 			],
@@ -237,7 +238,7 @@ final readonly class CreateDonationRestRequestHandler {
 			'fundrik_donation_request_conflict',
 			sprintf(
 				'Cannot create donation "%s": request payload does not match existing donation.',
-				(string) $payload->donation_id->get_value(),
+				$payload->donation_id->get_value(),
 			),
 			[ 'status' => 409 ],
 		);

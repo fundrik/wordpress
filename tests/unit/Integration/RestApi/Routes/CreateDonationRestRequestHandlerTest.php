@@ -167,6 +167,30 @@ final class CreateDonationRestRequestHandlerTest extends WordPressTestCase {
 		self::assertSame( 400, $response->get_error_data()['status'] ?? null );
 	}
 
+	#[Test]
+	public function handle_returns_invalid_param_error_for_non_positive_campaign_id(): void {
+
+		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
+		$this->donation_repository->shouldNotReceive( 'insert' );
+		$this->donation_repository->shouldNotReceive( 'find_by_id' );
+		$this->event_bus->shouldNotReceive( 'publish' );
+
+		$response = $this->handler->handle(
+			$this->make_request(
+				[
+					'donation_id' => '123e4567-e89b-12d3-a456-426614174010',
+					'campaign_id' => 0,
+					'amount' => 100,
+				],
+			),
+		);
+
+		self::assertInstanceOf( WP_Error::class, $response );
+		self::assertSame( 'rest_invalid_param', $response->get_error_code() );
+		self::assertSame( 'Campaign ID must be a positive integer. Given: 0.', $response->get_error_message() );
+		self::assertSame( 400, $response->get_error_data()['status'] ?? null );
+	}
+
 	private function make_request( array $payload ): WP_REST_Request {
 
 		$request = new WP_REST_Request( 'POST', '/fundrik/v1/donations' );

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\RestApi\Routes;
 
-use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 
 /**
  * Carries the normalized and validated donation creation request data.
@@ -20,13 +21,13 @@ final readonly class CreateDonationRestRequestData {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EntityId $donation_id Donation identifier.
-	 * @param EntityId $campaign_id Campaign identifier.
+	 * @param DonationId $donation_id Donation ID.
+	 * @param CampaignId $campaign_id Campaign ID.
 	 * @param int $amount Donation amount in minor units.
 	 */
 	public function __construct(
-		public EntityId $donation_id,
-		public EntityId $campaign_id,
+		public DonationId $donation_id,
+		public CampaignId $campaign_id,
 		public int $amount,
 	) {}
 }
