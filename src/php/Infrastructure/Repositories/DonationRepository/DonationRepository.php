@@ -15,10 +15,10 @@ use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
-use Fundrik\WordPress\Infrastructure\Ids\DonationId;
-use Fundrik\WordPress\Infrastructure\Ids\DonationIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -149,6 +149,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	public function insert( Donation $donation ): Donation {
 
 		$donation_id = $this->require_donation_id( $donation->get_id() );
+		$campaign_id = $this->require_campaign_id( $donation->get_campaign_id() );
 		$version = $donation->get_version();
 
 		if ( ! $version->equals( EntityVersion::initial() ) ) {
@@ -162,7 +163,10 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		}
 
 		try {
-			$this->db->insert( self::TABLE_NAME, $this->map_donation_to_insert_row( $donation ) );
+			$this->db->insert(
+				self::TABLE_NAME,
+				$this->map_donation_to_insert_row( $donation, $donation_id, $campaign_id ),
+			);
 		} catch ( DatabaseDuplicateKeyExceptionInterface $e ) {
 			throw new DonationAlreadyExistsException( $donation_id, $e );
 		} catch ( DatabaseExceptionInterface $e ) {
@@ -289,17 +293,19 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 * @since 1.0.0
 	 *
 	 * @param Donation $donation Donation entity.
+	 * @param string $donation_id Donation ID.
+	 * @param int $campaign_id Campaign ID.
 	 *
 	 * @return array<string, int|string|bool|null> Persistence row data.
 	 */
-	private function map_donation_to_insert_row( Donation $donation ): array {
+	private function map_donation_to_insert_row( Donation $donation, string $donation_id, int $campaign_id ): array {
 
 		$created_at = $this->current_utc_timestamp();
 
 		return [
-			'id' => $this->require_donation_id( $donation->get_id() ),
+			'id' => $donation_id,
 			'version' => $donation->get_version()->get_value(),
-			'campaign_id' => $this->require_campaign_id( $donation->get_campaign_id() ),
+			'campaign_id' => $campaign_id,
 			'amount' => $donation->get_money()->get_amount()->get_value(),
 			'currency_code' => $donation->get_money()->get_currency()->get_code(),
 			'status' => $donation->get_status()->value,
@@ -352,7 +358,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 
 		try {
 			return DonationId::from_entity_id( $id )->get_value();
-		} catch ( DonationIdException $e ) {
+		} catch ( InvalidDonationIdException $e ) {
 			throw new DonationRepositoryException( $e->getMessage(), previous: $e );
 		}
 	}
@@ -372,7 +378,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 
 		try {
 			return CampaignId::from_entity_id( $id )->get_value();
-		} catch ( CampaignIdException $e ) {
+		} catch ( InvalidCampaignIdException $e ) {
 			throw new DonationRepositoryException( $e->getMessage(), previous: $e );
 		}
 	}

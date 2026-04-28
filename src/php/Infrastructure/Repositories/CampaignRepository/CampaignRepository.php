@@ -15,8 +15,8 @@ use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignId;
-use Fundrik\WordPress\Infrastructure\Ids\CampaignIdException;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -271,7 +271,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		try {
 			return CampaignId::from_entity_id( $id )->get_value();
-		} catch ( CampaignIdException $e ) {
+		} catch ( InvalidCampaignIdException $e ) {
 			throw new CampaignRepositoryException( $e->getMessage(), previous: $e );
 		}
 	}
