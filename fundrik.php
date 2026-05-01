@@ -29,6 +29,7 @@ declare(strict_types=1);
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistrar;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
 use Fundrik\WordPress\Kernel\Container\ContainerFactory;
+use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
 use Fundrik\WordPress\Kernel\Plugin;
 
 defined( 'ABSPATH' ) || die;
@@ -39,47 +40,50 @@ define( 'FUNDRIK_BASENAME', plugin_basename( __FILE__ ) );
 define( 'FUNDRIK_VERSION', '1.0.0' );
 
 require_once FUNDRIK_PATH . 'vendor/autoload.php';
+require_once FUNDRIK_PATH . 'src/php/Integration/Functions/CampaignFunctions.php';
+require_once FUNDRIK_PATH . 'src/php/Integration/Functions/DonationFormFunctions.php';
 
-if ( ! function_exists( 'fundrik_init' ) ) {
+// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+/**
+ * Initializes the Fundrik plugin.
+ *
+ * @since 1.0.0
+ *
+ * @internal
+ */
+function fundrik_init(): void {
 
-	/**
-	 * Initializes the Fundrik plugin.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @internal
-	 */
-	function fundrik_init(): void {
+	RuntimeContainer::reset();
 
-		try {
-			$container = ( new ContainerFactory() )->create();
+	try {
+		$container = ( new ContainerFactory() )->create();
 
-			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry() );
-			$registrar->register_bindings_into_container( $container );
+		$registrar = new ContainerBindingsRegistrar( new ContainerBindingsRegistry() );
+		$registrar->register_bindings_into_container( $container );
 
-			$container->make( Plugin::class )->run();
-		} catch ( Throwable $e ) {
+		$container->make( Plugin::class )->run();
+		RuntimeContainer::set( $container );
+	} catch ( Throwable $e ) {
 
-			fundrik_set_failure_message( $e->getMessage() );
+		fundrik_set_failure_message( $e->getMessage() );
 
-			if ( fundrik_is_debug_enabled() ) {
+		if ( fundrik_is_debug_enabled() ) {
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log(
-					sprintf(
-						'Fundrik initialization failed: %s in %s:%d',
-						$e->getMessage(),
-						$e->getFile(),
-						$e->getLine(),
-					),
-				);
-			}
-
-			return;
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log(
+				sprintf(
+					'Fundrik initialization failed: %s in %s:%d',
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine(),
+				),
+			);
 		}
+
+		return;
 	}
 }
+// phpcs:enable
 
 add_action( 'plugins_loaded', 'fundrik_init' );
 
