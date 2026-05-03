@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
 use Override;
 use WP_REST_Request;
@@ -21,16 +22,6 @@ use WP_REST_Server;
  * @internal
  */
 final readonly class LogCreateDonationRestRequestFailuresBootUnit implements BootUnitInterface {
-
-	/**
-	 * The public donation request path.
-	 *
-	 * @since 1.0.0
-	 */
-	private const string DONATIONS_REQUEST_PATH =
-		'/'
-		. DonationsRestRoute::ROUTE_NAMESPACE
-		. DonationsRestRoute::ROUTE_PATH;
 
 	/**
 	 * Constructor.
@@ -127,7 +118,7 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 	private function should_log( WP_REST_Request $request, WP_REST_Response $response ): bool {
 
 		return $request->get_method() === WP_REST_Server::CREATABLE
-			&& $request->get_route() === self::DONATIONS_REQUEST_PATH
+			&& $request->get_route() === RestRouteDefinitions::get_request_path( DonationsRestRoute::class )
 			&& $response->get_status() === 400;
 	}
 

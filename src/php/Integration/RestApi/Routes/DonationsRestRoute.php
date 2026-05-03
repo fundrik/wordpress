@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\RestApi\Routes;
 
-use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use Override;
@@ -19,9 +18,6 @@ use WP_REST_Server;
  */
 final readonly class DonationsRestRoute implements RestRouteInterface {
 
-	public const string ROUTE_NAMESPACE = RestRouteDefinitions::NAMESPACE_V1;
-	public const string ROUTE_PATH = '/donations';
-
 	/**
 	 * Constructor.
 	 *
@@ -32,28 +28,6 @@ final readonly class DonationsRestRoute implements RestRouteInterface {
 	public function __construct(
 		private CreateDonationRestRequestHandler $request_handler,
 	) {}
-
-	/**
-	 * Returns the REST API namespace for the donation route.
-	 *
-	 * @since 1.0.0
-	 */
-	#[Override]
-	public function get_route_namespace(): string {
-
-		return self::ROUTE_NAMESPACE;
-	}
-
-	/**
-	 * Returns the REST API route path for donations.
-	 *
-	 * @since 1.0.0
-	 */
-	#[Override]
-	public function get_route_path(): string {
-
-		return self::ROUTE_PATH;
-	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**

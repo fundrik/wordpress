@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\Boot\Units;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Override;
 use RuntimeException;
@@ -106,8 +107,8 @@ final readonly class RegisterRestApiRoutesBootUnit implements BootUnitInterface 
 	 */
 	private function register_route( RestRouteInterface $route ): void {
 
-		$route_namespace = $route->get_route_namespace();
-		$route_path = $route->get_route_path();
+		$route_namespace = RestRouteDefinitions::get_route_namespace( $route::class );
+		$route_path = RestRouteDefinitions::get_route_path( $route::class );
 
 		$result = register_rest_route(
 			$route_namespace,

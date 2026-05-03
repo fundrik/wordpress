@@ -14,20 +14,6 @@ namespace Fundrik\WordPress\Integration\RestApi;
 interface RestRouteInterface {
 
 	/**
-	 * Returns the REST API namespace.
-	 *
-	 * @since 1.0.0
-	 */
-	public function get_route_namespace(): string;
-
-	/**
-	 * Returns the REST API route path.
-	 *
-	 * @since 1.0.0
-	 */
-	public function get_route_path(): string;
-
-	/**
 	 * Returns the registration arguments passed to WordPress.
 	 *
 	 * @since 1.0.0

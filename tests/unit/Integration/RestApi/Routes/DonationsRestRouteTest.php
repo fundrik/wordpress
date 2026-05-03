@@ -16,6 +16,7 @@ use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepositoryException;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
 use Fundrik\WordPress\Integration\RestApi\Routes\CreateDonationRestRequestHandler;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
@@ -38,8 +39,6 @@ use WP_REST_Server;
 #[UsesClass( CampaignFactory::class )]
 #[UsesClass( CreateDonationRestRequestHandler::class )]
 final class DonationsRestRouteTest extends WordPressTestCase {
-
-	private const string DONATIONS_REQUEST_PATH = '/' . DonationsRestRoute::ROUTE_NAMESPACE . DonationsRestRoute::ROUTE_PATH;
 
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
 	private DonationRepositoryPort&MockInterface $donation_repository;
@@ -75,9 +74,6 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 
 	#[Test]
 	public function route_exposes_expected_registration_definition(): void {
-
-		self::assertSame( DonationsRestRoute::ROUTE_NAMESPACE, $this->route->get_route_namespace() );
-		self::assertSame( DonationsRestRoute::ROUTE_PATH, $this->route->get_route_path() );
 
 		$args = $this->route->get_route_args();
 		$endpoint = $args[0] ?? null;
@@ -376,7 +372,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 
 	private function make_request( array $json_payload ): WP_REST_Request {
 
-		$request = new WP_REST_Request( 'POST', self::DONATIONS_REQUEST_PATH );
+		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationsRestRoute::class ) );
 
 		foreach ( $json_payload as $key => $value ) {
 			$request->set_param( $key, $value );
