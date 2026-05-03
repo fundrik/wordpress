@@ -8,7 +8,7 @@ use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Override;
 use WP_Block_Editor_Context;
 
@@ -46,13 +46,13 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	 * @since 1.0.0
 	 *
 	 * @param AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook Dispatches the allowed blocks filter.
-	 * @param WordPressContextInterface $wp_context Provides registered WordPress types.
+	 * @param WordPressRuntimeInterface $wp_runtime Provides registered WordPress types.
 	 * @param BootUnitLogger $logger Writes structured boot-unit logs.
 	 * @param PostTypeConfigInterface ...$post_type_configs Supplies post type configs.
 	 */
 	public function __construct(
 		private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook,
-		private WordPressContextInterface $wp_context,
+		private WordPressRuntimeInterface $wp_runtime,
 		private BootUnitLogger $logger,
 		PostTypeConfigInterface ...$post_type_configs,
 	) {
@@ -107,7 +107,7 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 		}
 
 		if ( $allowed === true ) {
-			$allowed = array_keys( $this->wp_context->get_registered_block_types() );
+			$allowed = array_keys( $this->wp_runtime->get_registered_block_types() );
 		}
 
 		$filtered = array_filter(

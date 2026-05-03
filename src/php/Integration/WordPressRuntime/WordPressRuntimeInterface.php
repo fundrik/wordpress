@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\WordPressContext;
+namespace Fundrik\WordPress\Integration\WordPressRuntime;
 
 use WP_Block_Type;
+use WP_Post;
 use WP_Post_Type;
 
 /**
@@ -12,7 +13,7 @@ use WP_Post_Type;
  *
  * @since 1.0.0
  */
-interface WordPressContextInterface {
+interface WordPressRuntimeInterface {
 
 	/**
 	 * Retrieves the registered WordPress post types.
@@ -31,4 +32,13 @@ interface WordPressContextInterface {
 	 * @return array<string, WP_Block_Type> Registered block type objects keyed by name.
 	 */
 	public function get_registered_block_types(): array;
+
+	/**
+	 * Retrieves the current WordPress post.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return WP_Post|null Current post, null otherwise.
+	 */
+	public function get_current_post(): ?WP_Post;
 }

@@ -34,7 +34,7 @@
 				<element value="Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface"/>
 			</property>
 			<property name="excludedClasses" type="array">
-				<element value="Fundrik\WordPress\Integration\WordPressContext\WordPressContext"/>
+				<element value="Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime"/>
 				<element value="Fundrik\WordPress\Kernel\Container\RuntimeContainer"/>
 			</property>
 		</properties>

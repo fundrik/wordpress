@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Integration\WordPressContext;
+namespace Fundrik\WordPress\Tests\Integration\WordPressRuntime;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -14,16 +14,33 @@ use WP_Block_Type;
 use WP_Block_Type_Registry;
 use WP_Post_Type;
 
-#[CoversClass( WordPressContext::class )]
-final class WordPressContextTest extends MockeryTestCase {
+#[CoversClass( WordPressRuntime::class )]
+final class WordPressRuntimeTest extends MockeryTestCase {
 
-	private WordPressContext $context;
+	private WordPressRuntime $context;
 
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->context = new WordPressContext();
+		$this->context = new WordPressRuntime();
+	}
+
+	// ---------------------------------------------------------------------
+	// get_current_post()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function get_current_post_returns_wordpress_result(): void {
+
+		$post = Mockery::mock( \WP_Post::class );
+
+		Functions\expect( 'get_post' )
+			->once()
+			->withNoArgs()
+			->andReturn( $post );
+
+		self::assertSame( $post, $this->context->get_current_post() );
 	}
 
 	// ---------------------------------------------------------------------

@@ -50,8 +50,6 @@ final readonly class PostTypeRegistrar {
 		 * @since 1.0.0
 		 *
 		 * @param array<string, string> $labels The post type labels.
-		 *
-		 * @return array<string, string> The filtered labels.
 		 */
 		$labels = apply_filters( "fundrik_{$id}_post_type_labels", $post_type_config->get_labels() );
 
@@ -61,8 +59,6 @@ final readonly class PostTypeRegistrar {
 		 * @since 1.0.0
 		 *
 		 * @param string $slug The post type slug.
-		 *
-		 * @return string The filtered slug.
 		 */
 		$slug = apply_filters( "fundrik_{$id}_post_type_slug", $post_type_config->get_slug() );
 

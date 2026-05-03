@@ -50,6 +50,7 @@
 
 - `Infrastructure` contains technical implementations of system ports and orchestration that should remain platform-agnostic where possible.
 - `Integration` contains platform adapters that depend on WordPress APIs (`do_action`, `add_action`, `WP_*`, REST hooks, etc.).
+- Do not catch exceptions from `RuntimeContainer::get()` or container `make()` in public integration functions such as `fundrik_get_*`/`fundrik_the_*`; treat container access and service resolution failures as critical plugin failures.
 - Port interface docblocks should use the standard wording `Provides the <inbound|outbound> port for ...` for consistency across the codebase.
 
 # Project Scripts

@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\WordPressContext;
+namespace Fundrik\WordPress\Integration\WordPressRuntime;
 
 use Override;
 use WP_Block_Type;
 use WP_Block_Type_Registry;
+use WP_Post;
 use WP_Post_Type;
 
 /**
@@ -15,10 +16,8 @@ use WP_Post_Type;
  * @since 1.0.0
  *
  * @internal
- *
- * @todo Add cache invalidation mechanisms for post types and block types.
  */
-final class WordPressContext implements WordPressContextInterface {
+final class WordPressRuntime implements WordPressRuntimeInterface {
 
 	/**
 	 * Caches the result of get_post_types() to avoid repeated queries to WordPress core.
@@ -38,7 +37,7 @@ final class WordPressContext implements WordPressContextInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @var array<string, \WP_Block_Type>|null
+	 * @var array<string, WP_Block_Type>|null
 	 */
 	private ?array $registered_block_types = null;
 
@@ -79,5 +78,20 @@ final class WordPressContext implements WordPressContextInterface {
 		}
 
 		return $this->registered_block_types;
+	}
+
+	/**
+	 * Retrieves the current WordPress post.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return WP_Post|null Current post, null otherwise.
+	 */
+	#[Override]
+	public function get_current_post(): ?WP_Post {
+
+		$post = get_post();
+
+		return $post instanceof WP_Post ? $post : null;
 	}
 }

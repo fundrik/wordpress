@@ -10,7 +10,7 @@ use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUn
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
 use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
@@ -38,7 +38,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook;
 	private Closure $allowed_block_types_callback;
 
-	private WordPressContextInterface&MockInterface $wp_context;
+	private WordPressRuntimeInterface&MockInterface $wp_runtime;
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private BootUnitLogger $logger;
@@ -56,7 +56,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 			$this->allowed_block_types_hook->register( ... ),
 		);
 
-		$this->wp_context = Mockery::mock( WordPressContextInterface::class );
+		$this->wp_runtime = Mockery::mock( WordPressRuntimeInterface::class );
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
 	}
@@ -74,7 +74,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
 		$editor_context->post = $post;
 
-		$this->wp_context
+		$this->wp_runtime
 			->shouldReceive( 'get_registered_block_types' )
 			->once()
 			->andReturn(
@@ -145,7 +145,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 	#[Test]
 	public function filter_expands_true_and_filters_restricted_blocks(): void {
 
-		$this->wp_context
+		$this->wp_runtime
 			->shouldReceive( 'get_registered_block_types' )
 			->once()
 			->andReturn(
@@ -188,7 +188,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 
 		return new FilterAllowedBlocksByPostTypeBootUnit(
 			$this->allowed_block_types_hook,
-			$this->wp_context,
+			$this->wp_runtime,
 			$this->logger,
 			...$post_type_configs,
 		);

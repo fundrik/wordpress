@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel\Container;
 
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
@@ -14,6 +15,7 @@ use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
@@ -21,8 +23,8 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -37,10 +39,10 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
-use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContext;
-use Fundrik\WordPress\Integration\WordPressContext\WordPressContextInterface;
 use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
+use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
@@ -76,6 +78,7 @@ final readonly class ContainerBindingsRegistry {
 			DatabasePort::class => WpdbDatabase::class,
 			StoragePort::class => WordPressOptionsStorage::class,
 
+			CampaignReadPort::class => CampaignReadRepository::class,
 			CampaignRepositoryPort::class => CampaignRepository::class,
 			DonationRepositoryPort::class => DonationRepository::class,
 
@@ -84,7 +87,7 @@ final readonly class ContainerBindingsRegistry {
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			BootUnitRunnerPort::class => BootUnitRunner::class,
-			WordPressContextInterface::class => WordPressContext::class,
+			WordPressRuntimeInterface::class => WordPressRuntime::class,
 		] + HookDispatcherDefinitions::classes();
 		// phpcs:enable
 	}
