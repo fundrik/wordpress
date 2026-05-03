@@ -83,6 +83,31 @@ final readonly class CampaignId {
 	}
 
 	/**
+	 * Creates a campaign ID from an EntityId value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int|string $value EntityId value.
+	 *
+	 * @return self Campaign ID.
+	 *
+	 * @throws InvalidCampaignIdException When the value cannot be represented as a positive integer.
+	 */
+	public static function from_entity_id_value( int|string $value ): self {
+
+		if ( is_string( $value ) && ! ctype_digit( $value ) ) {
+			throw new InvalidCampaignIdException(
+				sprintf(
+					'Campaign ID must be a positive integer. Given: %s.',
+					$value,
+				),
+			);
+		}
+
+		return self::from_value( (int) $value );
+	}
+
+	/**
 	 * Returns the campaign ID value.
 	 *
 	 * @since 1.0.0

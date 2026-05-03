@@ -57,6 +57,18 @@ final readonly class DonationId {
 	}
 
 	/**
+	 * Generates a donation ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return self Donation ID.
+	 */
+	public static function generate(): self {
+
+		return self::from_entity_id( EntityId::uuid4() );
+	}
+
+	/**
 	 * Creates a donation ID from raw value.
 	 *
 	 * @since 1.0.0
@@ -80,6 +92,31 @@ final readonly class DonationId {
 				previous: $e,
 			);
 		}
+	}
+
+	/**
+	 * Creates a donation ID from an EntityId value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int|string $value EntityId value.
+	 *
+	 * @return self Donation ID.
+	 *
+	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUID.
+	 */
+	public static function from_entity_id_value( int|string $value ): self {
+
+		if ( ! is_string( $value ) ) {
+			throw new InvalidDonationIdException(
+				sprintf(
+					'Donation ID must be a valid UUID. Given: %s.',
+					(string) $value,
+				),
+			);
+		}
+
+		return self::from_value( $value );
 	}
 
 	/**

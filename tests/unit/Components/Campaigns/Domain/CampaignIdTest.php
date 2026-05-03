@@ -32,6 +32,14 @@ final class CampaignIdTest extends FundrikTestCase {
 	}
 
 	#[Test]
+	public function from_entity_id_value_returns_campaign_id_for_numeric_string(): void {
+
+		$id = CampaignId::from_entity_id_value( '24' );
+
+		self::assertSame( 24, $id->get_value() );
+	}
+
+	#[Test]
 	public function to_entity_id_returns_wrapped_entity_id(): void {
 
 		$id = CampaignId::from_value( 24 );
@@ -59,5 +67,16 @@ final class CampaignIdTest extends FundrikTestCase {
 		$this->expectExceptionMessage( 'Campaign ID must be a positive integer. Given: 0.' );
 
 		CampaignId::from_value( 0 );
+	}
+
+	#[Test]
+	public function from_entity_id_value_throws_for_non_numeric_string(): void {
+
+		$this->expectException( InvalidCampaignIdException::class );
+		$this->expectExceptionMessage(
+			'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+		);
+
+		CampaignId::from_entity_id_value( '123e4567-e89b-12d3-a456-426614174000' );
 	}
 }
