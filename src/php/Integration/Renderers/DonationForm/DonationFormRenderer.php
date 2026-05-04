@@ -24,18 +24,36 @@ final readonly class DonationFormRenderer {
 	 */
 	public function render( DonationFormRenderData $data ): string {
 
-		$amount_input_id = sprintf( 'fundrik-donation-amount-%d', $data->campaign_id );
+		$parts = [
+			'form_open' => $this->render_form_open( $data ),
+			'amount_field' => $this->render_amount_field( $data ),
+			'submit_button' => $this->render_submit_button(),
+			'message' => $this->render_message_markup(),
+			'form_close' => $this->render_form_close(),
+		];
 
-		$parts = [];
+		/**
+		 * Filters the donation form markup fragments.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array<string, string> $parts Donation form markup parts keyed by fragment name.
+		 * @param DonationFormRenderData $data Donation form render data.
+		 */
+		$parts = apply_filters( 'fundrik_donation_form_markup_parts', $parts, $data );
 
-		$parts[] = $this->render_form_open( $data );
-		$parts[] = $this->render_amount_label( $amount_input_id, $data->amount_label );
-		$parts[] = $this->render_amount_input( $amount_input_id, $data->default_amount );
-		$parts[] = $this->render_submit_button();
-		$parts[] = $this->render_message_markup();
-		$parts[] = $this->render_form_close();
+		$markup = implode( '', $parts );
 
-		return implode( '', $parts );
+		/**
+		 * Filters the rendered donation form markup.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $markup Donation form markup.
+		 * @param DonationFormRenderData $data Donation form render data.
+		 * @param array<string, string> $parts Donation form markup parts keyed by fragment name.
+		 */
+		return apply_filters( 'fundrik_donation_form_markup', $markup, $data, $parts );
 	}
 
 	/**
@@ -52,13 +70,33 @@ final readonly class DonationFormRenderer {
 		return sprintf(
 			'<form'
 			. ' class="fundrik-donation-form"'
-			. ' data-rest-url="%1$s"'
-			. ' data-campaign-id="%2$d"'
-			. ' data-donation-id="%3$s"'
+			. ' data-rest-url="%s"'
+			. ' data-campaign-id="%d"'
+			. ' data-donation-id="%s"'
 			. '>',
 			esc_url( $data->rest_url ),
 			$data->campaign_id,
 			esc_attr( $data->donation_id ),
+		);
+	}
+
+	/**
+	 * Returns the amount field markup.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param DonationFormRenderData $data Donation form render data.
+	 *
+	 * @return string Rendered amount field markup.
+	 */
+	private function render_amount_field( DonationFormRenderData $data ): string {
+
+		$amount_input_id = sprintf( 'fundrik-donation-amount-%d', $data->campaign_id );
+
+		return sprintf(
+			'<div class="fundrik-donation-form__amount-field">%s%s</div>',
+			$this->render_amount_label( $amount_input_id, $data->amount_label ),
+			$this->render_amount_input( $amount_input_id, $data->default_amount ),
 		);
 	}
 
@@ -75,7 +113,7 @@ final readonly class DonationFormRenderer {
 	private function render_amount_label( string $amount_input_id, string $amount_label ): string {
 
 		return sprintf(
-			'<label class="fundrik-donation-form__label" for="%1$s">%2$s</label>',
+			'<label class="fundrik-donation-form__amount-label" for="%s">%s</label>',
 			esc_attr( $amount_input_id ),
 			esc_html( $amount_label ),
 		);
@@ -95,14 +133,14 @@ final readonly class DonationFormRenderer {
 
 		return sprintf(
 			'<input'
-			. ' id="%1$s"'
-			. ' class="fundrik-donation-form__amount"'
+			. ' id="%s"'
+			. ' class="fundrik-donation-form__amount-input"'
 			. ' type="number"'
 			. ' name="amount"'
 			. ' min="1"'
 			. ' step="1"'
 			. ' inputmode="numeric"'
-			. ' value="%2$d"'
+			. ' value="%d"'
 			. ' required'
 			. ' />',
 			esc_attr( $amount_input_id ),

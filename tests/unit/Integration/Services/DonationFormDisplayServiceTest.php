@@ -21,6 +21,7 @@ use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderData;
 use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderer;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
@@ -65,6 +66,7 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 	public function render_returns_empty_string_when_campaign_is_missing(): void {
 
 		Filters\expectApplied( 'fundrik_get_campaign' )->never();
+		Filters\expectApplied( 'fundrik_donation_form_render_data' )->never();
 		$this->campaign_read
 			->shouldReceive( 'find_by_id' )
 			->once()
@@ -91,6 +93,27 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 			->once()
 			->with( $campaign, 42 )
 			->andReturn( $campaign );
+		Filters\expectApplied( 'fundrik_donation_form_render_data' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( DonationFormRenderData $render_data ): bool => $render_data->campaign_id === 42
+						&& preg_match( '/^[0-9a-f-]{36}$/', $render_data->donation_id ) === 1
+						&& $render_data->rest_url === 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class )
+						&& $render_data->default_amount === 10
+						&& $render_data->amount_label === 'Amount',
+				),
+				$campaign,
+			)
+			->andReturn(
+				new DonationFormRenderData(
+					campaign_id: 42,
+					donation_id: '123e4567-e89b-42d3-a456-426614174000',
+					rest_url: 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class ),
+					default_amount: 25,
+					amount_label: 'Custom amount',
+				),
+			);
 		$this->campaign_read
 			->shouldReceive( 'find_by_id' )
 			->once()
@@ -109,8 +132,9 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 			$markup,
 		);
 		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
-		self::assertMatchesRegularExpression( '/data-donation-id="[0-9a-f-]{36}"/', $markup );
-		self::assertStringContainsString( '>Amount</label>', $markup );
+		self::assertStringContainsString( 'data-donation-id="123e4567-e89b-42d3-a456-426614174000"', $markup );
+		self::assertStringContainsString( '>Custom amount</label>', $markup );
+		self::assertStringContainsString( 'value="25"', $markup );
 	}
 
 	private function create_settings_reader( int $default_amount, string $default_amount_label ): AdminSettingsReader {

@@ -58,9 +58,19 @@ final readonly class DonationFormDisplayService {
 			return '';
 		}
 
-		return $this->donation_form_renderer->render(
-			$this->create_render_data( $campaign ),
-		);
+		$render_data = $this->create_render_data( $campaign );
+
+		/**
+		 * Filters the donation form render data.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param DonationFormRenderData $render_data Donation form render data.
+		 * @param Campaign $campaign Campaign.
+		 */
+		$render_data = apply_filters( 'fundrik_donation_form_render_data', $render_data, $campaign );
+
+		return $this->donation_form_renderer->render( $render_data );
 	}
 
 	/**
