@@ -5,11 +5,9 @@ import { getDonationFormEditorSettings } from '../shared/donationFormEditorSetti
 import { usePostMetaFieldWithDefault } from '../../hooks/usePostMetaFieldWithDefault';
 
 export default function Edit( {
-	clientId,
 	context: { postType },
 } ) {
-
-	const amountInputId = `fundrik-donation-amount-${ clientId }`;
+	const blockProps = useBlockProps();
 	const { defaultAmount, defaultAmountLabel } = getDonationFormEditorSettings();
 	const { defaultAcceptsDonations } = getCampaignEditorSettings();
 	const [ acceptsDonations ] = usePostMetaFieldWithDefault(
@@ -20,7 +18,7 @@ export default function Edit( {
 
 	if ( acceptsDonations === false ) {
 		return (
-			<div { ...useBlockProps() }>
+			<div { ...blockProps }>
 				<p className="fundrik-donation-form__message" aria-live="polite">
 					{ __( 'Donation form is hidden because donations are disabled for this campaign.', 'fundrik' ) }
 				</p>
@@ -29,23 +27,23 @@ export default function Edit( {
 	}
 
 	return (
-		<div { ...useBlockProps() }>
-			<form className="fundrik-donation-form">
-				<label className="fundrik-donation-form__label" htmlFor={ amountInputId }>
-					{ defaultAmountLabel }
-				</label>
-				<input
-					id={ amountInputId }
-					className="fundrik-donation-form__amount"
-					type="text"
-					name="amount"
-					value={ String( defaultAmount ) }
-					disabled
-				/>
+		<div { ...blockProps }>
+			<div className="fundrik-donation-form">
+				<div className="fundrik-donation-form__amount-field">
+					<span className="fundrik-donation-form__amount-label">
+						{ defaultAmountLabel }
+					</span>
+					<input
+						className="fundrik-donation-form__amount-input"
+						type="text"
+						value={ String( defaultAmount ) }
+						disabled
+					/>
+				</div>
 				<button className="fundrik-donation-form__submit" type="button" disabled>
 					{ __( 'Donate', 'fundrik' ) }
 				</button>
-			</form>
+			</div>
 		</div>
 	);
 }

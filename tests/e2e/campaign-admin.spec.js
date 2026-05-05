@@ -354,7 +354,7 @@ test.describe( 'Fundrik campaign admin', () => {
 		await page.goto( frontendPost.link );
 
 		const form = page.locator( '.fundrik-donation-form' );
-		const amountInput = page.locator( '.fundrik-donation-form__amount' );
+		const amountInput = page.locator( '.fundrik-donation-form__amount-input' );
 		const submitButton = page.locator( '.fundrik-donation-form__submit' );
 		const message = page.locator( '.fundrik-donation-form__message' );
 

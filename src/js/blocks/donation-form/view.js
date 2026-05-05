@@ -1,202 +1,269 @@
-const FORM_SELECTOR = '.wp-block-fundrik-donation-form .fundrik-donation-form';
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { __ } from '@wordpress/i18n';
+import { resolveCampaignId } from '../../shared/campaign';
+import { resolveAmount } from '../../shared/amount';
+import { generateDonationId } from '../../shared/donation';
 
-const parseAmountMinor = ( amountRaw ) => {
+const MESSAGE_STATE = Object.freeze( {
+	PENDING: 'pending',
+	SUCCESS: 'success',
+	ERROR: 'error',
+} );
+const FORM_STATE = Object.freeze( {
+	IDLE: 'idle',
+	SUBMITTING: 'submitting',
+	SUCCESS: 'success',
+	ERROR: 'error',
+} );
+const donationForms = new WeakMap();
 
-	const normalized = String( amountRaw ).trim();
+document.addEventListener(
+	'DOMContentLoaded',
+	() => document.querySelectorAll( 'form.fundrik-donation-form' ).forEach( initDonationForm ),
+	{ once: true }
+);
 
-	if ( ! /^\d+$/.test( normalized ) ) {
-		return null;
+function initDonationForm( form ) {
+
+	getDonationForm( form ).init();
+}
+
+function getDonationForm( form ) {
+
+	let donationForm = donationForms.get( form );
+
+	if ( ! donationForm ) {
+		donationForm = new DonationForm( form );
+		donationForms.set( form, donationForm );
 	}
 
-	const amountMajor = Number.parseInt( normalized, 10 );
-	const amountMinor = amountMajor * 100;
+	return donationForm;
+}
 
-	if ( ! Number.isInteger( amountMinor ) || amountMinor <= 0 ) {
-		return null;
+class DonationForm {
+
+	constructor( form ) {
+		this.form = form;
+		this.elements = null;
+		this.campaignId = null;
+		this.restUrl = '';
+		this.donationId = generateDonationId();
+		this.state = FORM_STATE.IDLE;
+		this.initialized = false;
+		this.handleSubmit = this.handleSubmit.bind( this );
 	}
 
-	return amountMinor;
-};
+	init() {
 
-const setMessage = ( form, message, state ) => {
+		if ( this.initialized ) {
+			console.warn( __( 'Donation form initialization skipped: already initialized.', 'fundrik' ), this.form );
+			return;
+		}
 
-	const messageNode = form.querySelector( '.fundrik-donation-form__message' );
+		this.elements = this.resolveElements();
 
-	if ( ! messageNode ) {
-		return;
+		if ( ! this.elements ) {
+			console.warn( __( 'Donation form initialization failed: missing required elements.', 'fundrik' ), this.form );
+			return;
+		}
+
+		const formConfig = this.resolveFormConfig();
+
+		if ( ! formConfig ) {
+			console.warn( __( 'Donation form initialization failed: invalid form config.', 'fundrik' ), this.form );
+			return;
+		}
+
+		this.campaignId = formConfig.campaignId;
+		this.restUrl = formConfig.restUrl;
+
+		this.form.addEventListener( 'submit', this.handleSubmit );
+		this.initialized = true;
 	}
 
-	messageNode.textContent = message;
-	messageNode.dataset.state = state;
-};
+	resolveElements() {
 
-const setFormBusy = ( form, isBusy ) => {
+		const amountInput = this.form.querySelector( 'input.fundrik-donation-form__amount-input' );
 
-	const submitButton = form.querySelector( '.fundrik-donation-form__submit' );
-	const amountInput = form.querySelector( '.fundrik-donation-form__amount' );
+		if ( ! amountInput ) {
+			return null;
+		}
 
-	if ( submitButton instanceof HTMLButtonElement ) {
-		submitButton.disabled = isBusy;
+		const submitButton = this.form.querySelector( 'button.fundrik-donation-form__submit' );
+		const messageElement = this.form.querySelector( 'div.fundrik-donation-form__message' );
+
+		return {
+			amountInput,
+			submitButton,
+			messageElement,
+		};
 	}
 
-	if ( amountInput instanceof HTMLInputElement ) {
-		amountInput.disabled = isBusy;
+	resolveFormConfig() {
+
+		const campaignId = resolveCampaignId( this.form.dataset.campaignId );
+
+		if ( campaignId === null ) {
+			return null;
+		}
+
+		const restUrl = this.form.dataset.restUrl;
+
+		if ( ! restUrl ) {
+			return null;
+		}
+
+		return {
+			campaignId,
+			restUrl,
+		};
 	}
 
-	form.classList.toggle( 'is-busy', isBusy );
-};
+	async handleSubmit( event ) {
 
-const formatUuidFromBytes = ( bytes ) => {
+		event.preventDefault();
 
-	const hex = Array.from(
-		bytes,
-		( byte ) => byte.toString( 16 ).padStart( 2, '0' ),
-	);
+		if ( this.state === FORM_STATE.SUBMITTING ) {
+			return;
+		}
 
-	return `${ hex.slice( 0, 4 ).join( '' ) }-${ hex.slice( 4, 6 ).join( '' ) }-${ hex.slice( 6, 8 ).join( '' ) }-${ hex.slice( 8, 10 ).join( '' ) }-${ hex.slice( 10, 16 ).join( '' ) }`;
-};
+		const requestData = this.resolveSubmitRequestData();
 
-const generateDonationId = () => {
+		if ( requestData.error ) {
+			this.state = FORM_STATE.ERROR;
+			this.showError( requestData.error );
+			return;
+		}
 
-	if ( typeof window.crypto?.randomUUID === 'function' ) {
-		return window.crypto.randomUUID();
-	}
+		this.state = FORM_STATE.SUBMITTING;
+		this.showPending();
 
-	const bytes = new Uint8Array( 16 );
+		try {
+			const result = await this.submitDonation( requestData.data );
 
-	if ( typeof window.crypto?.getRandomValues === 'function' ) {
-		window.crypto.getRandomValues( bytes );
-	} else {
-		for ( let index = 0; index < bytes.length; index += 1 ) {
-			bytes[ index ] = Math.floor( Math.random() * 256 );
+			if ( ! result.ok ) {
+				this.state = FORM_STATE.ERROR;
+				this.showError( result.message );
+				return;
+			}
+
+			this.resetFormAfterSuccess();
+			this.state = FORM_STATE.SUCCESS;
+			this.showSuccess();
+
+		} finally {
+			if ( this.state === FORM_STATE.SUBMITTING ) {
+				this.state = FORM_STATE.IDLE;
+			}
+
+			this.finish();
 		}
 	}
 
-	bytes[ 6 ] = ( bytes[ 6 ] & 0x0f ) | 0x40;
-	bytes[ 8 ] = ( bytes[ 8 ] & 0x3f ) | 0x80;
+	resolveSubmitRequestData() {
 
-	return formatUuidFromBytes( bytes );
-};
+		const amount = resolveAmount( this.elements.amountInput.value );
 
-const ensureDonationId = ( form ) => {
+		if ( amount === null ) {
+			return { error: __( 'Amount must be a positive integer.', 'fundrik' ) };
+		}
 
-	const existing = ( form.dataset.donationId || '' ).trim();
-
-	if ( UUID_PATTERN.test( existing ) ) {
-		return existing;
-	}
-
-	const generated = generateDonationId();
-	form.dataset.donationId = generated;
-
-	return generated;
-};
-
-const getErrorMessage = ( responseData ) => {
-
-	if ( responseData && typeof responseData.message === 'string' && responseData.message !== '' ) {
-		return responseData.message;
-	}
-
-	return 'Failed to submit donation.';
-};
-
-const handleSubmit = async ( event ) => {
-
-	event.preventDefault();
-
-	const form = event.currentTarget;
-
-	if ( ! ( form instanceof HTMLFormElement ) ) {
-		return;
-	}
-
-	const amountInput = form.querySelector( '.fundrik-donation-form__amount' );
-
-	if ( ! ( amountInput instanceof HTMLInputElement ) ) {
-		return;
-	}
-
-	const campaignId = Number.parseInt( form.dataset.campaignId || '0', 10 );
-	const restUrl = form.dataset.restUrl || '';
-	const amountMinor = parseAmountMinor( amountInput.value );
-	const donationId = ensureDonationId( form );
-
-	if ( ! Number.isInteger( campaignId ) || campaignId <= 0 ) {
-		setMessage( form, 'Campaign ID is invalid.', 'error' );
-		return;
-	}
-
-	if ( ! restUrl ) {
-		setMessage( form, 'Donation endpoint URL is unavailable.', 'error' );
-		return;
-	}
-
-	if ( ! UUID_PATTERN.test( donationId ) ) {
-		setMessage( form, 'Donation ID is unavailable.', 'error' );
-		return;
-	}
-
-	if ( amountMinor === null ) {
-		setMessage( form, 'Amount must be a positive integer.', 'error' );
-		return;
-	}
-
-	setFormBusy( form, true );
-	setMessage( form, 'Submitting...', 'pending' );
-
-	try {
-
-		const response = await fetch( restUrl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: {
-				'Content-Type': 'application/json',
+		return {
+			data: {
+				restUrl: this.restUrl,
+				payload: {
+					donation_id: this.donationId,
+					campaign_id: this.campaignId,
+					amount,
+				},
 			},
-			body: JSON.stringify( {
-				donation_id: donationId,
-				campaign_id: campaignId,
-				amount: amountMinor,
-			} ),
-		} );
-
-		const responseData = await response.json().catch( () => ( {} ) );
-
-		if ( ! response.ok ) {
-			setMessage( form, getErrorMessage( responseData ), 'error' );
-			return;
-		}
-
-		amountInput.value = amountInput.defaultValue;
-		setMessage( form, 'Donation submitted.', 'success' );
-		form.dataset.donationId = generateDonationId();
-
-	} catch ( error ) {
-
-		setMessage( form, 'Failed to submit donation.', 'error' );
-
-	} finally {
-		setFormBusy( form, false );
+		};
 	}
-};
 
-const initDonationForms = () => {
+	async submitDonation( request ) {
 
-	const forms = document.querySelectorAll( FORM_SELECTOR );
+		try {
+			const response = await fetch( request.restUrl, {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify( request.payload ),
+			} );
 
-	forms.forEach( ( formNode ) => {
+			const responseData = await response.json().catch( () => ( {} ) );
 
-		if ( ! ( formNode instanceof HTMLFormElement ) ) {
+			if ( ! response.ok ) {
+				return {
+					ok: false,
+					message: this.getErrorMessage( responseData ),
+				};
+			}
+
+			return { ok: true };
+
+		} catch {
+			return {
+				ok: false,
+				message: __( 'Failed to submit donation.', 'fundrik' ),
+			};
+		}
+	}
+
+	resetFormAfterSuccess() {
+
+		this.elements.amountInput.value = this.elements.amountInput.defaultValue;
+
+		this.donationId = generateDonationId();
+	}
+
+	showPending() {
+
+		this.setFormBusy( true );
+		this.setMessage( __( 'Submitting...', 'fundrik' ), MESSAGE_STATE.PENDING );
+	}
+
+	showSuccess() {
+
+		this.setMessage( __( 'Donation submitted.', 'fundrik' ), MESSAGE_STATE.SUCCESS );
+	}
+
+	showError( message ) {
+
+		this.setMessage( message, MESSAGE_STATE.ERROR );
+	}
+
+	finish() {
+
+		this.setFormBusy( false );
+	}
+
+	setFormBusy( isBusy ) {
+
+		if ( this.elements.submitButton ) {
+			this.elements.submitButton.disabled = isBusy;
+		}
+
+		this.elements.amountInput.disabled = isBusy;
+		this.form.classList.toggle( 'is-busy', isBusy );
+	}
+
+	setMessage( message, state ) {
+
+		if ( ! this.elements.messageElement ) {
 			return;
 		}
 
-		formNode.addEventListener( 'submit', handleSubmit );
-	} );
-};
+		this.elements.messageElement.textContent = message;
+		this.elements.messageElement.dataset.state = state;
+	}
 
-if ( document.readyState === 'loading' ) {
-	document.addEventListener( 'DOMContentLoaded', initDonationForms );
-} else {
-	initDonationForms();
+	getErrorMessage( responseData ) {
+
+		if ( responseData && typeof responseData.message === 'string' && responseData.message !== '' ) {
+			return responseData.message;
+		}
+
+		return __( 'Failed to submit donation.', 'fundrik' );
+	}
 }
