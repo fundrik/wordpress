@@ -93,7 +93,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 	#[Test]
 	public function create_donation_returns_created_response_for_valid_payload(): void {
 
-		$donation_id = '123e4567-e89b-12d3-a456-426614174000';
+		$donation_id = '123e4567-e89b-42d3-a456-426614174000';
 
 		$this->donation_repository->shouldNotReceive( 'find_by_id' );
 
@@ -149,7 +149,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 
 		$request = $this->make_request(
 			[
-				'donation_id' => '123e4567-e89b-12d3-a456-426614174001',
+				'donation_id' => '123e4567-e89b-42d3-a456-426614174001',
 				'campaign_id' => 15,
 				'amount' => 0,
 			],
@@ -165,7 +165,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 	#[Test]
 	public function create_donation_returns_conflict_when_campaign_is_closed(): void {
 
-		$donation_id = '123e4567-e89b-12d3-a456-426614174002';
+		$donation_id = '123e4567-e89b-42d3-a456-426614174002';
 
 		$this->donation_repository->shouldNotReceive( 'find_by_id' );
 
@@ -196,7 +196,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 	#[Test]
 	public function create_donation_replays_existing_donation_when_create_collides_on_duplicate_id(): void {
 
-		$donation_id = '123e4567-e89b-12d3-a456-426614174003';
+		$donation_id = '123e4567-e89b-42d3-a456-426614174003';
 		$existing_donation = $this->make_donation( $donation_id, 22, 500 );
 
 		$this->donation_repository
@@ -247,7 +247,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 	#[Test]
 	public function create_donation_returns_internal_error_for_generic_persistence_failure(): void {
 
-		$donation_id = '123e4567-e89b-12d3-a456-426614174005';
+		$donation_id = '123e4567-e89b-42d3-a456-426614174005';
 
 		$this->donation_repository->shouldNotReceive( 'find_by_id' );
 
@@ -283,7 +283,7 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 	#[Test]
 	public function create_donation_returns_conflict_when_donation_id_is_reused_for_different_payload(): void {
 
-		$donation_id = '123e4567-e89b-12d3-a456-426614174004';
+		$donation_id = '123e4567-e89b-42d3-a456-426614174004';
 		$existing_donation = $this->make_donation( $donation_id, 22, 500 );
 
 		$this->donation_repository
@@ -334,6 +334,29 @@ final class DonationsRestRouteTest extends WordPressTestCase {
 		$request = $this->make_request(
 			[
 				'donation_id' => 'not-a-uuid',
+				'campaign_id' => 22,
+				'amount' => 500,
+			],
+		);
+
+		$response = $this->dispatch_request( $request );
+
+		self::assertInstanceOf( WP_Error::class, $response );
+		self::assertSame( 'rest_invalid_param', $response->get_error_code() );
+		self::assertSame( 400, $response->get_error_data()['status'] ?? null );
+	}
+
+	#[Test]
+	public function create_donation_rejects_non_uuidv4_donation_id(): void {
+
+		$this->donation_repository->shouldNotReceive( 'find_by_id' );
+		$this->campaign_repository->shouldNotReceive( 'find_by_id' );
+		$this->donation_repository->shouldNotReceive( 'insert' );
+		$this->event_bus->shouldNotReceive( 'publish' );
+
+		$request = $this->make_request(
+			[
+				'donation_id' => '123e4567-e89b-72d3-a456-426614174000',
 				'campaign_id' => 22,
 				'amount' => 500,
 			],

@@ -72,11 +72,9 @@ final readonly class DonationFormRenderer {
 			. ' class="fundrik-donation-form"'
 			. ' data-rest-url="%s"'
 			. ' data-campaign-id="%d"'
-			. ' data-donation-id="%s"'
 			. '>',
 			esc_url( $data->rest_url ),
 			$data->campaign_id,
-			esc_attr( $data->donation_id ),
 		);
 	}
 
@@ -172,7 +170,7 @@ final readonly class DonationFormRenderer {
 	 */
 	private function render_message_markup(): string {
 
-		return '<p class="fundrik-donation-form__message" aria-live="polite"></p>';
+		return '<div class="fundrik-donation-form__message" aria-live="polite"></div>';
 	}
 
 	/**

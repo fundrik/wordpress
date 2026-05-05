@@ -352,7 +352,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return string Donation ID.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a valid UUID.
+	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a valid UUIDv4.
 	 */
 	private function require_donation_id( EntityId $id ): string {
 

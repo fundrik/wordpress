@@ -128,7 +128,7 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 			$markup,
 		);
 		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
-		self::assertMatchesRegularExpression( '/data-donation-id="[0-9a-f-]{36}"/', $markup );
+		self::assertStringNotContainsString( 'data-donation-id=', $markup );
 		self::assertStringContainsString( '>Amount</label>', $markup );
 	}
 

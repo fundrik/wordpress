@@ -19,18 +19,18 @@ final class DonationIdTest extends FundrikTestCase {
 	public function from_entity_id_returns_donation_id_for_uuid_entity_id(): void {
 
 		$id = DonationId::from_entity_id(
-			EntityId::create( '123e4567-e89b-12d3-a456-426614174000' ),
+			EntityId::create( '123e4567-e89b-42d3-a456-426614174000' ),
 		);
 
-		self::assertSame( '123e4567-e89b-12d3-a456-426614174000', $id->get_value() );
+		self::assertSame( '123e4567-e89b-42d3-a456-426614174000', $id->get_value() );
 	}
 
 	#[Test]
 	public function from_value_returns_donation_id_for_uuid_string(): void {
 
-		$id = DonationId::from_value( '123e4567-e89b-12d3-a456-426614174001' );
+		$id = DonationId::from_value( '123e4567-e89b-42d3-a456-426614174001' );
 
-		self::assertSame( '123e4567-e89b-12d3-a456-426614174001', $id->get_value() );
+		self::assertSame( '123e4567-e89b-42d3-a456-426614174001', $id->get_value() );
 	}
 
 	#[Test]
@@ -39,7 +39,7 @@ final class DonationIdTest extends FundrikTestCase {
 		$id = DonationId::generate();
 
 		self::assertMatchesRegularExpression(
-			'/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+			'/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
 			$id->get_value(),
 		);
 	}
@@ -47,24 +47,24 @@ final class DonationIdTest extends FundrikTestCase {
 	#[Test]
 	public function from_entity_id_value_returns_donation_id_for_uuid_string(): void {
 
-		$id = DonationId::from_entity_id_value( '123e4567-e89b-12d3-a456-426614174001' );
+		$id = DonationId::from_entity_id_value( '123e4567-e89b-42d3-a456-426614174001' );
 
-		self::assertSame( '123e4567-e89b-12d3-a456-426614174001', $id->get_value() );
+		self::assertSame( '123e4567-e89b-42d3-a456-426614174001', $id->get_value() );
 	}
 
 	#[Test]
 	public function to_entity_id_returns_wrapped_entity_id(): void {
 
-		$id = DonationId::from_value( '123e4567-e89b-12d3-a456-426614174001' );
+		$id = DonationId::from_value( '123e4567-e89b-42d3-a456-426614174001' );
 
-		self::assertEquals( EntityId::create( '123e4567-e89b-12d3-a456-426614174001' ), $id->to_entity_id() );
+		self::assertEquals( EntityId::create( '123e4567-e89b-42d3-a456-426614174001' ), $id->to_entity_id() );
 	}
 
 	#[Test]
 	public function from_entity_id_throws_for_integer_entity_id(): void {
 
 		$this->expectException( InvalidDonationIdException::class );
-		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: 42.' );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUIDv4. Given: 42.' );
 
 		DonationId::from_entity_id( EntityId::create( 42 ) );
 	}
@@ -73,7 +73,7 @@ final class DonationIdTest extends FundrikTestCase {
 	public function from_value_throws_for_invalid_uuid_string(): void {
 
 		$this->expectException( InvalidDonationIdException::class );
-		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: abc.' );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUIDv4. Given: abc.' );
 
 		DonationId::from_value( 'abc' );
 	}
@@ -82,8 +82,17 @@ final class DonationIdTest extends FundrikTestCase {
 	public function from_entity_id_value_throws_for_integer_value(): void {
 
 		$this->expectException( InvalidDonationIdException::class );
-		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: 42.' );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUIDv4. Given: 42.' );
 
 		DonationId::from_entity_id_value( 42 );
+	}
+
+	#[Test]
+	public function from_value_throws_for_non_uuidv4_string(): void {
+
+		$this->expectException( InvalidDonationIdException::class );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUIDv4. Given: 123e4567-e89b-72d3-a456-426614174000.' );
+
+		DonationId::from_value( '123e4567-e89b-72d3-a456-426614174000' );
 	}
 }

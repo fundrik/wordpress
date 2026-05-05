@@ -20,7 +20,7 @@ use PHPUnit\Framework\Attributes\Test;
 final class DonationRepositoryDuplicateInsertTest extends MockeryTestCase {
 
 	private const string TABLE_NAME = 'fundrik_donations';
-	private const string DONATION_ID = '01956b66-c80b-7f0e-b8d4-4c4f9f7d5531';
+	private const string DONATION_ID = '01956b66-c80b-4f0e-b8d4-4c4f9f7d5531';
 
 	private DatabasePort&MockInterface $db;
 	private DonationRepository $repository;

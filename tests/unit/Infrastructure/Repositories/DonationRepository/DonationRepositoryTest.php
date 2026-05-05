@@ -24,7 +24,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 	private const string TABLE_NAME = 'fundrik_donations';
 
-	private const string DONATION_ID = '01956b66-c80b-7f0e-b8d4-4c4f9f7d5531';
+	private const string DONATION_ID = '01956b66-c80b-4f0e-b8d4-4c4f9f7d5531';
 
 	private DatabasePort&MockInterface $db;
 
@@ -109,7 +109,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		$this->db->shouldNotReceive( 'get_by_id' );
 
 		$this->expectException( DonationRepositoryException::class );
-		$this->expectExceptionMessage( 'Donation ID must be a valid UUID. Given: 7.' );
+		$this->expectExceptionMessage( 'Donation ID must be a valid UUIDv4. Given: 7.' );
 
 		$this->repository->find_by_id( $id );
 	}

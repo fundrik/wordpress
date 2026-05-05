@@ -98,7 +98,6 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 			->with(
 				Mockery::on(
 					static fn ( DonationFormRenderData $render_data ): bool => $render_data->campaign_id === 42
-						&& preg_match( '/^[0-9a-f-]{36}$/', $render_data->donation_id ) === 1
 						&& $render_data->rest_url === 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class )
 						&& $render_data->default_amount === 10
 						&& $render_data->amount_label === 'Amount',
@@ -108,7 +107,6 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 			->andReturn(
 				new DonationFormRenderData(
 					campaign_id: 42,
-					donation_id: '123e4567-e89b-42d3-a456-426614174000',
 					rest_url: 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class ),
 					default_amount: 25,
 					amount_label: 'Custom amount',
@@ -132,7 +130,7 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 			$markup,
 		);
 		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
-		self::assertStringContainsString( 'data-donation-id="123e4567-e89b-42d3-a456-426614174000"', $markup );
+		self::assertStringNotContainsString( 'data-donation-id=', $markup );
 		self::assertStringContainsString( '>Custom amount</label>', $markup );
 		self::assertStringContainsString( 'value="25"', $markup );
 	}

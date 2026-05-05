@@ -12,6 +12,8 @@ use WP_REST_Server;
 /**
  * Describes the public donations REST API route.
  *
+ * The `donation_id` request field must be a UUIDv4.
+ *
  * @since 1.0.0
  *
  * @internal

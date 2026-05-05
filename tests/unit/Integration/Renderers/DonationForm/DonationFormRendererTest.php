@@ -31,7 +31,6 @@ final class DonationFormRendererTest extends WordPressTestCase {
 
 		$data = new DonationFormRenderData(
 			campaign_id: 42,
-			donation_id: '123e4567-e89b-42d3-a456-426614174000',
 			rest_url: 'http://example.test/wp-json/fundrik/v1/donations',
 			default_amount: 10,
 			amount_label: 'Amount',
@@ -70,5 +69,6 @@ final class DonationFormRendererTest extends WordPressTestCase {
 
 		self::assertStringContainsString( 'custom-wrapper', $markup );
 		self::assertStringContainsString( 'fundrik-donation-form__notice', $markup );
+		self::assertStringNotContainsString( 'data-donation-id=', $markup );
 	}
 }

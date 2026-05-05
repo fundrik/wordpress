@@ -37,23 +37,25 @@ final readonly class DonationId {
 	 *
 	 * @return self Donation ID.
 	 *
-	 * @throws InvalidDonationIdException When the EntityId cannot be represented as a valid UUID.
+	 * @throws InvalidDonationIdException When the EntityId cannot be represented as a valid UUIDv4.
 	 */
 	public static function from_entity_id( EntityId $id ): self {
 
 		try {
-			$id->get_as_uuid();
-
-			return new self( $id );
+			$uuid = $id->get_as_uuid();
 		} catch ( InvalidEntityIdException $e ) {
 			throw new InvalidDonationIdException(
 				sprintf(
-					'Donation ID must be a valid UUID. Given: %s.',
+					'Donation ID must be a valid UUIDv4. Given: %s.',
 					(string) $id->get_value(),
 				),
 				previous: $e,
 			);
 		}
+
+		self::assert_uuid_v4( $uuid );
+
+		return new self( $id );
 	}
 
 	/**
@@ -77,21 +79,26 @@ final readonly class DonationId {
 	 *
 	 * @return self Donation ID.
 	 *
-	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUID.
+	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUIDv4.
 	 */
 	public static function from_value( string $value ): self {
 
 		try {
-			return self::from_entity_id( EntityId::create( $value ) );
+			$entity_id = EntityId::create( $value );
+			$uuid = $entity_id->get_as_uuid();
 		} catch ( InvalidEntityIdException $e ) {
 			throw new InvalidDonationIdException(
 				sprintf(
-					'Donation ID must be a valid UUID. Given: %s.',
+					'Donation ID must be a valid UUIDv4. Given: %s.',
 					$value,
 				),
 				previous: $e,
 			);
 		}
+
+		self::assert_uuid_v4( $uuid );
+
+		return new self( $entity_id );
 	}
 
 	/**
@@ -103,14 +110,14 @@ final readonly class DonationId {
 	 *
 	 * @return self Donation ID.
 	 *
-	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUID.
+	 * @throws InvalidDonationIdException When the value cannot be represented as a valid UUIDv4.
 	 */
 	public static function from_entity_id_value( int|string $value ): self {
 
 		if ( ! is_string( $value ) ) {
 			throw new InvalidDonationIdException(
 				sprintf(
-					'Donation ID must be a valid UUID. Given: %s.',
+					'Donation ID must be a valid UUIDv4. Given: %s.',
 					(string) $value,
 				),
 			);
@@ -142,5 +149,28 @@ final readonly class DonationId {
 	public function to_entity_id(): EntityId {
 
 		return $this->entity_id;
+	}
+
+	/**
+	 * Checks whether the value is a UUIDv4.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $value UUID string.
+	 *
+	 * @throws InvalidDonationIdException When the UUID is not version 4.
+	 */
+	private static function assert_uuid_v4( string $value ): void {
+
+		if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value ) === 1 ) {
+			return;
+		}
+
+		throw new InvalidDonationIdException(
+			sprintf(
+				'Donation ID must be a valid UUIDv4. Given: %s.',
+				$value,
+			),
+		);
 	}
 }
