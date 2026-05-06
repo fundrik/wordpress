@@ -115,6 +115,8 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 				accepts_donations: ArrayExtractor::extract_bool_required( $row, 'accepts_donations' ),
 				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
 				target_amount: ArrayExtractor::extract_int_nullable_required( $row, 'target_amount' ),
+				collected_amount: ArrayExtractor::extract_int_required( $row, 'collected_amount' ),
+				donations_count: ArrayExtractor::extract_int_required( $row, 'donations_count' ),
 				created_at: UtcDateTime::create_from_format(
 					ArrayExtractor::extract_string_required( $row, 'created_at' ),
 					self::DATETIME_DB_FORMAT,

@@ -219,6 +219,8 @@ final class CampaignLookupServiceTest extends WordPressTestCase {
 			accepts_donations: true,
 			currency_code: 'RUB',
 			target_amount: 1_000,
+			collected_amount: 0,
+			donations_count: 0,
 			created_at: UtcDateTime::create(
 				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
 			),

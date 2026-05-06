@@ -46,6 +46,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 					id: 7,
 					accepts_donations: false,
 					target_amount: 123,
+					collected_amount: 550,
+					donations_count: 2,
 					updated_at: '2026-03-22 11:15:00',
 				),
 			);
@@ -58,6 +60,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 		self::assertTrue( $result?->has_target() );
 		self::assertSame( 123, $result?->get_target_amount() );
 		self::assertSame( 'RUB', $result?->get_currency_code() );
+		self::assertSame( 550, $result?->get_collected_amount() );
+		self::assertSame( 2, $result?->get_donations_count() );
 		self::assertSame( '2026-03-21 10:00:00', $result?->get_created_at()->format( 'Y-m-d H:i:s' ) );
 		self::assertSame( '2026-03-22 11:15:00', $result?->get_updated_at()?->format( 'Y-m-d H:i:s' ) );
 	}
@@ -76,6 +80,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 					id: 7,
 					accepts_donations: true,
 					target_amount: null,
+					collected_amount: 0,
+					donations_count: 0,
 					updated_at: null,
 				),
 			);
@@ -85,6 +91,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 		self::assertTrue( $result?->accepts_donations() );
 		self::assertFalse( $result?->has_target() );
 		self::assertNull( $result?->get_target_amount() );
+		self::assertSame( 0, $result?->get_collected_amount() );
+		self::assertSame( 0, $result?->get_donations_count() );
 		self::assertNull( $result?->get_updated_at() );
 	}
 
@@ -164,6 +172,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 		bool $accepts_donations = false,
 		string $currency_code = 'RUB',
 		?int $target_amount = 123,
+		int $collected_amount = 0,
+		int $donations_count = 0,
 		?string $updated_at = null,
 	): array {
 
@@ -173,6 +183,8 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 			'accepts_donations' => $accepts_donations ? '1' : '0',
 			'currency_code' => $currency_code,
 			'target_amount' => $target_amount === null ? null : (string) $target_amount,
+			'collected_amount' => (string) $collected_amount,
+			'donations_count' => (string) $donations_count,
 			'created_at' => '2026-03-21 10:00:00',
 			'updated_at' => $updated_at,
 		];
