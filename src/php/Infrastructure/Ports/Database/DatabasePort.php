@@ -126,6 +126,20 @@ interface DatabasePort {
 	public function update( string $table, array $data, array $where ): int;
 
 	/**
+	 * Applies non-zero numeric deltas to the row with the given ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int|string $id The row ID to update.
+	 * @param array<string, int> $deltas Non-empty [column => non-zero delta] map.
+	 *
+	 * @throws DatabaseRowNotFoundExceptionInterface When the row does not exist.
+	 * @throws DatabaseExceptionInterface When the update fails.
+	 */
+	public function apply_numeric_deltas( string $table, int|string $id, array $deltas ): void;
+
+	/**
 	 * Deletes the row with the given ID.
 	 *
 	 * @since 1.0.0
@@ -133,6 +147,7 @@ interface DatabasePort {
 	 * @param string $table The table name.
 	 * @param int|string $id The row ID to delete.
 	 *
+	 * @throws DatabaseRowNotFoundExceptionInterface When the row does not exist.
 	 * @throws DatabaseExceptionInterface When the delete fails.
 	 */
 	public function delete( string $table, int|string $id ): void;

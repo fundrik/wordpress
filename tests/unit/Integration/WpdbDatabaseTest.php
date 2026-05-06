@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Integration\Database\WpdbDatabase;
 use Fundrik\WordPress\Integration\Database\WpdbDatabaseException;
+use Fundrik\WordPress\Integration\Database\WpdbRowNotFoundException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -397,10 +398,6 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->db->table_exists( $table );
 	}
-
-	// ---------------------------------------------------------------------
-	// exists_by_id()
-	// ---------------------------------------------------------------------
 
 	// ---------------------------------------------------------------------
 	// get_all_by_column()
@@ -982,6 +979,196 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	// ---------------------------------------------------------------------
+	// apply_numeric_deltas()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function apply_numeric_deltas_prepares_and_executes_atomic_update_query(): void {
+
+		$table = 'fundrik_campaigns';
+		$id = 7;
+		$deltas = [
+			'collected_amount' => 500,
+			'donations_count' => 1,
+		];
+
+		$sql = 'UPDATE %i SET %i = %i + %d, %i = %i + %d WHERE id = %d';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with(
+				$sql,
+				'wp_fundrik_campaigns',
+				'collected_amount',
+				'collected_amount',
+				500,
+				'donations_count',
+				'donations_count',
+				1,
+				7,
+			)
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		$this->db->apply_numeric_deltas( $table, $id, $deltas );
+		$this->addToAssertionCount( 1 );
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_uses_string_placeholder_when_id_is_string(): void {
+
+		$table = 'fundrik_campaigns';
+		$id = 'abc';
+		$deltas = [
+			'collected_amount' => 500,
+		];
+
+		$sql = 'UPDATE %i SET %i = %i + %d WHERE id = %s';
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with(
+				$sql,
+				'wp_fundrik_campaigns',
+				'collected_amount',
+				'collected_amount',
+				500,
+				'abc',
+			)
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $query )
+			->andReturn( 1 );
+
+		$this->db->apply_numeric_deltas( $table, $id, $deltas );
+		$this->addToAssertionCount( 1 );
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_throws_when_delta_list_is_empty(): void {
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'Numeric deltas must be non-empty. Given: empty array.' );
+
+		$this->db->apply_numeric_deltas( 'fundrik_campaigns', 7, [] );
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_throws_when_any_delta_is_zero(): void {
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'Numeric delta for column "collected_amount" must be non-zero. Given: 0.' );
+
+		$this->db->apply_numeric_deltas(
+			'fundrik_campaigns',
+			7,
+			[ 'collected_amount' => 0 ],
+		);
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_throws_when_prepare_returns_invalid_value(): void {
+
+		$sql = 'UPDATE %i SET %i = %i + %d WHERE id = %d';
+		$args = [ 'wp_fundrik_campaigns', 'collected_amount', 'collected_amount', 500, 7 ];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, ...$args )
+			->andReturn( null );
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'Prepared query must be a string. Given: null.' );
+
+		$this->db->apply_numeric_deltas(
+			'fundrik_campaigns',
+			7,
+			[ 'collected_amount' => 500 ],
+		);
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_throws_when_row_is_not_found(): void {
+
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with(
+				'UPDATE %i SET %i = %i + %d WHERE id = %d',
+				'wp_fundrik_campaigns',
+				'collected_amount',
+				'collected_amount',
+				500,
+				7,
+			)
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $query )
+			->andReturn( 0 );
+
+		$this->expectException( WpdbRowNotFoundException::class );
+		$this->expectExceptionMessage( 'Cannot apply numeric deltas to row "7" in table "wp_fundrik_campaigns": row not found.' );
+
+		$this->db->apply_numeric_deltas(
+			'fundrik_campaigns',
+			7,
+			[ 'collected_amount' => 500 ],
+		);
+	}
+
+	#[Test]
+	public function apply_numeric_deltas_throws_when_query_execution_fails(): void {
+
+		$query = 'prepared_query';
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with(
+				'UPDATE %i SET %i = %i + %d WHERE id = %d',
+				'wp_fundrik_campaigns',
+				'collected_amount',
+				'collected_amount',
+				500,
+				7,
+			)
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'query' )
+			->once()
+			->with( $query )
+			->andReturn( false );
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage( 'Failed to apply numeric deltas to row "7" in table "wp_fundrik_campaigns".' );
+
+		$this->db->apply_numeric_deltas(
+			'fundrik_campaigns',
+			7,
+			[ 'collected_amount' => 500 ],
+		);
+	}
+
+	// ---------------------------------------------------------------------
 	// delete()
 	// ---------------------------------------------------------------------
 
@@ -1029,6 +1216,24 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 
 		$this->expectException( WpdbDatabaseException::class );
 		$this->expectExceptionMessage( 'Failed to delete row "7" from table "wp_table".' );
+
+		$this->db->delete( $table, $id );
+	}
+
+	#[Test]
+	public function delete_throws_when_row_is_not_found(): void {
+
+		$table = 'wp_table';
+		$id = 7;
+
+		$this->wpdb
+			->shouldReceive( 'delete' )
+			->once()
+			->with( $table, [ 'id' => $id ] )
+			->andReturn( 0 );
+
+		$this->expectException( WpdbRowNotFoundException::class );
+		$this->expectExceptionMessage( 'Cannot delete row "7" from table "wp_table": row not found.' );
 
 		$this->db->delete( $table, $id );
 	}

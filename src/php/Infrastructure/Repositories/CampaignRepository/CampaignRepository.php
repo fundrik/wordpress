@@ -20,6 +20,7 @@ use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdEx
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseRowNotFoundExceptionInterface;
 use Override;
 
 /**
@@ -242,12 +243,10 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 
 		$id_int = $this->require_campaign_id( $id );
 
-		if ( ! $this->exists_by_id( $id ) ) {
-			throw new CampaignNotFoundException( $id_int, 'delete' );
-		}
-
 		try {
 			$this->db->delete( self::TABLE_NAME, $id_int );
+		} catch ( DatabaseRowNotFoundExceptionInterface $e ) {
+			throw new CampaignNotFoundException( $id_int, 'delete', $e );
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to delete campaign "%d".', $id_int ),

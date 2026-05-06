@@ -68,8 +68,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		$placeholder = is_int( $id ) ? '%d' : '%s';
 
 		$sql = "SELECT * FROM %i WHERE id = {$placeholder} LIMIT 1";
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, $id );
+		$query = $this->prepare_query( $sql, $table, $id );
 
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var array<string, mixed>|null $row */
@@ -109,8 +108,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		$table = $this->qualify_table_name( $table );
 		$sql = 'SELECT * FROM %i';
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table );
+		$query = $this->prepare_query( $sql, $table );
 
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var list<array<string, mixed>>|null $results */
@@ -153,8 +151,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		[ $where_sql, $where_args ] = $this->build_column_value_filter( $column, $value );
 
 		$sql = "SELECT * FROM %i {$where_sql}";
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, ...$where_args );
+		$query = $this->prepare_query( $sql, $table, ...$where_args );
 
 		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		/** @var list<array<string, mixed>>|null $results */
@@ -195,8 +192,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		$table = $this->qualify_table_name( $table );
 		$sql = 'SHOW TABLES LIKE %s';
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table );
+		$query = $this->prepare_query( $sql, $table );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$exists = $this->wpdb->get_var( $query );
@@ -233,8 +229,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		$placeholder = is_int( $id ) ? '%d' : '%s';
 
 		$sql = "SELECT 1 FROM %i WHERE id = {$placeholder} LIMIT 1";
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, $id );
+		$query = $this->prepare_query( $sql, $table, $id );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$exists = $this->wpdb->get_var( $query );
@@ -273,8 +268,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 		[ $where_sql, $where_args ] = $this->build_column_value_filter( $column, $value );
 
 		$sql = "SELECT 1 FROM %i {$where_sql} LIMIT 1";
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, $table, ...$where_args );
+		$query = $this->prepare_query( $sql, $table, ...$where_args );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$exists = $this->wpdb->get_var( $query );
@@ -362,6 +356,61 @@ final readonly class WpdbDatabase implements DatabasePort {
 		return $result;
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Applies non-zero numeric deltas to the row with the given ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int|string $id The row ID to update.
+	 * @param array<string, int> $deltas Non-empty [column => non-zero delta] map.
+	 *
+	 * @throws WpdbRowNotFoundException When the row does not exist.
+	 * @throws WpdbDatabaseException When the update fails.
+	 */
+	#[Override]
+	public function apply_numeric_deltas( string $table, int|string $id, array $deltas ): void {
+
+		$table = $this->qualify_table_name( $table );
+		$id_placeholder = is_int( $id ) ? '%d' : '%s';
+		[ $assignments, $delta_args ] = $this->build_numeric_delta_assignments( $deltas );
+
+		$sql = sprintf(
+			'UPDATE %%i SET %s WHERE id = %s',
+			implode( ', ', $assignments ),
+			$id_placeholder,
+		);
+		$args = [ $table, ...$delta_args, $id ];
+
+		$query = $this->prepare_query( $sql, ...$args );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$result = $this->wpdb->query( $query );
+
+		if ( $result === false || $this->wpdb->last_error !== '' ) {
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to apply numeric deltas to row "%s" in table "%s".',
+					(string) $id,
+					$table,
+				),
+			);
+		}
+
+		if ( $result === 0 ) {
+			throw new WpdbRowNotFoundException(
+				sprintf(
+					'Cannot apply numeric deltas to row "%s" in table "%s": row not found.',
+					(string) $id,
+					$table,
+				),
+			);
+		}
+	}
+	// phpcs:enable
+
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Deletes the row with the given ID.
 	 *
@@ -370,6 +419,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 * @param string $table The table name.
 	 * @param int|string $id The row ID to delete.
 	 *
+	 * @throws WpdbRowNotFoundException When the row does not exist.
 	 * @throws WpdbDatabaseException When the delete fails.
 	 */
 	#[Override]
@@ -391,7 +441,19 @@ final readonly class WpdbDatabase implements DatabasePort {
 				),
 			);
 		}
+
+		if ( $result === 0 ) {
+
+			throw new WpdbRowNotFoundException(
+				sprintf(
+					'Cannot delete row "%s" from table "%s": row not found.',
+					(string) $id,
+					$table,
+				),
+			);
+		}
 	}
+	// phpcs:enable
 
 	/**
 	 * Executes a raw SQL query.
@@ -427,18 +489,7 @@ final readonly class WpdbDatabase implements DatabasePort {
 	#[Override]
 	public function query_with_args( string $sql, int|float|string|bool|null ...$args ): void {
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$query = $this->wpdb->prepare( $sql, ...$args );
-
-		if ( ! is_string( $query ) ) {
-
-			throw new WpdbDatabaseException(
-				sprintf(
-					'Prepared query must be a string. Given: %s.',
-					get_debug_type( $query ),
-				),
-			);
-		}
+		$query = $this->prepare_query( $sql, ...$args );
 
 		$this->query( $query );
 	}
@@ -586,6 +637,75 @@ final readonly class WpdbDatabase implements DatabasePort {
 		}
 
 		return [ "WHERE %i = {$placeholder}", [ $column, $value ] ];
+	}
+
+	/**
+	 * Builds assignment fragments and placeholder arguments for numeric deltas.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, int> $deltas Non-empty [column => non-zero delta] map.
+	 *
+	 * @return array{0:list<string>,1:list<int|string>} Assignment SQL fragments and placeholder arguments.
+	 *
+	 * @throws WpdbDatabaseException When the delta list is empty or contains zero values.
+	 */
+	private function build_numeric_delta_assignments( array $deltas ): array {
+
+		if ( $deltas === [] ) {
+			throw new WpdbDatabaseException( 'Numeric deltas must be non-empty. Given: empty array.' );
+		}
+
+		$assignments = [];
+		$args = [];
+
+		foreach ( $deltas as $column => $delta ) {
+
+			if ( $delta === 0 ) {
+				throw new WpdbDatabaseException(
+					sprintf(
+						'Numeric delta for column "%s" must be non-zero. Given: 0.',
+						$column,
+					),
+				);
+			}
+
+			$assignments[] = '%i = %i + %d';
+			$args[] = $column;
+			$args[] = $column;
+			$args[] = $delta;
+		}
+
+		return [ $assignments, $args ];
+	}
+
+	/**
+	 * Prepares a SQL query and returns the sanitized query string.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $sql Query template with placeholders.
+	 * @param int|float|string|bool|null ...$args Placeholder arguments.
+	 *
+	 * @return string Prepared query string.
+	 *
+	 * @throws WpdbDatabaseException When prepare does not return a string.
+	 */
+	private function prepare_query( string $sql, int|float|string|bool|null ...$args ): string {
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$query = $this->wpdb->prepare( $sql, ...$args );
+
+		if ( ! is_string( $query ) ) {
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Prepared query must be a string. Given: %s.',
+					get_debug_type( $query ),
+				),
+			);
+		}
+
+		return $query;
 	}
 
 	/**
