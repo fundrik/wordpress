@@ -12,9 +12,16 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDonationsEnable
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignSynchronizedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationApplicationEventInterface;
+use Fundrik\Core\Components\Donations\Application\Events\DonationCreatedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationRefundedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationRejectedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationSucceededEvent;
 use Fundrik\Core\Components\Shared\Application\Events\ApplicationEventInterface;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
 use Override;
 use Psr\Log\LoggerInterface;
@@ -39,7 +46,6 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 		private LoggerInterface $logger,
 	) {}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Publishes the given event to matching WordPress actions.
 	 *
@@ -52,9 +58,21 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
 
-		if ( ! $event instanceof CampaignApplicationEventInterface ) {
-			return;
-		}
+		match ( true ) {
+			$event instanceof CampaignApplicationEventInterface => $this->publish_campaign_event( $event ),
+			$event instanceof DonationApplicationEventInterface => $this->publish_donation_event( $event ),
+			default => null,
+		};
+	}
+
+	/**
+	 * Publishes the given campaign event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param CampaignApplicationEventInterface $event Campaign application event.
+	 */
+	private function publish_campaign_event( CampaignApplicationEventInterface $event ): void {
 
 		$publisher = match ( true ) {
 			$event instanceof CampaignCreatedEvent => $this->publish_campaign_created( ... ),
@@ -80,7 +98,37 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 
 		$publisher( $campaign_id );
 	}
-	// phpcs:enable
+
+	/**
+	 * Publishes the given donation event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param DonationApplicationEventInterface $event Donation application event.
+	 */
+	private function publish_donation_event( DonationApplicationEventInterface $event ): void {
+
+		$publisher = match ( true ) {
+			$event instanceof DonationCreatedEvent => $this->publish_donation_created( ... ),
+			$event instanceof DonationSucceededEvent => $this->publish_donation_succeeded( ... ),
+			$event instanceof DonationRejectedEvent => $this->publish_donation_rejected( ... ),
+			$event instanceof DonationRefundedEvent => $this->publish_donation_refunded( ... ),
+			default => null,
+		};
+
+		if ( $publisher === null ) {
+			return;
+		}
+
+		try {
+			$donation_id = DonationId::from_entity_id( $event->get_donation_id() )->get_value();
+		} catch ( InvalidDonationIdException ) {
+			$this->log_invalid_donation_id( $event, 'donation_id_not_uuid' );
+			return;
+		}
+
+		$publisher( $donation_id );
+	}
 
 	/**
 	 * Publishes a campaign-created event to WordPress actions.
@@ -216,6 +264,82 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	}
 
 	/**
+	 * Publishes a donation-created event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $donation_id Donation ID.
+	 */
+	private function publish_donation_created( string $donation_id ): void {
+
+		/**
+		 * Fires after a donation has been created.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $donation_id Donation ID.
+		 */
+		do_action( 'fundrik_donation_created', $donation_id );
+	}
+
+	/**
+	 * Publishes a donation-succeeded event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $donation_id Donation ID.
+	 */
+	private function publish_donation_succeeded( string $donation_id ): void {
+
+		/**
+		 * Fires after a donation has succeeded.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $donation_id Donation ID.
+		 */
+		do_action( 'fundrik_donation_succeeded', $donation_id );
+	}
+
+	/**
+	 * Publishes a donation-rejected event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $donation_id Donation ID.
+	 */
+	private function publish_donation_rejected( string $donation_id ): void {
+
+		/**
+		 * Fires after a donation has been rejected.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $donation_id Donation ID.
+		 */
+		do_action( 'fundrik_donation_rejected', $donation_id );
+	}
+
+	/**
+	 * Publishes a donation-refunded event to WordPress actions.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $donation_id Donation ID.
+	 */
+	private function publish_donation_refunded( string $donation_id ): void {
+
+		/**
+		 * Fires after a donation has been refunded.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $donation_id Donation ID.
+		 */
+		do_action( 'fundrik_donation_refunded', $donation_id );
+	}
+
+	/**
 	 * Logs that campaign ID resolution has failed for a given event.
 	 *
 	 * @since 1.0.0
@@ -227,6 +351,29 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 
 		$this->logger->warning(
 			'Publishing application event skipped due to invalid campaign ID.',
+			$this->logger_context(
+				[
+					'operation' => 'publish',
+					'outcome' => 'invalid',
+					'event_class' => $event::class,
+					'reason' => $reason,
+				],
+			),
+		);
+	}
+
+	/**
+	 * Logs that donation ID resolution has failed for a given event.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param ApplicationEventInterface $event Application event.
+	 * @param string $reason Machine-readable reason for resolution failure.
+	 */
+	private function log_invalid_donation_id( ApplicationEventInterface $event, string $reason ): void {
+
+		$this->logger->warning(
+			'Publishing application event skipped due to invalid donation ID.',
 			$this->logger_context(
 				[
 					'operation' => 'publish',

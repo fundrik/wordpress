@@ -12,6 +12,10 @@ use Fundrik\Core\Components\Campaigns\Application\Events\CampaignDonationsEnable
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignRenamedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignSynchronizedEvent;
 use Fundrik\Core\Components\Campaigns\Application\Events\CampaignTargetChangedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationCreatedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationRefundedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationRejectedEvent;
+use Fundrik\Core\Components\Donations\Application\Events\DonationSucceededEvent;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
 use Fundrik\WordPress\Tests\Fixtures\DummyApplicationEvent;
@@ -129,6 +133,54 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 	}
 
 	#[Test]
+	public function publish_dispatches_donation_created_event_to_wordpress_actions(): void {
+
+		$event = new DonationCreatedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
+
+		Actions\expectDone( 'fundrik_donation_created' )
+			->once()
+			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_donation_succeeded_event_to_wordpress_actions(): void {
+
+		$event = new DonationSucceededEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
+
+		Actions\expectDone( 'fundrik_donation_succeeded' )
+			->once()
+			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_donation_rejected_event_to_wordpress_actions(): void {
+
+		$event = new DonationRejectedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
+
+		Actions\expectDone( 'fundrik_donation_rejected' )
+			->once()
+			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_dispatches_donation_refunded_event_to_wordpress_actions(): void {
+
+		$event = new DonationRefundedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
+
+		Actions\expectDone( 'fundrik_donation_refunded' )
+			->once()
+			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
 	public function publish_logs_warning_when_campaign_id_cannot_be_resolved(): void {
 
 		$event = new CampaignCreatedEvent(
@@ -167,6 +219,48 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_synchronized' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
+		Actions\expectDone( 'fundrik_donation_created' )->never();
+		Actions\expectDone( 'fundrik_donation_succeeded' )->never();
+		Actions\expectDone( 'fundrik_donation_rejected' )->never();
+		Actions\expectDone( 'fundrik_donation_refunded' )->never();
+
+		$this->publisher->publish( $event );
+	}
+
+	#[Test]
+	public function publish_logs_warning_when_donation_id_cannot_be_resolved(): void {
+
+		$event = new DonationSucceededEvent( EntityId::create( 11 ) );
+
+		/** Warning expectation.
+		 *
+		 * @var Expectation $logger_warning_expectation
+		 */
+		$logger_warning_expectation = $this->logger->shouldReceive( 'warning' );
+
+		$logger_warning_expectation
+			->once()
+			->with(
+				'Publishing application event skipped due to invalid donation ID.',
+				Mockery::subset(
+					[
+						'service_class' => WordPressActionApplicationEventPublisher::class,
+						'logger_class' => WordPressActionApplicationEventPublisher::class,
+						'component' => 'event_bus',
+						'layer' => 'integration',
+						'system' => 'wordpress',
+						'operation' => 'publish',
+						'outcome' => 'invalid',
+						'event_class' => DonationSucceededEvent::class,
+						'reason' => 'donation_id_not_uuid',
+					],
+				),
+			);
+
+		Actions\expectDone( 'fundrik_donation_created' )->never();
+		Actions\expectDone( 'fundrik_donation_succeeded' )->never();
+		Actions\expectDone( 'fundrik_donation_rejected' )->never();
+		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
 		$this->publisher->publish( $event );
 	}
@@ -183,6 +277,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_synchronized' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
+		Actions\expectDone( 'fundrik_donation_created' )->never();
+		Actions\expectDone( 'fundrik_donation_succeeded' )->never();
+		Actions\expectDone( 'fundrik_donation_rejected' )->never();
+		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
 		$this->publisher->publish( $event );
 	}
@@ -199,6 +297,10 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_campaign_target_changed' )->never();
 		Actions\expectDone( 'fundrik_campaign_synchronized' )->never();
 		Actions\expectDone( 'fundrik_campaign_deleted' )->never();
+		Actions\expectDone( 'fundrik_donation_created' )->never();
+		Actions\expectDone( 'fundrik_donation_succeeded' )->never();
+		Actions\expectDone( 'fundrik_donation_rejected' )->never();
+		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
 		$this->publisher->publish( $event );
 	}
