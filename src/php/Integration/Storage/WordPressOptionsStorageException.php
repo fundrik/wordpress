@@ -8,7 +8,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Storage\StorageExceptionInterface;
 use RuntimeException;
 
 /**
- * Represents a WordPress options storage failure.
+ * Thrown when a WordPress options storage operation fails.
  *
  * @since 1.0.0
  *

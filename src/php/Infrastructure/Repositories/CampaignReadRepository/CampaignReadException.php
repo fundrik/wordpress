@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignRea
 use RuntimeException;
 
 /**
- * Thrown when campaign read operation fails.
+ * Thrown when a campaign read operation fails.
  *
  * @since 1.0.0
  *

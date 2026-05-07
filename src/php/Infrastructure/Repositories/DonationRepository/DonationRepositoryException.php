@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use RuntimeException;
 
 /**
- * Thrown when donation persistence operation fails.
+ * Thrown when a donation persistence operation fails.
  *
  * @since 1.0.0
  *

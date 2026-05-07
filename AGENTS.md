@@ -36,6 +36,9 @@
 - Prefer stable summary verbs by artifact role:
   - `Represents ...` for value objects, DTOs, commands, and read models.
   - `Provides ...` for services, factories, and ports when they expose an entry point or capability.
+  - `Thrown when ...` for concrete exception classes.
+  - `Serves as the base exception for ...` for abstract/base exception classes.
+  - `Marks ...` for exception marker interfaces.
   - `Creates ...`, `Returns ...`, `Checks ...`, `Formats ...`, `Converts ...` for methods, based on what they do.
 - For port interfaces, use the standard summary wording `Provides the <inbound|outbound> port for ...`.
 - In `@param`, `@return`, and `@throws` descriptions, use short noun phrases or outcome phrases, not full explanatory sentences.

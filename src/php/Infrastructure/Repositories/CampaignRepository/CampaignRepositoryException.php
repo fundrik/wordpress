@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use RuntimeException;
 
 /**
- * Thrown when campaign persistence operation fails.
+ * Thrown when a campaign persistence operation fails.
  *
  * @since 1.0.0
  *

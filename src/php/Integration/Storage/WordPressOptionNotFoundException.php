@@ -8,7 +8,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Storage\StorageNotFoundExceptionInter
 use RuntimeException;
 
 /**
- * Represents a missing WordPress option in storage.
+ * Thrown when a WordPress option is missing in storage.
  *
  * @since 1.0.0
  *
