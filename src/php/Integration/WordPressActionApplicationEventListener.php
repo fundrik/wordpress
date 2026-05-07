@@ -22,32 +22,32 @@ use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
-use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventListenerInterface;
 use Override;
 use Psr\Log\LoggerInterface;
 
 /**
- * Publishes known application events to WordPress actions.
+ * Publishes WordPress actions for supported application events.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class WordPressActionApplicationEventPublisher implements ApplicationEventPublisherPort {
+final readonly class WordPressActionApplicationEventListener implements ApplicationEventListenerInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param LoggerInterface $logger Writes structured log entries for application event publishing.
+	 * @param LoggerInterface $logger Writes structured log entries for application event handling.
 	 */
 	public function __construct(
 		private LoggerInterface $logger,
 	) {}
 
 	/**
-	 * Publishes the given event to matching WordPress actions.
+	 * Handles the given event by publishing matching WordPress actions.
 	 *
 	 * Unknown events are ignored.
 	 *
@@ -56,25 +56,25 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 * @param ApplicationEventInterface $event Application event.
 	 */
 	#[Override]
-	public function publish( ApplicationEventInterface $event ): void {
+	public function handle( ApplicationEventInterface $event ): void {
 
 		match ( true ) {
-			$event instanceof CampaignApplicationEventInterface => $this->publish_campaign_event( $event ),
-			$event instanceof DonationApplicationEventInterface => $this->publish_donation_event( $event ),
+			$event instanceof CampaignApplicationEventInterface => $this->handle_campaign_event( $event ),
+			$event instanceof DonationApplicationEventInterface => $this->handle_donation_event( $event ),
 			default => null,
 		};
 	}
 
 	/**
-	 * Publishes the given campaign event to WordPress actions.
+	 * Handles the given campaign event by publishing WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param CampaignApplicationEventInterface $event Campaign application event.
 	 */
-	private function publish_campaign_event( CampaignApplicationEventInterface $event ): void {
+	private function handle_campaign_event( CampaignApplicationEventInterface $event ): void {
 
-		$publisher = match ( true ) {
+		$publish_action = match ( true ) {
 			$event instanceof CampaignCreatedEvent => $this->publish_campaign_created( ... ),
 			$event instanceof CampaignDonationsEnabledEvent => $this->publish_campaign_donations_enabled( ... ),
 			$event instanceof CampaignDonationsDisabledEvent => $this->publish_campaign_donations_disabled( ... ),
@@ -85,7 +85,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 			default => null,
 		};
 
-		if ( $publisher === null ) {
+		if ( $publish_action === null ) {
 			return;
 		}
 
@@ -96,19 +96,19 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 			return;
 		}
 
-		$publisher( $campaign_id );
+		$publish_action( $campaign_id );
 	}
 
 	/**
-	 * Publishes the given donation event to WordPress actions.
+	 * Handles the given donation event by publishing WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param DonationApplicationEventInterface $event Donation application event.
 	 */
-	private function publish_donation_event( DonationApplicationEventInterface $event ): void {
+	private function handle_donation_event( DonationApplicationEventInterface $event ): void {
 
-		$publisher = match ( true ) {
+		$publish_action = match ( true ) {
 			$event instanceof DonationCreatedEvent => $this->publish_donation_created( ... ),
 			$event instanceof DonationSucceededEvent => $this->publish_donation_succeeded( ... ),
 			$event instanceof DonationRejectedEvent => $this->publish_donation_rejected( ... ),
@@ -116,7 +116,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 			default => null,
 		};
 
-		if ( $publisher === null ) {
+		if ( $publish_action === null ) {
 			return;
 		}
 
@@ -127,7 +127,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 			return;
 		}
 
-		$publisher( $donation_id );
+		$publish_action( $donation_id );
 	}
 
 	/**
@@ -350,8 +350,8 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	private function log_invalid_campaign_id( ApplicationEventInterface $event, string $reason ): void {
 
 		$this->logger->warning(
-			'Publishing application event skipped due to invalid campaign ID.',
-			$this->logger_context(
+			'Publishing WordPress action skipped due to invalid campaign ID.',
+			$this->build_logger_context(
 				[
 					'operation' => 'publish',
 					'outcome' => 'invalid',
@@ -373,8 +373,8 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	private function log_invalid_donation_id( ApplicationEventInterface $event, string $reason ): void {
 
 		$this->logger->warning(
-			'Publishing application event skipped due to invalid donation ID.',
-			$this->logger_context(
+			'Publishing WordPress action skipped due to invalid donation ID.',
+			$this->build_logger_context(
 				[
 					'operation' => 'publish',
 					'outcome' => 'invalid',
@@ -386,7 +386,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	}
 
 	/**
-	 * Builds structured logger context for publishing application events.
+	 * Builds structured logger context for handling application events.
 	 *
 	 * @since 1.0.0
 	 *
@@ -396,7 +396,7 @@ final readonly class WordPressActionApplicationEventPublisher implements Applica
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function logger_context( array $extra = [] ): array {
+	private function build_logger_context( array $extra = [] ): array {
 
 		return [
 			'service_class' => self::class,

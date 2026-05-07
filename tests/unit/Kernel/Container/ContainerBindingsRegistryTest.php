@@ -9,7 +9,8 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\Campa
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
-use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventPublisherPort;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventListenerInterface;
+use Fundrik\WordPress\Infrastructure\EventBus\CampaignMetricsProjectionApplicationEventListener;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
@@ -40,7 +41,7 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
-use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
+use Fundrik\WordPress\Integration\WordPressActionApplicationEventListener;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
@@ -113,7 +114,6 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 			CampaignRepositoryPort::class => CampaignRepository::class,
 			DonationRepositoryPort::class => DonationRepository::class,
 			ApplicationEventBusPort::class => ApplicationEventBus::class,
-			ApplicationEventPublisherPort::class => WordPressActionApplicationEventPublisher::class,
 
 			HookDispatcherRegistrarPort::class => HookDispatcherRegistrar::class,
 			BootUnitRunnerPort::class => BootUnitRunner::class,
@@ -125,6 +125,14 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 	private static function expected_contextual_bindings(): array {
 
 		return [
+			[
+				'consumer' => ApplicationEventBus::class,
+				'dependency' => ApplicationEventListenerInterface::class,
+				'implementation' => [
+					WordPressActionApplicationEventListener::class,
+					CampaignMetricsProjectionApplicationEventListener::class,
+				],
+			],
 			[
 				'consumer' => BootUnitRunner::class,
 				'dependency' => BootUnitInterface::class,

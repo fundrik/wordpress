@@ -17,7 +17,7 @@ use Fundrik\Core\Components\Donations\Application\Events\DonationRefundedEvent;
 use Fundrik\Core\Components\Donations\Application\Events\DonationRejectedEvent;
 use Fundrik\Core\Components\Donations\Application\Events\DonationSucceededEvent;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Integration\WordPressActionApplicationEventPublisher;
+use Fundrik\WordPress\Integration\WordPressActionApplicationEventListener;
 use Fundrik\WordPress\Tests\Fixtures\DummyApplicationEvent;
 use Fundrik\WordPress\Tests\Fixtures\DummyCampaignApplicationEvent;
 use Fundrik\WordPress\Tests\WordPressTestCase;
@@ -28,11 +28,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\LoggerInterface;
 
-#[CoversClass( WordPressActionApplicationEventPublisher::class )]
-final class WordPressActionApplicationEventPublisherTest extends WordPressTestCase {
+#[CoversClass( WordPressActionApplicationEventListener::class )]
+final class WordPressActionApplicationEventListenerTest extends WordPressTestCase {
 
 	private LoggerInterface&MockInterface $logger;
-	private WordPressActionApplicationEventPublisher $publisher;
+	private WordPressActionApplicationEventListener $listener;
 
 	protected function setUp(): void {
 
@@ -45,11 +45,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		$logger = Mockery::mock( LoggerInterface::class );
 
 		$this->logger = $logger;
-		$this->publisher = new WordPressActionApplicationEventPublisher( $this->logger );
+		$this->listener = new WordPressActionApplicationEventListener( $this->logger );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_created_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_created_event_to_wordpress_actions(): void {
 
 		$event = new CampaignCreatedEvent( EntityId::create( 11 ) );
 
@@ -57,11 +57,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 11 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_donations_enabled_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_donations_enabled_event_to_wordpress_actions(): void {
 
 		$event = new CampaignDonationsEnabledEvent( EntityId::create( 12 ) );
 
@@ -69,11 +69,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 12 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_donations_disabled_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_donations_disabled_event_to_wordpress_actions(): void {
 
 		$event = new CampaignDonationsDisabledEvent( EntityId::create( 14 ) );
 
@@ -81,11 +81,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 14 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_renamed_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_renamed_event_to_wordpress_actions(): void {
 
 		$event = new CampaignRenamedEvent( EntityId::create( 15 ) );
 
@@ -93,11 +93,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 15 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_target_changed_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_target_changed_event_to_wordpress_actions(): void {
 
 		$event = new CampaignTargetChangedEvent( EntityId::create( 16 ) );
 
@@ -105,11 +105,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 16 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_synchronized_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_synchronized_event_to_wordpress_actions(): void {
 
 		$event = new CampaignSynchronizedEvent( EntityId::create( 17 ) );
 
@@ -117,11 +117,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 17 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_campaign_deleted_event_to_wordpress_actions(): void {
+	public function handle_dispatches_campaign_deleted_event_to_wordpress_actions(): void {
 
 		$event = new CampaignDeletedEvent( EntityId::create( 13 ) );
 
@@ -129,11 +129,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( 13 );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_donation_created_event_to_wordpress_actions(): void {
+	public function handle_dispatches_donation_created_event_to_wordpress_actions(): void {
 
 		$event = new DonationCreatedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
 
@@ -141,11 +141,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_donation_succeeded_event_to_wordpress_actions(): void {
+	public function handle_dispatches_donation_succeeded_event_to_wordpress_actions(): void {
 
 		$event = new DonationSucceededEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
 
@@ -153,11 +153,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_donation_rejected_event_to_wordpress_actions(): void {
+	public function handle_dispatches_donation_rejected_event_to_wordpress_actions(): void {
 
 		$event = new DonationRejectedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
 
@@ -165,11 +165,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_dispatches_donation_refunded_event_to_wordpress_actions(): void {
+	public function handle_dispatches_donation_refunded_event_to_wordpress_actions(): void {
 
 		$event = new DonationRefundedEvent( EntityId::create( '019b6bcb-2f32-4461-838f-67a1479fbdbe' ) );
 
@@ -177,11 +177,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 			->once()
 			->with( '019b6bcb-2f32-4461-838f-67a1479fbdbe' );
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_logs_warning_when_campaign_id_cannot_be_resolved(): void {
+	public function handle_logs_warning_when_campaign_id_cannot_be_resolved(): void {
 
 		$event = new CampaignCreatedEvent(
 			EntityId::create( '2be078f7-7d75-4450-90d0-e7fd204f072e' ),
@@ -196,11 +196,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		$logger_warning_expectation
 			->once()
 			->with(
-				'Publishing application event skipped due to invalid campaign ID.',
+				'Publishing WordPress action skipped due to invalid campaign ID.',
 				Mockery::subset(
 					[
-						'service_class' => WordPressActionApplicationEventPublisher::class,
-						'logger_class' => WordPressActionApplicationEventPublisher::class,
+						'service_class' => WordPressActionApplicationEventListener::class,
+						'logger_class' => WordPressActionApplicationEventListener::class,
 						'component' => 'event_bus',
 						'layer' => 'integration',
 						'system' => 'wordpress',
@@ -224,11 +224,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_donation_rejected' )->never();
 		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_logs_warning_when_donation_id_cannot_be_resolved(): void {
+	public function handle_logs_warning_when_donation_id_cannot_be_resolved(): void {
 
 		$event = new DonationSucceededEvent( EntityId::create( 11 ) );
 
@@ -241,11 +241,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		$logger_warning_expectation
 			->once()
 			->with(
-				'Publishing application event skipped due to invalid donation ID.',
+				'Publishing WordPress action skipped due to invalid donation ID.',
 				Mockery::subset(
 					[
-						'service_class' => WordPressActionApplicationEventPublisher::class,
-						'logger_class' => WordPressActionApplicationEventPublisher::class,
+						'service_class' => WordPressActionApplicationEventListener::class,
+						'logger_class' => WordPressActionApplicationEventListener::class,
 						'component' => 'event_bus',
 						'layer' => 'integration',
 						'system' => 'wordpress',
@@ -262,11 +262,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_donation_rejected' )->never();
 		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_ignores_non_campaign_event(): void {
+	public function handle_ignores_non_campaign_event(): void {
 
 		$event = new DummyApplicationEvent();
 
@@ -282,11 +282,11 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_donation_rejected' )->never();
 		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 
 	#[Test]
-	public function publish_ignores_unsupported_campaign_event(): void {
+	public function handle_ignores_unsupported_campaign_event(): void {
 
 		$event = new DummyCampaignApplicationEvent( EntityId::create( 18 ) );
 
@@ -302,6 +302,6 @@ final class WordPressActionApplicationEventPublisherTest extends WordPressTestCa
 		Actions\expectDone( 'fundrik_donation_rejected' )->never();
 		Actions\expectDone( 'fundrik_donation_refunded' )->never();
 
-		$this->publisher->publish( $event );
+		$this->listener->handle( $event );
 	}
 }

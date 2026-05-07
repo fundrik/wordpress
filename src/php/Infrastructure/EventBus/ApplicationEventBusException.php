@@ -8,7 +8,7 @@ use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBu
 use RuntimeException;
 
 /**
- * Signals that publishing an application event failed.
+ * Thrown when dispatching an application event fails.
  *
  * @since 1.0.0
  *

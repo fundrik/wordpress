@@ -10,7 +10,7 @@ use Override;
 use Throwable;
 
 /**
- * Orchestrates application event publishing through configured channels.
+ * Dispatches application events to configured listeners.
  *
  * @since 1.0.0
  *
@@ -19,35 +19,46 @@ use Throwable;
 final readonly class ApplicationEventBus implements ApplicationEventBusPort {
 
 	/**
+	 * Configured event listeners.
+	 *
+	 * @var list<ApplicationEventListenerInterface>
+	 */
+	private array $listeners;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param ApplicationEventPublisherPort $publisher Publishes events through a concrete integration channel.
+	 * @param ApplicationEventListenerInterface ...$listeners Event listeners.
 	 */
-	public function __construct(
-		private ApplicationEventPublisherPort $publisher,
-	) {}
+	public function __construct( ApplicationEventListenerInterface ...$listeners ) {
+
+		$this->listeners = $listeners;
+	}
 
 	/**
-	 * Publishes the given application event.
+	 * Dispatches the given application event to configured listeners.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param ApplicationEventInterface $event The application event to publish.
+	 * @param ApplicationEventInterface $event Application event to dispatch.
 	 *
-	 * @throws ApplicationEventBusException When publishing fails.
+	 * @throws ApplicationEventBusException When dispatching fails.
 	 */
 	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
 
 		try {
-			$this->publisher->publish( $event );
+
+			foreach ( $this->listeners as $listener ) {
+				$listener->handle( $event );
+			}
 		} catch ( Throwable $e ) {
 
 			throw new ApplicationEventBusException(
 				sprintf(
-					'Failed to publish application event "%s".',
+					'Failed to dispatch application event "%s".',
 					$event::class,
 				),
 				previous: $e,
