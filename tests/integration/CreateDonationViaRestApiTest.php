@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\IntegrationTests;
 
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +21,6 @@ final class CreateDonationViaRestApiTest extends TestCase {
 
 	private const string CAMPAIGNS_TABLE_SUFFIX = 'fundrik_campaigns';
 	private const string DONATIONS_TABLE_SUFFIX = 'fundrik_donations';
-	private const string DONATIONS_REQUEST_PATH = '/' . DonationsRestRoute::ROUTE_NAMESPACE . DonationsRestRoute::ROUTE_PATH;
 
 	private int $post_id = 0;
 
@@ -109,7 +109,7 @@ final class CreateDonationViaRestApiTest extends TestCase {
 
 		self::assertSame( 1, $inserted_campaign );
 
-		$request = new WP_REST_Request( 'POST', self::DONATIONS_REQUEST_PATH );
+		$request = new WP_REST_Request( 'POST', $this->get_donations_request_path() );
 		$request->set_header( 'Content-Type', 'application/json' );
 
 		$donation_id = $this->generate_donation_id();
@@ -140,7 +140,7 @@ final class CreateDonationViaRestApiTest extends TestCase {
 		$donation_id = (string) $data['id'];
 		$this->donation_ids[] = $donation_id;
 
-		$duplicate_request = new WP_REST_Request( 'POST', self::DONATIONS_REQUEST_PATH );
+		$duplicate_request = new WP_REST_Request( 'POST', $this->get_donations_request_path() );
 		$duplicate_request->set_header( 'Content-Type', 'application/json' );
 		$duplicate_request->set_body(
 			(string) wp_json_encode(
@@ -335,11 +335,16 @@ final class CreateDonationViaRestApiTest extends TestCase {
 	 */
 	private function create_donation_request( array $payload ): WP_REST_Request {
 
-		$request = new WP_REST_Request( 'POST', self::DONATIONS_REQUEST_PATH );
+		$request = new WP_REST_Request( 'POST', $this->get_donations_request_path() );
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body( (string) wp_json_encode( $payload ) );
 
 		return $request;
+	}
+
+	private function get_donations_request_path(): string {
+
+		return RestRouteDefinitions::get_request_path( DonationsRestRoute::class );
 	}
 
 	private function generate_donation_id(): string {
@@ -353,5 +358,3 @@ final class CreateDonationViaRestApiTest extends TestCase {
 		return Uuid::uuid4()->toString();
 	}
 }
-
-
