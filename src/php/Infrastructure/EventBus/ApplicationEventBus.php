@@ -10,7 +10,7 @@ use Override;
 use Throwable;
 
 /**
- * Dispatches application events to configured listeners.
+ * Dispatches application events to configured consumers.
  *
  * @since 1.0.0
  *
@@ -19,50 +19,42 @@ use Throwable;
 final readonly class ApplicationEventBus implements ApplicationEventBusPort {
 
 	/**
-	 * Configured event listeners.
+	 * Configured event consumers.
 	 *
-	 * @var list<ApplicationEventListenerInterface>
+	 * @var list<ApplicationEventConsumerInterface>
 	 */
-	private array $listeners;
+	private array $consumers;
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param ApplicationEventListenerInterface ...$listeners Event listeners.
+	 * @param ApplicationEventConsumerInterface ...$consumers Event consumers.
 	 */
-	public function __construct( ApplicationEventListenerInterface ...$listeners ) {
+	public function __construct( ApplicationEventConsumerInterface ...$consumers ) {
 
-		$this->listeners = $listeners;
+		$this->consumers = $consumers;
 	}
 
 	/**
-	 * Dispatches the given application event to configured listeners.
+	 * Dispatches the given application event to configured consumers.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param ApplicationEventInterface $event Application event to dispatch.
-	 *
-	 * @throws ApplicationEventBusException When dispatching fails.
 	 */
 	#[Override]
 	public function publish( ApplicationEventInterface $event ): void {
 
-		try {
+		foreach ( $this->consumers as $consumer ) {
 
-			foreach ( $this->listeners as $listener ) {
-				$listener->handle( $event );
+			try {
+				$consumer->consume( $event );
+			} catch ( Throwable ) {
+				// Consumers are responsible for handling and logging their own failures.
+				continue;
 			}
-		} catch ( Throwable $e ) {
-
-			throw new ApplicationEventBusException(
-				sprintf(
-					'Failed to dispatch application event "%s".',
-					$event::class,
-				),
-				previous: $e,
-			);
 		}
 	}
 }

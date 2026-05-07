@@ -8,9 +8,9 @@ use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignRea
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
+use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryApplicationEventUpdater;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
-use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventListenerInterface;
-use Fundrik\WordPress\Infrastructure\EventBus\CampaignMetricsProjectionApplicationEventListener;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventConsumerInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationDefinitions;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunner;
@@ -26,6 +26,7 @@ use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\ApplicationEventToWordPressActionBridge;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitRunner;
@@ -41,7 +42,6 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteInterface;
 use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
-use Fundrik\WordPress\Integration\WordPressActionApplicationEventListener;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Fundrik\WordPress\Kernel\Container\ContainerBindingsRegistry;
@@ -127,10 +127,10 @@ final class ContainerBindingsRegistryTest extends FundrikTestCase {
 		return [
 			[
 				'consumer' => ApplicationEventBus::class,
-				'dependency' => ApplicationEventListenerInterface::class,
+				'dependency' => ApplicationEventConsumerInterface::class,
 				'implementation' => [
-					WordPressActionApplicationEventListener::class,
-					CampaignMetricsProjectionApplicationEventListener::class,
+					ApplicationEventToWordPressActionBridge::class,
+					CampaignSummaryApplicationEventUpdater::class,
 				],
 			],
 			[

@@ -22,32 +22,32 @@ use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
-use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventListenerInterface;
+use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventConsumerInterface;
 use Override;
 use Psr\Log\LoggerInterface;
 
 /**
- * Publishes WordPress actions for supported application events.
+ * Bridges supported application events to WordPress actions.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class WordPressActionApplicationEventListener implements ApplicationEventListenerInterface {
+final readonly class ApplicationEventToWordPressActionBridge implements ApplicationEventConsumerInterface {
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param LoggerInterface $logger Writes structured log entries for application event handling.
+	 * @param LoggerInterface $logger Writes structured log entries for application event bridging.
 	 */
 	public function __construct(
 		private LoggerInterface $logger,
 	) {}
 
 	/**
-	 * Handles the given event by publishing matching WordPress actions.
+	 * Consumes the given event by bridging it to matching WordPress actions.
 	 *
 	 * Unknown events are ignored.
 	 *
@@ -56,23 +56,23 @@ final readonly class WordPressActionApplicationEventListener implements Applicat
 	 * @param ApplicationEventInterface $event Application event.
 	 */
 	#[Override]
-	public function handle( ApplicationEventInterface $event ): void {
+	public function consume( ApplicationEventInterface $event ): void {
 
 		match ( true ) {
-			$event instanceof CampaignApplicationEventInterface => $this->handle_campaign_event( $event ),
-			$event instanceof DonationApplicationEventInterface => $this->handle_donation_event( $event ),
+			$event instanceof CampaignApplicationEventInterface => $this->bridge_campaign_event( $event ),
+			$event instanceof DonationApplicationEventInterface => $this->bridge_donation_event( $event ),
 			default => null,
 		};
 	}
 
 	/**
-	 * Handles the given campaign event by publishing WordPress actions.
+	 * Bridges the given campaign event to WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param CampaignApplicationEventInterface $event Campaign application event.
 	 */
-	private function handle_campaign_event( CampaignApplicationEventInterface $event ): void {
+	private function bridge_campaign_event( CampaignApplicationEventInterface $event ): void {
 
 		$publish_action = match ( true ) {
 			$event instanceof CampaignCreatedEvent => $this->publish_campaign_created( ... ),
@@ -100,13 +100,13 @@ final readonly class WordPressActionApplicationEventListener implements Applicat
 	}
 
 	/**
-	 * Handles the given donation event by publishing WordPress actions.
+	 * Bridges the given donation event to WordPress actions.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param DonationApplicationEventInterface $event Donation application event.
 	 */
-	private function handle_donation_event( DonationApplicationEventInterface $event ): void {
+	private function bridge_donation_event( DonationApplicationEventInterface $event ): void {
 
 		$publish_action = match ( true ) {
 			$event instanceof DonationCreatedEvent => $this->publish_donation_created( ... ),
@@ -386,7 +386,7 @@ final readonly class WordPressActionApplicationEventListener implements Applicat
 	}
 
 	/**
-	 * Builds structured logger context for handling application events.
+	 * Builds structured logger context for bridging application events.
 	 *
 	 * @since 1.0.0
 	 *

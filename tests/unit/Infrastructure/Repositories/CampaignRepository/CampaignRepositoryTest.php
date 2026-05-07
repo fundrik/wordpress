@@ -12,6 +12,7 @@ use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignNot
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepositoryException;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseRowNotFoundException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -490,12 +491,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$id = EntityId::create( 7 );
 
 		$this->db
-			->shouldReceive( 'exists_by_id' )
-			->once()
-			->with( self::TABLE_NAME, 7 )
-			->andReturn( true );
-
-		$this->db
 			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 );
@@ -511,12 +506,10 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$id = EntityId::create( 7 );
 
 		$this->db
-			->shouldReceive( 'exists_by_id' )
+			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( false );
-
-		$this->db->shouldNotReceive( 'delete' );
+			->andThrow( new FakeDatabaseRowNotFoundException( 'Row not found.' ) );
 
 		$this->expectException( CampaignNotFoundException::class );
 		$this->expectExceptionMessage( 'Cannot delete campaign "7": persisted record not found.' );
@@ -529,7 +522,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 
 		$id = EntityId::create( '019b6bcb-2f32-7461-838f-67a1479fbdbe' );
 
-		$this->db->shouldNotReceive( 'exists_by_id' );
 		$this->db->shouldNotReceive( 'delete' );
 
 		$this->expectException( CampaignRepositoryException::class );
@@ -544,12 +536,6 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 	public function delete_throws_when_database_delete_fails(): void {
 
 		$id = EntityId::create( 7 );
-
-		$this->db
-			->shouldReceive( 'exists_by_id' )
-			->once()
-			->with( self::TABLE_NAME, 7 )
-			->andReturn( true );
 
 		$this->db
 			->shouldReceive( 'delete' )
