@@ -1,3 +1,4 @@
+import { useEffect, useState } from '@wordpress/element';
 import { useBlockProps } from '@wordpress/block-editor';
 import { ToggleControl, TextControl } from '@wordpress/components';
 import { getCampaignEditorSettings } from '../shared/campaignEditorSettings';
@@ -6,7 +7,6 @@ import { usePostMetaFieldWithDefault } from '../../hooks/usePostMetaFieldWithDef
 export default function Edit( {
 	context: { postType },
 } ) {
-
 	const {
 		defaultAcceptsDonations,
 		defaultHasTarget,
@@ -23,12 +23,37 @@ export default function Edit( {
 		'fundrik_campaign_has_target',
 		defaultHasTarget,
 	);
-	
+
 	const [ targetAmount, setTargetAmount ] = usePostMetaFieldWithDefault(
 		postType,
 		'fundrik_campaign_target_amount',
 		'',
 	);
+
+	const [ targetAmountInput, setTargetAmountInput ] = useState(
+		() => String( targetAmount ),
+	);
+
+	useEffect( () => {
+		setTargetAmountInput( String( targetAmount ) );
+	}, [ targetAmount ] );
+
+	const handleTargetAmountChange = ( nextValue ) => {
+		setTargetAmountInput( nextValue );
+
+		if ( nextValue.trim() === '' ) {
+			setTargetAmount( undefined );
+			return;
+		}
+
+		const nextMajorUnits = Number.parseInt( nextValue, 10 );
+
+		if ( Number.isNaN( nextMajorUnits ) ) {
+			return;
+		}
+
+		setTargetAmount( nextMajorUnits );
+	};
 
 	return (
 		<div { ...useBlockProps() }>
@@ -45,9 +70,10 @@ export default function Edit( {
 			{ hasTarget ? (
 				<TextControl
 					label="Target Amount"
-					type="number"
-					value={ targetAmount }
-					onChange={ setTargetAmount }
+					type="text"
+					inputMode="numeric"
+					value={ targetAmountInput }
+					onChange={ handleTargetAmountChange }
 				/>
 			) : (
 				<p className="fundrik-campaign-settings__hint">

@@ -3,7 +3,7 @@
   "apiVersion": 3,
   "name": "fundrik/campaign-settings",
   "title": "Campaign Settings",
-  "category": "widgets",
+  "category": "fundrik",
   "icon": "admin-settings",
   "description": "Campaign settings. Not displayed on the site.",
   "supports": {
