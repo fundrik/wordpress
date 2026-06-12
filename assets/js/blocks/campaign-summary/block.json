@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "fundrik/campaign-summary",
+  "title": "Campaign Summary",
+  "category": "fundrik",
+  "icon": "chart-bar",
+  "description": "Displays campaign progress, collected amount, goal, and donation count for the current campaign.",
+  "supports": {
+    "html": false
+  },
+  "textdomain": "fundrik",
+  "editorScript": "file:./index.js",
+  "usesContext": [
+    "postType"
+  ],
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

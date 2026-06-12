@@ -6,7 +6,7 @@ return array(
 		'apiVersion' => 3,
 		'name' => 'fundrik/campaign-settings',
 		'title' => 'Campaign Settings',
-		'category' => 'widgets',
+		'category' => 'fundrik',
 		'icon' => 'admin-settings',
 		'description' => 'Campaign settings. Not displayed on the site.',
 		'supports' => array(
@@ -33,12 +33,31 @@ return array(
 			'postType'
 		)
 	),
+	'campaign-summary' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'fundrik/campaign-summary',
+		'title' => 'Campaign Summary',
+		'category' => 'fundrik',
+		'icon' => 'chart-bar',
+		'description' => 'Displays campaign progress, collected amount, goal, and donation count for the current campaign.',
+		'supports' => array(
+			'html' => false
+		),
+		'textdomain' => 'fundrik',
+		'editorScript' => 'file:./index.js',
+		'usesContext' => array(
+			'postType'
+		),
+		'style' => 'file:./style-index.css',
+		'render' => 'file:./render.php'
+	),
 	'donation-form' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
 		'name' => 'fundrik/donation-form',
 		'title' => 'Donation Form',
-		'category' => 'widgets',
+		'category' => 'fundrik',
 		'icon' => 'heart',
 		'description' => 'Displays the donation form for the current campaign when the campaign accepts donations.',
 		'supports' => array(
