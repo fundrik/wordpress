@@ -3,7 +3,7 @@
   "apiVersion": 3,
   "name": "fundrik/donation-form",
   "title": "Donation Form",
-  "category": "widgets",
+  "category": "fundrik",
   "icon": "heart",
   "description": "Displays the donation form for the current campaign when the campaign accepts donations.",
   "supports": {

@@ -1,21 +1,26 @@
-function isValidAmount( value ) {
+const MINOR_UNITS_PER_MAJOR = 100;
 
-	return Number.isInteger( value ) && value > 0;
-}
+function parseAmountToMinorUnits( value ) {
 
-function resolveAmount( value ) {
-
-	if ( typeof value !== 'string' || ! /^[0-9]+$/.test( value ) ) {
+	if ( typeof value !== 'string' ) {
 		return null;
 	}
 
-	const amountMajor = Number.parseInt( value, 10 );
+	const trimmed = value.trim();
 
-	if ( ! isValidAmount( amountMajor ) ) {
+	if ( ! /^\d+$/.test( trimmed ) ) {
 		return null;
 	}
 
-	return amountMajor * 100;
+	const amountMajor = Number.parseInt( trimmed, 10 );
+
+	if ( Number.isNaN( amountMajor ) || amountMajor <= 0 ) {
+		return null;
+	}
+
+	return amountMajor * MINOR_UNITS_PER_MAJOR;
 }
 
-export { isValidAmount, resolveAmount };
+export {
+	parseAmountToMinorUnits,
+};

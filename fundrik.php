@@ -41,6 +41,7 @@ define( 'FUNDRIK_VERSION', '1.0.0' );
 
 require_once FUNDRIK_PATH . 'vendor/autoload.php';
 require_once FUNDRIK_PATH . 'src/php/Integration/Functions/CampaignFunctions.php';
+require_once FUNDRIK_PATH . 'src/php/Integration/Functions/CampaignSummaryFunctions.php';
 require_once FUNDRIK_PATH . 'src/php/Integration/Functions/DonationFormFunctions.php';
 
 // phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength

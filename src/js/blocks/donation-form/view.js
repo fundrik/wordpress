@@ -1,6 +1,6 @@
 import { __ } from '@wordpress/i18n';
 import { resolveCampaignId } from '../../shared/campaign';
-import { resolveAmount } from '../../shared/amount';
+import { parseAmountToMinorUnits } from '../../shared/amount';
 import { generateDonationId } from '../../shared/donation';
 
 const MESSAGE_STATE = Object.freeze( {
@@ -138,7 +138,7 @@ class DonationForm {
 		this.showPending();
 
 		try {
-			const result = await this.submitDonation( requestData.data );
+			const result = await this.submitDonation( requestData );
 
 			if ( ! result.ok ) {
 				this.state = FORM_STATE.ERROR;
@@ -161,20 +161,18 @@ class DonationForm {
 
 	resolveSubmitRequestData() {
 
-		const amount = resolveAmount( this.elements.amountInput.value );
+		const amount = parseAmountToMinorUnits( this.elements.amountInput.value );
 
 		if ( amount === null ) {
 			return { error: __( 'Amount must be a positive integer.', 'fundrik' ) };
 		}
 
 		return {
-			data: {
-				restUrl: this.restUrl,
-				payload: {
-					donation_id: this.donationId,
-					campaign_id: this.campaignId,
-					amount,
-				},
+			restUrl: this.restUrl,
+			payload: {
+				donation_id: this.donationId,
+				campaign_id: this.campaignId,
+				amount,
 			},
 		};
 	}
