@@ -16,7 +16,9 @@ use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
  */
 function fundrik_get_donation_form( ?int $campaign_id = null ): string {
 
-	return RuntimeContainer::get()->make( DonationFormDisplayService::class )->render( $campaign_id );
+	return RuntimeContainer::get()
+		->make( DonationFormDisplayService::class )
+		->render( $campaign_id );
 }
 
 /**
@@ -28,6 +30,6 @@ function fundrik_get_donation_form( ?int $campaign_id = null ): string {
  */
 function fundrik_the_donation_form( ?int $campaign_id = null ): void {
 
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Donation form markup is escaped by the renderer.
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup is trusted output from the renderer.
 	echo fundrik_get_donation_form( $campaign_id );
 }

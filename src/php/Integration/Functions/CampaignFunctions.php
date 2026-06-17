@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
+use Fundrik\WordPress\Integration\Campaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
 
@@ -17,7 +17,7 @@ use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
  */
 function fundrik_get_campaign( ?int $campaign_id = null ): ?Campaign {
 
-	$campaign_lookup = RuntimeContainer::get()->make( CampaignLookupService::class );
-
-	return $campaign_lookup->get( $campaign_id );
+	return RuntimeContainer::get()
+		->make( CampaignLookupService::class )
+		->get( $campaign_id );
 }

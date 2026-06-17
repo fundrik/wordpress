@@ -39,7 +39,7 @@ final readonly class AdminSettingsFieldRenderer {
 			esc_attr( $field_name ),
 			esc_attr( $input_id ),
 			(int) $value,
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Input attributes are escaped before markup output.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Optional attributes are built from escaped values.
 			$this->build_optional_number_attributes( $min, $max, $step ),
 		);
 	}
@@ -72,7 +72,7 @@ final readonly class AdminSettingsFieldRenderer {
 			esc_attr( $field_name ),
 			esc_attr( $input_id ),
 			esc_attr( $value ),
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Input attributes are escaped before markup output.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Optional attributes are built from escaped values.
 			$maxlength_attribute,
 		);
 	}

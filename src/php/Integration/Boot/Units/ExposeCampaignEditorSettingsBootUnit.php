@@ -27,8 +27,8 @@ final readonly class ExposeCampaignEditorSettingsBootUnit implements BootUnitInt
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook Dispatches
-	 * the block editor assets action.
+	 * // phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.Commenting.DocCommentSpacing.IncorrectLinesCountBetweenDifferentAnnotationsTypes
+	 * @param EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook Dispatches the block editor assets action.
 	 * @param AdminSettingsReader $settings_reader Provides resolved admin settings values.
 	 * @param BootUnitLogger $logger Writes structured log entries.
 	 */
@@ -56,6 +56,8 @@ final readonly class ExposeCampaignEditorSettingsBootUnit implements BootUnitInt
 	 * Exposes admin settings to the block editor scripts.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @todo Decide whether editor settings should be emitted once globally instead of per script handle.
 	 */
 	private function expose_editor_settings(): void {
 
@@ -71,6 +73,12 @@ final readonly class ExposeCampaignEditorSettingsBootUnit implements BootUnitInt
 
 		$this->add_editor_settings_inline_script(
 			'fundrik-campaign-settings-editor-script',
+			'fundrikCampaignEditorSettings',
+			$this->get_campaign_editor_settings(),
+		);
+
+		$this->add_editor_settings_inline_script(
+			'fundrik-campaign-summary-editor-script',
 			'fundrikCampaignEditorSettings',
 			$this->get_campaign_editor_settings(),
 		);
