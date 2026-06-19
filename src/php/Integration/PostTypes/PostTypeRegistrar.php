@@ -66,7 +66,7 @@ final readonly class PostTypeRegistrar {
 			'labels' => $labels,
 			'public' => true,
 			'menu_icon' => 'dashicons-heart',
-			'supports' => [ 'title', 'editor', 'custom-fields' ],
+			'supports' => [ 'title', 'editor', 'thumbnail', 'custom-fields' ],
 			'has_archive' => true,
 			'rewrite' => [ 'slug' => $slug ],
 			'show_in_menu' => AdminPageDefinitions::ROOT_MENU_SLUG,

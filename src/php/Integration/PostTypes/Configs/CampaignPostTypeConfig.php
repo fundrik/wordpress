@@ -35,7 +35,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 	public const string META_HAS_TARGET = 'fundrik_campaign_has_target';
 
 	/**
-	 * Stores the fundraising target amount in minor units.
+	 * Stores the fundraising target amount in major units.
 	 */
 	#[PostTypeMetaField( type: WpSchemaType::Integer )]
 	public const string META_TARGET_AMOUNT = 'fundrik_campaign_target_amount';
@@ -86,6 +86,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 
 		return [
 			[ 'fundrik/campaign-settings' ],
+			[ 'fundrik/campaign-summary' ],
 			[ 'fundrik/donation-form' ],
 		];
 	}
@@ -102,6 +103,7 @@ class CampaignPostTypeConfig implements PostTypeConfigInterface {
 
 		return [
 			'fundrik/campaign-settings',
+			'fundrik/campaign-summary',
 			'fundrik/donation-form',
 		];
 	}

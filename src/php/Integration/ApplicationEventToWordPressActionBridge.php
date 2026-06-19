@@ -400,7 +400,6 @@ final readonly class ApplicationEventToWordPressActionBridge implements Applicat
 
 		return [
 			'service_class' => self::class,
-			'logger_class' => self::class,
 			'component' => 'event_bus',
 			'layer' => 'integration',
 			'system' => 'wordpress',

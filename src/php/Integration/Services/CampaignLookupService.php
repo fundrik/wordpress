@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Services;
 
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
+use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignQueryService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\ReadCampaignByIdException;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Psr\Log\LoggerInterface;
 
@@ -37,6 +38,7 @@ final readonly class CampaignLookupService {
 		private LoggerInterface $logger,
 	) {}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Returns a campaign by ID or current campaign post.
 	 *
@@ -55,26 +57,44 @@ final readonly class CampaignLookupService {
 		}
 
 		try {
-			$campaign = $this->campaign_query->find_by_id( $campaign_id );
+			$core_campaign = $this->campaign_query->find_by_id( $campaign_id );
 		} catch ( ReadCampaignByIdException $e ) {
 			$this->log_campaign_lookup_failed( $campaign_id, $e );
 			return null;
 		}
 
-		if ( $campaign === null ) {
+		if ( $core_campaign === null ) {
 			return null;
 		}
 
+		$campaign = $this->create_campaign_read_model( $core_campaign );
+
 		/**
-		 * Filters the campaign.
+		 * Filters the campaign read model.
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param Campaign $campaign Campaign object.
+		 * @param Campaign $campaign Campaign read model.
 		 * @param int $campaign_id Campaign ID.
 		 */
-		return apply_filters( 'fundrik_get_campaign', $campaign, $campaign_id );
+		$filtered_campaign = apply_filters( 'fundrik_get_campaign', $campaign, $campaign_id );
+
+		if ( $filtered_campaign instanceof Campaign ) {
+			return $filtered_campaign;
+		}
+
+		_doing_it_wrong(
+			'fundrik_get_campaign',
+			sprintf(
+				'Filter must return a campaign read model. Given: %s.',
+				esc_html( get_debug_type( $filtered_campaign ) ),
+			),
+			'1.0.0',
+		);
+
+		return $campaign;
 	}
+	// phpcs:enable
 
 	/**
 	 * Resolves a campaign ID from the given input or current WordPress post context.
@@ -118,6 +138,60 @@ final readonly class CampaignLookupService {
 		}
 
 		return $post->ID;
+	}
+
+	/**
+	 * Creates the public campaign read model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param CoreCampaign $core_campaign Core campaign read model.
+	 *
+	 * @return Campaign Public campaign read model.
+	 */
+	private function create_campaign_read_model( CoreCampaign $core_campaign ): Campaign {
+
+		$campaign_id = $core_campaign->get_id();
+		$permalink = $this->resolve_campaign_permalink( $campaign_id );
+		$featured_image_id = $this->resolve_featured_image_id( $campaign_id );
+
+		return new Campaign(
+			core_campaign: $core_campaign,
+			permalink: $permalink,
+			featured_image_id: $featured_image_id,
+		);
+	}
+
+	/**
+	 * Returns the campaign permalink.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $campaign_id Campaign ID.
+	 *
+	 * @return string|null Campaign permalink, null otherwise.
+	 */
+	private function resolve_campaign_permalink( int $campaign_id ): ?string {
+
+		$permalink = get_permalink( $campaign_id );
+
+		return is_string( $permalink ) && $permalink !== '' ? $permalink : null;
+	}
+
+	/**
+	 * Returns the featured image attachment ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $campaign_id Campaign ID.
+	 *
+	 * @return int|null Featured image attachment ID, null otherwise.
+	 */
+	private function resolve_featured_image_id( int $campaign_id ): ?int {
+
+		$featured_image_id = get_post_thumbnail_id( $campaign_id );
+
+		return is_int( $featured_image_id ) && $featured_image_id > 0 ? $featured_image_id : null;
 	}
 
 	/**
@@ -187,7 +261,6 @@ final readonly class CampaignLookupService {
 
 		return [
 			'service_class' => self::class,
-			'logger_class' => self::class,
 			'component' => 'campaign_lookup',
 			'layer' => 'integration',
 			'system' => 'wordpress',

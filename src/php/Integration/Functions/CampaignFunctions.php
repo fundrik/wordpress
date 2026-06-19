@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Fundrik\WordPress\Integration\Campaign;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
 
