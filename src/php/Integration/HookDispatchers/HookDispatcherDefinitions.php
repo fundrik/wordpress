@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\HookDispatchers;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\BlockCategoriesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
@@ -37,6 +38,7 @@ final readonly class HookDispatcherDefinitions {
 		return [
 			AdminInitActionHookDispatcher::class,
 			AdminMenuActionHookDispatcher::class,
+			BlockCategoriesAllFilterHookDispatcher::class,
 			AllowedBlockTypesAllFilterHookDispatcher::class,
 			DeletePostActionHookDispatcher::class,
 			EnqueueBlockEditorAssetsActionHookDispatcher::class,

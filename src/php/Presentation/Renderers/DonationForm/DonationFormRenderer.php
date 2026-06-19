@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Renderers\DonationForm;
+namespace Fundrik\WordPress\Presentation\Renderers\DonationForm;
 
 /**
  * Renders HTML markup for the donation form.
@@ -135,9 +135,9 @@ final readonly class DonationFormRenderer {
 			. ' class="fundrik-donation-form__amount-input"'
 			. ' type="number"'
 			. ' name="amount"'
-			. ' min="1"'
-			. ' step="1"'
-			. ' inputmode="numeric"'
+			. ' min="0.01"'
+			. ' step="0.01"'
+			. ' inputmode="decimal"'
 			. ' value="%d"'
 			. ' required'
 			. ' />',

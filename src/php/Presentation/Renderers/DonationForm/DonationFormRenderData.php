@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\Renderers\DonationForm;
+namespace Fundrik\WordPress\Presentation\Renderers\DonationForm;
 
 /**
  * Represents render-ready data for the donation form markup.
