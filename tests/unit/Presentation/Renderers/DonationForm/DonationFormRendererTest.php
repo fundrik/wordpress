@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Integration\Renderers\DonationForm;
+namespace Fundrik\WordPress\Tests\Presentation\Renderers\DonationForm;
 
 use Brain\Monkey\Filters;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderData;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Override;

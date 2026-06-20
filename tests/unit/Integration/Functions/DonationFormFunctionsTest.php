@@ -21,9 +21,10 @@ use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
+use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Integration\Services\DonationFormDisplayService;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
@@ -51,6 +52,20 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 
 		require_once dirname( __DIR__, 4 ) . '/src/php/Integration/Functions/CampaignFunctions.php';
 		require_once dirname( __DIR__, 4 ) . '/src/php/Integration/Functions/DonationFormFunctions.php';
+
+		Functions\when( 'get_post_field' )->alias(
+			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
+				$field === 'post_name' ? 'campaign-' . $post_id : null,
+		);
+		Functions\when( 'get_permalink' )->alias(
+			static fn ( int $post_id ): string => 'https://example.test/campaign-' . $post_id . '/',
+		);
+		Functions\when( 'get_post_thumbnail_id' )->alias(
+			static fn ( int $post_id ): int => $post_id === 42 ? 99 : 0,
+		);
+		Functions\when( 'wp_get_attachment_image_url' )->alias(
+			static fn ( int $attachment_id, string $size = 'full' ): string => 'https://example.test/media/' . $attachment_id . '.jpg',
+		);
 
 		RuntimeContainer::reset();
 		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
@@ -104,8 +119,16 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 		$campaign = $this->make_campaign( 42 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
 			->once()
-			->with( $campaign, 42 )
-			->andReturn( $campaign );
+			->with(
+				Mockery::on(
+					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
+						&& $campaign_view->get_title() === 'Campaign'
+						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
+						&& $campaign_view->get_featured_image_id() === 99,
+				),
+				42,
+			)
+			->andReturn( $this->make_campaign_view( $campaign ) );
 		$this->campaign_read
 			->shouldReceive( 'find_by_id' )
 			->once()
@@ -143,8 +166,14 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 		$campaign = $this->make_campaign( 42 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
 			->once()
-			->with( $campaign, 42 )
-			->andReturn( $campaign );
+			->with(
+				Mockery::on(
+					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
+						&& $campaign_view->get_title() === 'Campaign',
+				),
+				42,
+			)
+			->andReturn( $this->make_campaign_view( $campaign ) );
 		$this->campaign_read
 			->shouldReceive( 'find_by_id' )
 			->once()
@@ -220,6 +249,23 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
 			),
 			updated_at: null,
+		);
+	}
+
+	private function make_campaign_view( Campaign $campaign ): WpCampaign {
+
+		return new WpCampaign(
+			id: $campaign->get_id(),
+			title: $campaign->get_title(),
+			accepts_donations: $campaign->accepts_donations(),
+			currency_code: $campaign->get_currency_code(),
+			target_amount: $campaign->get_target_amount(),
+			collected_amount: $campaign->get_collected_amount(),
+			donations_count: $campaign->get_donations_count(),
+			created_at: $campaign->get_created_at(),
+			updated_at: $campaign->get_updated_at(),
+			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
+			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
 		);
 	}
 }

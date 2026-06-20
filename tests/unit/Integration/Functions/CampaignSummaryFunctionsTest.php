@@ -15,8 +15,11 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\Read
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
-use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignStatusPolicy;
+use Fundrik\WordPress\Presentation\Renderers\CampaignSummary\CampaignSummaryRenderer;
+use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
+use Fundrik\WordPress\Integration\Services\CampaignSummaryDisplayService;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
 use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
@@ -28,10 +31,10 @@ use Override;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\NullLogger;
-use WP_Post;
 
-#[CoversFunction( 'fundrik_get_campaign' )]
-final class CampaignFunctionsTest extends WordPressTestCase {
+#[CoversFunction( 'fundrik_get_campaign_summary' )]
+#[CoversFunction( 'fundrik_the_campaign_summary' )]
+final class CampaignSummaryFunctionsTest extends WordPressTestCase {
 
 	private CampaignReadPort&MockInterface $campaign_read;
 
@@ -41,7 +44,11 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 		parent::setUp();
 
 		require_once dirname( __DIR__, 4 ) . '/src/php/Integration/Functions/CampaignFunctions.php';
+		require_once dirname( __DIR__, 4 ) . '/src/php/Integration/Functions/CampaignSummaryFunctions.php';
 
+		Functions\when( 'number_format_i18n' )->alias(
+			static fn ( $number, int $decimals ): string => number_format( (float) $number, $decimals, '.', ',' ),
+		);
 		Functions\when( 'get_post_field' )->alias(
 			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
 				$field === 'post_name' ? 'campaign-' . $post_id : null,
@@ -69,17 +76,74 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_throws_when_runtime_container_is_unavailable(): void {
+	public function fundrik_get_campaign_summary_throws_when_runtime_container_is_unavailable(): void {
 
 		$this->expectException( LogicException::class );
 
-		fundrik_get_campaign( 42 );
+		fundrik_get_campaign_summary( 42 );
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_returns_campaign_from_the_runtime_container(): void {
+	public function fundrik_get_campaign_summary_returns_empty_string_when_campaign_is_missing(): void {
 
-		$campaign = $this->make_campaign( 42 );
+		Filters\expectApplied( 'fundrik_get_campaign' )->never();
+		$this->campaign_read
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 42,
+				),
+			)
+			->andReturn( null );
+
+		$container = new Container();
+		$container->instance( CampaignSummaryDisplayService::class, $this->create_campaign_summary_display_service() );
+		RuntimeContainer::set( $container );
+
+		self::assertSame( '', fundrik_get_campaign_summary( 42 ) );
+	}
+
+	#[Test]
+	public function fundrik_get_campaign_summary_returns_rendered_markup_for_the_given_campaign(): void {
+
+		$campaign = $this->make_campaign( 42, true, 1_000, 2_500, 3 );
+		Filters\expectApplied( 'fundrik_get_campaign' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
+						&& $campaign_view->get_title() === 'Campaign',
+				),
+				42,
+			)
+			->andReturn( $this->make_campaign_view( $campaign ) );
+		$this->campaign_read
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === 42,
+				),
+			)
+			->andReturn( $campaign );
+
+		$container = new Container();
+		$container->instance( CampaignSummaryDisplayService::class, $this->create_campaign_summary_display_service() );
+		RuntimeContainer::set( $container );
+
+		$markup = fundrik_get_campaign_summary( 42 );
+
+		self::assertStringContainsString( 'class="fundrik-campaign-summary"', $markup );
+		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
+		self::assertStringContainsString( 'Goal reached', $markup );
+		self::assertStringContainsString( '25.00 RUB', $markup );
+	}
+
+	#[Test]
+	public function fundrik_get_campaign_summary_accepts_display_options(): void {
+
+		$campaign = $this->make_campaign( 42, true, 1_000, 2_500, 3 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
 			->once()
 			->with(
@@ -103,58 +167,27 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 			->andReturn( $campaign );
 
 		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
+		$container->instance( CampaignSummaryDisplayService::class, $this->create_campaign_summary_display_service() );
 		RuntimeContainer::set( $container );
 
-		$result = fundrik_get_campaign( 42 );
+		$markup = fundrik_get_campaign_summary(
+			42,
+			[
+				'showStatus' => false,
+				'showGoal' => false,
+				'showCollectedAmount' => false,
+				'showDonationsCount' => false,
+			],
+		);
 
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 42, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
+		self::assertStringNotContainsString( 'fundrik-campaign-summary__status', $markup );
+		self::assertStringNotContainsString( 'data-metric="collected"', $markup );
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_returns_the_filtered_campaign(): void {
+	public function fundrik_the_campaign_summary_echoes_the_rendered_markup(): void {
 
-		$campaign = $this->make_campaign( 42 );
-		$filtered_campaign = $this->make_campaign( 77 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign',
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $filtered_campaign ) );
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( $campaign );
-
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
-		RuntimeContainer::set( $container );
-
-		$result = fundrik_get_campaign( 42 );
-
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 77, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
-	}
-
-	#[Test]
-	public function fundrik_get_campaign_returns_current_campaign_when_id_is_omitted(): void {
-
-		$campaign = $this->make_campaign( 42 );
+		$campaign = $this->make_campaign( 42, false, 1_000, 500, 2 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
 			->once()
 			->with(
@@ -175,61 +208,48 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 			)
 			->andReturn( $campaign );
 
-		Functions\expect( 'get_post' )
-			->once()
-			->andReturn( $this->make_post( 42, CampaignPostTypeConfig::ID ) );
-
 		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
+		$container->instance( CampaignSummaryDisplayService::class, $this->create_campaign_summary_display_service() );
 		RuntimeContainer::set( $container );
 
-		$result = fundrik_get_campaign();
+		$this->expectOutputRegex( '/data-status="donations_disabled"/' );
 
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 42, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
+		fundrik_the_campaign_summary( 42 );
 	}
 
-	#[Test]
-	public function fundrik_get_campaign_returns_null_when_current_campaign_context_is_missing(): void {
+	private function create_campaign_summary_display_service(): CampaignSummaryDisplayService {
 
-		Functions\expect( 'get_post' )->once()->andReturn( null );
-		Filters\expectApplied( 'fundrik_get_campaign' )->never();
-
-		$this->campaign_read->shouldNotReceive( 'find_by_id' );
-
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
-		RuntimeContainer::set( $container );
-
-		self::assertNull( fundrik_get_campaign() );
-	}
-
-	private function create_campaign_lookup_service(): CampaignLookupService {
-
-		return new CampaignLookupService(
-			new CampaignQueryService(
-				new ReadCampaignByIdHandler(
-					$this->campaign_read,
+		return new CampaignSummaryDisplayService(
+			new CampaignLookupService(
+				new CampaignQueryService(
+					new ReadCampaignByIdHandler(
+						$this->campaign_read,
+					),
 				),
+				new WordPressRuntime(),
+				new NullLogger(),
 			),
-			new WordPressRuntime(),
-			new NullLogger(),
+			new CampaignStatusPolicy(),
+			new CampaignSummaryRenderer( new MoneyFormatter() ),
 		);
 	}
 
-	private function make_campaign( int $id ): Campaign {
+	private function make_campaign(
+		int $id,
+		bool $accepts_donations = true,
+		?int $target_amount = 1_000,
+		int $collected_amount = 0,
+		int $donations_count = 0,
+	): Campaign {
 
 		return new Campaign(
 			id: $id,
 			title: 'Campaign',
-			accepts_donations: true,
+			accepts_donations: $accepts_donations,
 			currency_code: 'RUB',
-			target_amount: 1_000,
-			collected_amount: 0,
-			donations_count: 0,
+			target_amount: $target_amount,
+			collected_amount: $collected_amount,
+			donations_count: $donations_count,
 			created_at: UtcDateTime::create(
 				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
 			),
@@ -252,14 +272,5 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
 			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
 		);
-	}
-
-	private function make_post( int $id, string $post_type ): WP_Post {
-
-		$post = Mockery::mock( WP_Post::class );
-		$post->ID = $id;
-		$post->post_type = $post_type;
-
-		return $post;
 	}
 }

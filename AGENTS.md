@@ -52,7 +52,10 @@
 # Architecture Conventions
 
 - `Infrastructure` contains technical implementations of system ports and orchestration that should remain platform-agnostic where possible.
-- `Integration` contains platform adapters that depend on WordPress APIs (`do_action`, `add_action`, `WP_*`, REST hooks, etc.).
+- `Application` contains WordPress-specific application policy and derived state.
+- `Presentation` contains renderers, view models, and formatters for WordPress-facing output.
+- `Integration` contains WordPress-facing adapters and wiring, including public functions, settings exposure, WordPress API hooks (`do_action`, `add_action`, `WP_*`, REST hooks, etc.), and data mapping into presentation models.
+- Keep application policy out of presentation renderers; compute it in application services or mappers and pass render-ready data into presentation.
 - Do not catch exceptions from `RuntimeContainer::get()` or container `make()` in public integration functions such as `fundrik_get_*`/`fundrik_the_*`; treat container access and service resolution failures as critical plugin failures.
 - Port interface docblocks should use the standard wording `Provides the <inbound|outbound> port for ...` for consistency across the codebase.
 

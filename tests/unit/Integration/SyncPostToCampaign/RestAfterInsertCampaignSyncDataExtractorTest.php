@@ -154,7 +154,7 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 
 		self::assertFalse( $result->accepts_donations );
 		self::assertTrue( $result->has_target );
-		self::assertSame( 123, $result->target_amount );
+		self::assertSame( 12300, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
 
@@ -200,6 +200,47 @@ final class RestAfterInsertCampaignSyncDataExtractorTest extends MockeryTestCase
 		self::assertTrue( $result->accepts_donations );
 		self::assertFalse( $result->has_target );
 		self::assertNull( $result->target_amount );
+		self::assertSame( 'RUB', $result->target_currency );
+	}
+
+	#[Test]
+	public function extract_treats_empty_target_currency_as_default(): void {
+
+		$post = $this->make_post( 10, 'Campaign title' );
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 2,
+					],
+				],
+			);
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_HAS_TARGET )
+			->andReturn( false );
+
+		Functions\expect( 'metadata_exists' )
+			->once()
+			->with( 'post', 10, CampaignPostTypeConfig::META_TARGET_CURRENCY )
+			->andReturn( true );
+
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( 10, CampaignPostTypeConfig::META_TARGET_CURRENCY, true )
+			->andReturn( '' );
+
+		$result = $this->extractor->extract( $post, $this->request );
+
 		self::assertSame( 'RUB', $result->target_currency );
 	}
 

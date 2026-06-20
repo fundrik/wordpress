@@ -15,14 +15,15 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\Read
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderData;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
@@ -47,6 +48,20 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 	protected function setUp(): void {
 
 		parent::setUp();
+
+		Functions\when( 'get_post_field' )->alias(
+			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
+				$field === 'post_name' ? 'campaign-' . $post_id : null,
+		);
+		Functions\when( 'get_permalink' )->alias(
+			static fn ( int $post_id ): string => 'https://example.test/campaign-' . $post_id . '/',
+		);
+		Functions\when( 'get_post_thumbnail_id' )->alias(
+			static fn ( int $post_id ): int => $post_id === 42 ? 99 : 0,
+		);
+		Functions\when( 'wp_get_attachment_image_url' )->alias(
+			static fn ( int $attachment_id, string $size = 'full' ): string => 'https://example.test/media/' . $attachment_id . '.jpg',
+		);
 
 		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
 		$this->donation_form_display = new DonationFormDisplayService(
@@ -91,8 +106,16 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 		$campaign = $this->make_campaign( 42 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
 			->once()
-			->with( $campaign, 42 )
-			->andReturn( $campaign );
+			->with(
+				Mockery::on(
+					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
+						&& $campaign_view->get_title() === 'Campaign'
+						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
+						&& $campaign_view->get_featured_image_id() === 99,
+				),
+				42,
+			)
+			->andReturn( $this->make_campaign_view( $campaign ) );
 		Filters\expectApplied( 'fundrik_donation_form_render_data' )
 			->once()
 			->with(
@@ -102,7 +125,12 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 						&& $render_data->default_amount === 10
 						&& $render_data->amount_label === 'Amount',
 				),
-				$campaign,
+				Mockery::on(
+					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
+						&& $campaign_view->get_title() === 'Campaign'
+						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
+						&& $campaign_view->get_featured_image_id() === 99,
+				),
 			)
 			->andReturn(
 				new DonationFormRenderData(
@@ -174,6 +202,23 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
 			),
 			updated_at: null,
+		);
+	}
+
+	private function make_campaign_view( Campaign $campaign ): WpCampaign {
+
+		return new WpCampaign(
+			id: $campaign->get_id(),
+			title: $campaign->get_title(),
+			accepts_donations: $campaign->accepts_donations(),
+			currency_code: $campaign->get_currency_code(),
+			target_amount: $campaign->get_target_amount(),
+			collected_amount: $campaign->get_collected_amount(),
+			donations_count: $campaign->get_donations_count(),
+			created_at: $campaign->get_created_at(),
+			updated_at: $campaign->get_updated_at(),
+			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
+			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
 		);
 	}
 }

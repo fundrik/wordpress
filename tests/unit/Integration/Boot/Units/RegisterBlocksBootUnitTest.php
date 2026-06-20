@@ -9,6 +9,7 @@ use Closure;
 use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\BlockCategoriesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
@@ -23,6 +24,7 @@ use Psr\Log\LoggerInterface;
 #[CoversClass( RegisterBlocksBootUnit::class )]
 #[UsesClass( BootUnitLogger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
+#[UsesClass( BlockCategoriesAllFilterHookDispatcher::class )]
 #[UsesClass( InitActionHookDispatcher::class )]
 #[UsesClass( PluginPath::class )]
 final class RegisterBlocksBootUnitTest extends WordPressTestCase {
@@ -30,9 +32,12 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 	use DispatcherTestHelpers;
 
 	private const string HOOK_NAME = 'init';
+	private const string CATEGORIES_HOOK_NAME = 'block_categories_all';
 
 	private InitActionHookDispatcher $init_hook;
 	private Closure $init_callback;
+	private BlockCategoriesAllFilterHookDispatcher $block_categories_hook;
+	private Closure $block_categories_callback;
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private BootUnitLogger $logger;
@@ -51,10 +56,15 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 			self::HOOK_NAME,
 			$this->init_hook->register( ... ),
 		);
+		$this->block_categories_hook = new BlockCategoriesAllFilterHookDispatcher( $hook_logger );
+		$this->block_categories_callback = $this->register_and_capture_filter_callback(
+			self::CATEGORIES_HOOK_NAME,
+			$this->block_categories_hook->register( ... ),
+		);
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
 
-		$this->boot_unit = new RegisterBlocksBootUnit( $this->init_hook, $this->logger );
+		$this->boot_unit = new RegisterBlocksBootUnit( $this->init_hook, $this->block_categories_hook, $this->logger );
 	}
 
 	#[Test]
@@ -70,5 +80,37 @@ final class RegisterBlocksBootUnitTest extends WordPressTestCase {
 			->with( $blocks_path, $manifest_path );
 
 		( $this->init_callback )();
+	}
+
+	#[Test]
+	public function boot_attaches_callback_that_registers_the_fundrik_category(): void {
+
+		$this->boot_unit->boot();
+
+		$editor_context = Mockery::mock( \WP_Block_Editor_Context::class );
+
+		$returned = ( $this->block_categories_callback )(
+			[
+				[
+					'slug' => 'widgets',
+					'title' => 'Widgets',
+				],
+			],
+			$editor_context,
+		);
+
+		self::assertSame(
+			[
+				[
+					'slug' => 'widgets',
+					'title' => 'Widgets',
+				],
+				[
+					'slug' => 'fundrik',
+					'title' => 'Fundrik',
+				],
+			],
+			$returned,
+		);
 	}
 }

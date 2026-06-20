@@ -120,7 +120,7 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function boot_exposes_donation_form_editor_settings_for_campaign_post_type(): void {
+	public function boot_exposes_editor_settings_for_campaign_post_type(): void {
 
 		$screen = Mockery::mock( WP_Screen::class );
 		$screen->post_type = CampaignPostTypeConfig::ID;
@@ -139,7 +139,7 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 			)
 			->andReturn( '{"defaultAmount":25,"defaultAmountLabel":"Contribution"}' );
 		Functions\expect( 'wp_json_encode' )
-			->once()
+			->twice()
 			->with(
 				[
 					'defaultAcceptsDonations' => true,
@@ -159,6 +159,13 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 			->once()
 			->with(
 				'fundrik-campaign-settings-editor-script',
+				'window.fundrikCampaignEditorSettings = {"defaultAcceptsDonations":true,"defaultHasTarget":false};',
+				'before',
+			);
+		Functions\expect( 'wp_add_inline_script' )
+			->once()
+			->with(
+				'fundrik-campaign-summary-editor-script',
 				'window.fundrikCampaignEditorSettings = {"defaultAcceptsDonations":true,"defaultHasTarget":false};',
 				'before',
 			);
@@ -203,6 +210,7 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 		string $default_amount_label,
 		bool $default_accepts_donations,
 		bool $default_has_target,
+		string $currency = 'RUB',
 	): AdminSettingsReader {
 
 		$storage = Mockery::mock( StoragePort::class );

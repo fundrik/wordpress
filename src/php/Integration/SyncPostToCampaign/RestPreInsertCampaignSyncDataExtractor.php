@@ -74,7 +74,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 			$accepts_donations = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
 			$has_target = ArrayExtractor::extract_bool_optional( $meta, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
 			$target_amount = $has_target ? $this->extract_target_amount( $meta ) : null;
-			$target_currency = ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
+			$target_currency = $this->extract_target_currency( $meta ) ?? $default_target_currency;
 
 			return new RestCampaignSyncData(
 				id: CampaignId::from_value( $id ),
@@ -105,7 +105,7 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @param array<string, mixed> $meta The REST meta payload.
 	 *
-	 * @return int|null The extracted target amount, or null when empty.
+	 * @return int|null The extracted target amount in minor units, or null when empty.
 	 *
 	 * @throws ArrayExtractionException When the amount is present but invalid.
 	 *
@@ -113,18 +113,40 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 */
 	private function extract_target_amount( array $meta ): ?int {
 
-		if ( ! array_key_exists( CampaignPostTypeConfig::META_TARGET_AMOUNT, $meta ) ) {
-			return null;
-		}
+		$value = $meta[ CampaignPostTypeConfig::META_TARGET_AMOUNT ] ?? null;
 
-		$value = $meta[ CampaignPostTypeConfig::META_TARGET_AMOUNT ];
-
-		if ( $value === '' ) {
+		if ( $value === null || $value === '' ) {
 			// Treat a cleared form field as an omitted target amount in the REST payload.
 			return null;
 		}
 
-		return ArrayExtractor::extract_int_nullable_optional( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT );
+		$amount_major = ArrayExtractor::extract_int_required( $meta, CampaignPostTypeConfig::META_TARGET_AMOUNT );
+
+		return $amount_major * 100;
+	}
+
+	/**
+	 * Returns the target currency from meta, treating an empty string as null.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $meta The REST meta payload.
+	 *
+	 * @return string|null The extracted currency code, or null when empty.
+	 *
+	 * @throws ArrayExtractionException When the currency is present but invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function extract_target_currency( array $meta ): ?string {
+
+		$currency = ArrayExtractor::extract_string_optional( $meta, CampaignPostTypeConfig::META_TARGET_CURRENCY );
+
+		if ( $currency === null || $currency === '' ) {
+			return null;
+		}
+
+		return $currency;
 	}
 
 	/**

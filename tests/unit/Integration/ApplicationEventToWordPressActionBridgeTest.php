@@ -200,7 +200,6 @@ final class ApplicationEventToWordPressActionBridgeTest extends WordPressTestCas
 				Mockery::subset(
 					[
 						'service_class' => ApplicationEventToWordPressActionBridge::class,
-						'logger_class' => ApplicationEventToWordPressActionBridge::class,
 						'component' => 'event_bus',
 						'layer' => 'integration',
 						'system' => 'wordpress',
@@ -245,7 +244,6 @@ final class ApplicationEventToWordPressActionBridgeTest extends WordPressTestCas
 				Mockery::subset(
 					[
 						'service_class' => ApplicationEventToWordPressActionBridge::class,
-						'logger_class' => ApplicationEventToWordPressActionBridge::class,
 						'component' => 'event_bus',
 						'layer' => 'integration',
 						'system' => 'wordpress',

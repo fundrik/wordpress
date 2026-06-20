@@ -70,8 +70,9 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 		// WordPress/Gutenberg can persist partial meta updates, so optional meta keys may remain unset.
 		$accepts_donations = MetaReader::find_post_meta_bool( $id, CampaignPostTypeConfig::META_ACCEPTS_DONATIONS ) ?? $default_accepts_donations;
 		$has_target = MetaReader::find_post_meta_bool( $id, CampaignPostTypeConfig::META_HAS_TARGET ) ?? $default_has_target;
-		$target_amount = $has_target ? MetaReader::find_post_meta_int( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
-		$target_currency = MetaReader::find_post_meta_string( $id, CampaignPostTypeConfig::META_TARGET_CURRENCY ) ?? $default_target_currency;
+		$target_amount_major = $has_target ? MetaReader::find_post_meta_int( $id, CampaignPostTypeConfig::META_TARGET_AMOUNT ) : null;
+		$target_amount = $target_amount_major === null ? null : $target_amount_major * 100;
+		$target_currency = $this->resolve_target_currency( $id ) ?? $default_target_currency;
 		// phpcs:enable SlevomatCodingStandard.Functions.RequireMultiLineCall.RequiredMultiLineCall, SlevomatCodingStandard.Files.LineLength.LineTooLong, SlevomatCodingStandard.ControlStructures.RequireMultiLineTernaryOperator.MultiLineTernaryOperatorNotUsed
 
 		/** @var array<string, mixed> $meta */
@@ -88,6 +89,28 @@ final readonly class RestAfterInsertCampaignSyncDataExtractor {
 			target_amount: $target_amount,
 			target_currency: $target_currency,
 		);
+	}
+
+	/**
+	 * Returns the target currency from post meta, treating an empty string as null.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $post_id Campaign post ID.
+	 *
+	 * @return string|null Extracted currency code, null otherwise.
+	 *
+	 * @throws UnexpectedValueException When stored post meta has an unexpected value.
+	 */
+	private function resolve_target_currency( int $post_id ): ?string {
+
+		$currency = MetaReader::find_post_meta_string( $post_id, CampaignPostTypeConfig::META_TARGET_CURRENCY );
+
+		if ( $currency === null || $currency === '' ) {
+			return null;
+		}
+
+		return $currency;
 	}
 
 	// phpcs:enable

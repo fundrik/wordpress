@@ -132,7 +132,7 @@ test.describe( 'Fundrik campaign admin', () => {
 
 		await setCampaignTitle( editor, 'E2E Campaign Draft' );
 		await editor.canvas.getByLabel( 'Has Target' ).check();
-		await editor.canvas.getByLabel( 'Target Amount' ).fill( '2500' );
+		await editor.canvas.getByLabel( /Target Amount/i ).fill( '25' );
 
 		const saveResponse = await saveCampaignAndGetResponse( page );
 		expect( saveResponse.ok() ).toBe( true );
@@ -144,7 +144,7 @@ test.describe( 'Fundrik campaign admin', () => {
 		const response = await getCampaignByPostId( requestUtils, postId );
 
 		expect( response?.meta?.fundrik_campaign_has_target ).toBe( true );
-		expect( response?.meta?.fundrik_campaign_target_amount ).toBe( 2500 );
+		expect( response?.meta?.fundrik_campaign_target_amount ).toBe( 25 );
 	} );
 
 	test( 'creates campaign draft without target amount when target stays disabled', async ( {
@@ -197,7 +197,7 @@ test.describe( 'Fundrik campaign admin', () => {
 		expect( postId ).toBeGreaterThan( 0 );
 
 		await editor.canvas.getByLabel( 'Has Target' ).check();
-		await editor.canvas.getByLabel( 'Target Amount' ).fill( '0' );
+		await editor.canvas.getByLabel( /Target Amount/i ).fill( '0' );
 
 		const failedSaveResponse = await saveCampaignAndGetResponse( page, postId );
 		const failedPayload = await failedSaveResponse.json();
@@ -439,7 +439,7 @@ test.describe( 'Fundrik campaign admin', () => {
 		expect( duplicateResult.body?.amount ).toBe( 12300 );
 	} );
 
-	test( 'preloads campaign settings and donation form blocks with expected lock state', async ( {
+	test( 'preloads campaign template blocks with expected lock state', async ( {
 		admin,
 		page,
 	} ) => {
@@ -455,16 +455,25 @@ test.describe( 'Fundrik campaign admin', () => {
 			const blocks = blockEditorSelect.getBlocks();
 			const firstBlock = blocks[ 0 ];
 			const secondBlock = blocks[ 1 ];
+			const thirdBlock = blocks[ 2 ];
 			const campaignSettingsLock = firstBlock?.attributes?.lock ?? null;
 			const campaignSettingsCanRemove =
 				firstBlock == null
 					? null
 					: blockEditorSelect.canRemoveBlock( firstBlock.clientId );
-			const donationFormLock = secondBlock?.attributes?.lock ?? null;
-			const donationFormCanRemove =
+			const campaignSummaryLock = secondBlock?.attributes?.lock ?? null;
+			const campaignSummaryCanRemove =
 				secondBlock == null
 					? null
 					: blockEditorSelect.canRemoveBlock( secondBlock.clientId );
+			const donationFormLock = thirdBlock?.attributes?.lock ?? null;
+			const donationFormCanRemove =
+				thirdBlock == null
+					? null
+					: blockEditorSelect.canRemoveBlock( thirdBlock.clientId );
+			const hasCampaignSummaryBlock = blocks.some(
+				( block ) => block.name === 'fundrik/campaign-summary',
+			);
 			const hasDonationFormBlock = blocks.some(
 				( block ) => block.name === 'fundrik/donation-form',
 			);
@@ -473,25 +482,33 @@ test.describe( 'Fundrik campaign admin', () => {
 				total: blocks.length,
 				firstName: firstBlock?.name ?? null,
 				secondName: secondBlock?.name ?? null,
+				thirdName: thirdBlock?.name ?? null,
 				campaignSettingsLock,
 				campaignSettingsCanRemove,
+				campaignSummaryLock,
+				campaignSummaryCanRemove,
+				hasCampaignSummaryBlock,
 				donationFormLock,
 				donationFormCanRemove,
 				hasDonationFormBlock,
 			};
 		} );
 
-		expect( blockState.total ).toBe( 2 );
+		expect( blockState.total ).toBe( 3 );
 		expect( blockState.firstName ).toBe( 'fundrik/campaign-settings' );
-		expect( blockState.secondName ).toBe( 'fundrik/donation-form' );
+		expect( blockState.secondName ).toBe( 'fundrik/campaign-summary' );
+		expect( blockState.thirdName ).toBe( 'fundrik/donation-form' );
+		expect( blockState.hasCampaignSummaryBlock ).toBe( true );
 		expect( blockState.hasDonationFormBlock ).toBe( true );
 		expect( blockState.campaignSettingsLock ).toEqual( { move: true, remove: true } );
 		expect( blockState.campaignSettingsCanRemove ).toBe( false );
+		expect( blockState.campaignSummaryLock ).toBeNull();
+		expect( blockState.campaignSummaryCanRemove ).toBe( true );
 		expect( blockState.donationFormLock ).toEqual( { move: false, remove: true } );
 		expect( blockState.donationFormCanRemove ).toBe( false );
 	} );
 
-	test( 'keeps campaign settings and donation form single-use in campaigns', async ( {
+	test( 'keeps required campaign blocks single-use and allows repeated summaries', async ( {
 		admin,
 		page,
 	} ) => {
@@ -506,16 +523,29 @@ test.describe( 'Fundrik campaign admin', () => {
 			const blockEditorSelect = wp.data.select( 'core/block-editor' );
 			const blockEditorDispatch = wp.data.dispatch( 'core/block-editor' );
 			const campaignSettingsBlockType = wp.blocks.getBlockType( 'fundrik/campaign-settings' );
+			const campaignSummaryBlockType = wp.blocks.getBlockType( 'fundrik/campaign-summary' );
 			const donationFormBlockType = wp.blocks.getBlockType( 'fundrik/donation-form' );
 			const campaignSettingsBlocksCount = blockEditorSelect
 				.getBlocks()
 				.filter( ( block ) => block.name === 'fundrik/campaign-settings' ).length;
+			const campaignSummaryBlocksCount = blockEditorSelect
+				.getBlocks()
+				.filter( ( block ) => block.name === 'fundrik/campaign-summary' ).length;
 			const initialDonationFormBlocksCount = blockEditorSelect
 				.getBlocks()
 				.filter( ( block ) => block.name === 'fundrik/donation-form' ).length;
+			const canInsertCampaignSummaryBlock = blockEditorSelect.canInsertBlockType(
+				'fundrik/campaign-summary',
+			);
 			const canInsertDonationFormBlock = blockEditorSelect.canInsertBlockType(
 				'fundrik/donation-form',
 			);
+
+			if ( canInsertCampaignSummaryBlock ) {
+				blockEditorDispatch.insertBlocks( [
+					wp.blocks.createBlock( 'fundrik/campaign-summary' ),
+				] );
+			}
 
 			if ( canInsertDonationFormBlock ) {
 				blockEditorDispatch.insertBlocks( [
@@ -523,6 +553,9 @@ test.describe( 'Fundrik campaign admin', () => {
 				] );
 			}
 
+			const campaignSummaryBlocksCountAfterInsert = blockEditorSelect
+				.getBlocks()
+				.filter( ( block ) => block.name === 'fundrik/campaign-summary' ).length;
 			const donationFormBlocksCountAfterInsert = blockEditorSelect
 				.getBlocks()
 				.filter( ( block ) => block.name === 'fundrik/donation-form' ).length;
@@ -531,6 +564,11 @@ test.describe( 'Fundrik campaign admin', () => {
 				campaignSettingsBlocksCount,
 				campaignSettingsSupportsInserter: campaignSettingsBlockType?.supports?.inserter,
 				campaignSettingsSupportsMultiple: campaignSettingsBlockType?.supports?.multiple,
+				campaignSummaryBlocksCount,
+				campaignSummarySupportsMultiple: campaignSummaryBlockType?.supports?.multiple,
+				campaignSummarySupportsInserter: campaignSummaryBlockType?.supports?.inserter,
+				canInsertCampaignSummaryBlock,
+				campaignSummaryBlocksCountAfterInsert,
 				donationFormSupportsInserter: donationFormBlockType?.supports?.inserter,
 				donationFormSupportsMultiple: donationFormBlockType?.supports?.multiple,
 				initialDonationFormBlocksCount,
@@ -542,13 +580,18 @@ test.describe( 'Fundrik campaign admin', () => {
 		expect( insertionState.campaignSettingsBlocksCount ).toBe( 1 );
 		expect( insertionState.campaignSettingsSupportsInserter ).toBe( false );
 		expect( insertionState.campaignSettingsSupportsMultiple ).toBe( false );
+		expect( insertionState.campaignSummaryBlocksCount ).toBe( 1 );
+		expect( insertionState.campaignSummarySupportsMultiple ).toBeUndefined();
+		expect( insertionState.campaignSummarySupportsInserter ).toBeUndefined();
+		expect( insertionState.canInsertCampaignSummaryBlock ).toBe( true );
+		expect( insertionState.campaignSummaryBlocksCountAfterInsert ).toBe( 2 );
 		expect( insertionState.donationFormSupportsMultiple ).toBe( false );
 		expect( insertionState.initialDonationFormBlocksCount ).toBe( 1 );
 		expect( insertionState.canInsertDonationFormBlock ).toBe( false );
 		expect( insertionState.donationFormBlocksCountAfterInsert ).toBe( 1 );
 	} );
 
-	test( 'keeps campaign settings and donation form blocks unavailable in regular posts', async ( {
+	test( 'keeps campaign blocks unavailable in regular posts', async ( {
 		admin,
 		page,
 	} ) => {
@@ -566,6 +609,9 @@ test.describe( 'Fundrik campaign admin', () => {
 			const hasCampaignSettingsBlock = blocks.some(
 				( block ) => block.name === 'fundrik/campaign-settings',
 			);
+			const hasCampaignSummaryBlock = blocks.some(
+				( block ) => block.name === 'fundrik/campaign-summary',
+			);
 			const hasDonationFormBlock = blocks.some(
 				( block ) => block.name === 'fundrik/donation-form',
 			);
@@ -573,21 +619,28 @@ test.describe( 'Fundrik campaign admin', () => {
 			const isAllowedInCurrentEditor = Array.isArray( allowedBlockTypes )
 				? allowedBlockTypes.includes( 'fundrik/campaign-settings' )
 				: allowedBlockTypes === true;
+			const isCampaignSummaryAllowedInCurrentEditor = Array.isArray( allowedBlockTypes )
+				? allowedBlockTypes.includes( 'fundrik/campaign-summary' )
+				: allowedBlockTypes === true;
 			const isDonationFormAllowedInCurrentEditor = Array.isArray( allowedBlockTypes )
 				? allowedBlockTypes.includes( 'fundrik/donation-form' )
 				: allowedBlockTypes === true;
 
 			return {
 				hasCampaignSettingsBlock,
+				hasCampaignSummaryBlock,
 				hasDonationFormBlock,
 				isAllowedInCurrentEditor,
+				isCampaignSummaryAllowedInCurrentEditor,
 				isDonationFormAllowedInCurrentEditor,
 			};
 		} );
 
 		expect( blockVisibility.hasCampaignSettingsBlock ).toBe( false );
+		expect( blockVisibility.hasCampaignSummaryBlock ).toBe( false );
 		expect( blockVisibility.hasDonationFormBlock ).toBe( false );
 		expect( blockVisibility.isAllowedInCurrentEditor ).toBe( false );
+		expect( blockVisibility.isCampaignSummaryAllowedInCurrentEditor ).toBe( false );
 		expect( blockVisibility.isDonationFormAllowedInCurrentEditor ).toBe( false );
 	} );
 } );

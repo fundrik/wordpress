@@ -59,7 +59,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 						&& $args['template'] === [ [ 'gamma/block' ] ]
 						&& $args['public'] === true
 						&& $args['menu_icon'] === 'dashicons-heart'
-						&& $args['supports'] === [ 'title', 'editor', 'custom-fields' ]
+						&& $args['supports'] === [ 'title', 'editor', 'thumbnail', 'custom-fields' ]
 						&& $args['show_in_menu'] === AdminPageDefinitions::ROOT_MENU_SLUG
 						&& $args['has_archive'] === true
 						&& $args['show_in_rest'] === true,

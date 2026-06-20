@@ -149,7 +149,7 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 
 		self::assertFalse( $result->accepts_donations );
 		self::assertTrue( $result->has_target );
-		self::assertSame( 123, $result->target_amount );
+		self::assertSame( 12300, $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
 	}
 
@@ -237,6 +237,31 @@ final class RestPreInsertCampaignSyncDataExtractorTest extends MockeryTestCase {
 		self::assertTrue( $result->has_target );
 		self::assertNull( $result->target_amount );
 		self::assertSame( 'USD', $result->target_currency );
+	}
+
+	#[Test]
+	public function extract_or_error_treats_empty_target_currency_as_default(): void {
+
+		$prepared_post = new stdClass();
+
+		$this->request
+			->shouldReceive( 'get_json_params' )
+			->once()
+			->andReturn(
+				[
+					'id' => 15,
+					'title' => 'Ok',
+					'meta' => [
+						CampaignPostTypeConfig::ENTITY_VERSION_FIELD_NAME => 7,
+						CampaignPostTypeConfig::META_TARGET_CURRENCY => '',
+					],
+				],
+			);
+
+		$result = $this->extractor->extract_or_error( $prepared_post, $this->request );
+
+		self::assertInstanceOf( RestCampaignSyncData::class, $result );
+		self::assertSame( 'RUB', $result->target_currency );
 	}
 
 	private function create_settings_reader(

@@ -51,6 +51,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 		self::assertSame(
 			[
 				[ 'fundrik/campaign-settings' ],
+				[ 'fundrik/campaign-summary' ],
 				[ 'fundrik/donation-form' ],
 			],
 			$this->config->get_block_template(),
@@ -63,6 +64,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 		self::assertSame(
 			[
 				'fundrik/campaign-settings',
+				'fundrik/campaign-summary',
 				'fundrik/donation-form',
 			],
 			$this->config->get_specific_blocks(),

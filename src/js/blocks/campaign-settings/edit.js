@@ -42,7 +42,8 @@ export default function Edit( {
 		setTargetAmountInput( nextValue );
 
 		if ( nextValue.trim() === '' ) {
-			setTargetAmount( undefined );
+			// Keep an explicit empty value so Gutenberg serializes the cleared field.
+			setTargetAmount( '' );
 			return;
 		}
 
