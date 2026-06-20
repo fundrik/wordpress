@@ -151,14 +151,22 @@ final readonly class CampaignLookupService {
 	 */
 	private function create_campaign_read_model( CoreCampaign $core_campaign ): Campaign {
 
-		$campaign_id = $core_campaign->get_id();
+		$campaign_id = CampaignId::from_entity_id_value( $core_campaign->get_id() )->get_value();
 		$permalink = $this->resolve_campaign_permalink( $campaign_id );
 		$featured_image_id = $this->resolve_featured_image_id( $campaign_id );
 
 		return new Campaign(
-			core_campaign: $core_campaign,
+			id: $campaign_id,
+			title: $core_campaign->get_title(),
 			permalink: $permalink,
 			featured_image_id: $featured_image_id,
+			accepts_donations: $core_campaign->accepts_donations(),
+			currency_code: $core_campaign->get_currency_code(),
+			target_amount: $core_campaign->get_target_amount(),
+			collected_amount: $core_campaign->get_collected_amount(),
+			donations_count: $core_campaign->get_donations_count(),
+			created_at: $core_campaign->get_created_at(),
+			updated_at: $core_campaign->get_updated_at(),
 		);
 	}
 
