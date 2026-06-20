@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Services;
 
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
-use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderData;
-use Fundrik\WordPress\Integration\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
 
 /**
  * Provides donation form display for WordPress-facing integration entry points.
@@ -84,7 +83,7 @@ final readonly class DonationFormDisplayService {
 	private function create_render_data( Campaign $campaign ): DonationFormRenderData {
 
 		return new DonationFormRenderData(
-			campaign_id: CampaignId::from_entity_id_value( $campaign->get_id() )->get_value(),
+			campaign_id: $campaign->get_id(),
 			rest_url: RestRouteDefinitions::get_route_url( DonationsRestRoute::class ),
 			default_amount: $this->settings_reader->get_donation_form_default_amount(),
 			amount_label: $this->settings_reader->get_donation_form_default_amount_label(),
