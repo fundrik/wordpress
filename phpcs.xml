@@ -36,6 +36,7 @@
 			<property name="excludedClasses" type="array">
 				<element value="Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime"/>
 				<element value="Fundrik\WordPress\Kernel\Container\RuntimeContainer"/>
+				<element value="Fundrik\WordPress\Integration\AdminPages\Tables\DonationsListTable"/>
 			</property>
 		</properties>
 	</rule>

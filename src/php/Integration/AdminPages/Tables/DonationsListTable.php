@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\AdminPages\Tables;
 
-use Fundrik\WordPress\Integration\ReadModels\DonationListItem;
+use Fundrik\WordPress\Integration\ReadModels\DonationAdminListItem;
 use Fundrik\WordPress\Integration\Services\DonationsListService;
 use Override;
 use WP_List_Table;
@@ -85,7 +85,7 @@ final class DonationsListTable extends WP_List_Table {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DonationListItem $item Donation row.
+	 * @param DonationAdminListItem $item Donation row.
 	 * @param string $column_name Column name.
 	 *
 	 * @return string Column output.
@@ -95,7 +95,7 @@ final class DonationsListTable extends WP_List_Table {
 	#[Override]
 	public function column_default( $item, $column_name ): string {
 
-		if ( ! $item instanceof DonationListItem ) {
+		if ( ! $item instanceof DonationAdminListItem ) {
 			return '';
 		}
 
