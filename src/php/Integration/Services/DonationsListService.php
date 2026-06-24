@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Services;
 
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
 use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Donations\Application\ReadModels\Donation as CoreDonation;
 use Fundrik\Core\Components\Donations\Application\ReadModels\PaginatedDonations;
@@ -12,7 +13,6 @@ use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
-use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
 use Fundrik\WordPress\Integration\ReadModels\DonationAdminListItem;
 use Fundrik\WordPress\Integration\ReadModels\PaginatedDonationsAdminList;
 use Fundrik\WordPress\Presentation\Formatters\DateTimeFormatter;
@@ -34,14 +34,14 @@ final readonly class DonationsListService {
 	 * @since 1.0.0
 	 *
 	 * @param DonationQueryService $donation_query Reads paginated donations.
-	 * @param CampaignReadRepository $campaign_read Reads campaigns in batches.
+	 * @param CampaignReadPort $campaign_read Reads campaigns in batches.
 	 * @param LoggerInterface $logger Writes structured log entries for donations list operations.
 	 * @param DateTimeFormatter $date_time_formatter Formats timestamps for display.
 	 * @param MoneyFormatter $money_formatter Formats money amounts for display.
 	 */
 	public function __construct(
 		private DonationQueryService $donation_query,
-		private CampaignReadRepository $campaign_read,
+		private CampaignReadPort $campaign_read,
 		private LoggerInterface $logger,
 		private DateTimeFormatter $date_time_formatter,
 		private MoneyFormatter $money_formatter,
