@@ -131,6 +131,57 @@ final readonly class WpdbDatabase implements DatabasePort {
 		return $this->sanitize_db_results( $results );
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Retrieves all rows from the given table by IDs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int|string ...$ids Row IDs to fetch.
+	 *
+	 * @return list<array<string, int|float|string|bool|null>> The list of matching rows.
+	 *
+	 * @throws WpdbDatabaseException When the query fails.
+	 */
+	#[Override]
+	public function get_all_by_ids( string $table, int|string ...$ids ): array {
+
+		if ( $ids === [] ) {
+			return [];
+		}
+
+		$table = $this->qualify_table_name( $table );
+		$placeholders = $this->build_placeholders( $ids );
+
+		$sql = sprintf(
+			'SELECT * FROM %%i WHERE id IN (%s)',
+			implode( ', ', $placeholders ),
+		);
+		$query = $this->prepare_query( $sql, $table, ...$ids );
+
+		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+		/** @var list<array<string, mixed>>|null $results */
+		$results = $this->wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to fetch rows from table "%s" by IDs.',
+					$table,
+				),
+			);
+		}
+
+		if ( ! is_array( $results ) ) {
+			return [];
+		}
+
+		return $this->sanitize_db_results( $results );
+	}
+	// phpcs:enable
+
 	/**
 	 * Retrieves all rows from the given table filtered by a column value.
 	 *
@@ -175,6 +226,84 @@ final readonly class WpdbDatabase implements DatabasePort {
 
 		return $this->sanitize_db_results( $results );
 	}
+
+	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh, SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	/**
+	 * Retrieves a paginated list of rows from the given table.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int $page Page number.
+	 * @param int $per_page Rows per page.
+	 *
+	 * @return array{0:list<array<string, int|float|string|bool|null>>,1:int} The rows and total count.
+	 *
+	 * @throws WpdbDatabaseException When the query fails.
+	 */
+	#[Override]
+	public function paginate( string $table, int $page, int $per_page ): array {
+
+		if ( $page <= 0 ) {
+			throw new WpdbDatabaseException( sprintf( 'Page must be a positive integer. Given: %d.', $page ) );
+		}
+
+		if ( $per_page <= 0 ) {
+			throw new WpdbDatabaseException(
+				sprintf( 'Items per page must be a positive integer. Given: %d.', $per_page ),
+			);
+		}
+
+		$table = $this->qualify_table_name( $table );
+
+		$count_sql = 'SELECT COUNT(*) FROM %i';
+		$count_query = $this->prepare_query( $count_sql, $table );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$total_items = (int) $this->wpdb->get_var( $count_query );
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to count rows in table "%s".',
+					$table,
+				),
+			);
+		}
+
+		if ( $total_items === 0 ) {
+			return [ [], 0 ];
+		}
+
+		$total_pages = (int) ceil( $total_items / $per_page );
+		$page = min( $page, max( 1, $total_pages ) );
+		$offset = ( $page - 1 ) * $per_page;
+
+		$sql = 'SELECT * FROM %i ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d';
+		$query = $this->prepare_query( $sql, $table, $per_page, $offset );
+
+		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+		/** @var list<array<string, mixed>>|null $results */
+		$results = $this->wpdb->get_results( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to fetch paginated rows from table "%s".',
+					$table,
+				),
+			);
+		}
+
+		if ( ! is_array( $results ) ) {
+			$results = [];
+		}
+
+		return [ $this->sanitize_db_results( $results ), $total_items ];
+	}
+	// phpcs:enable
 
 	/**
 	 * Determines whether the table exists.
@@ -677,6 +806,26 @@ final readonly class WpdbDatabase implements DatabasePort {
 		}
 
 		return [ $assignments, $args ];
+	}
+
+	/**
+	 * Builds the placeholder list for a set of values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param list<int|string> $values Values to convert to placeholders.
+	 *
+	 * @return list<string> Placeholder list.
+	 */
+	private function build_placeholders( array $values ): array {
+
+		$placeholders = [];
+
+		foreach ( $values as $value ) {
+			$placeholders[] = is_int( $value ) ? '%d' : '%s';
+		}
+
+		return $placeholders;
 	}
 
 	/**

@@ -274,6 +274,104 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	#[Test]
+	public function get_all_by_ids_returns_rows_as_list_and_sanitizes_each_row(): void {
+
+		$table = 'wp_table';
+		$ids = [ 7, 8 ];
+
+		$sql = 'SELECT * FROM %i WHERE id IN (%d, %d)';
+		$query = 'prepared_query';
+
+		$results = [
+			[
+				'id' => 7,
+				'title' => 'A',
+			],
+			[
+				'id' => 8,
+				'title' => 'B',
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, $table, ...$ids )
+			->andReturn( $query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame( $results, $this->db->get_all_by_ids( $table, ...$ids ) );
+	}
+
+	#[Test]
+	public function get_all_by_ids_returns_empty_array_when_given_no_ids(): void {
+
+		$this->wpdb->shouldNotReceive( 'prepare' );
+		$this->wpdb->shouldNotReceive( 'get_results' );
+
+		self::assertSame( [], $this->db->get_all_by_ids( 'wp_table' ) );
+	}
+
+	#[Test]
+	public function paginate_returns_rows_and_total_count(): void {
+
+		$table = 'wp_table';
+		$page = 2;
+		$per_page = 20;
+
+		$count_sql = 'SELECT COUNT(*) FROM %i';
+		$count_query = 'count_query';
+		$rows_sql = 'SELECT * FROM %i ORDER BY created_at DESC, id DESC LIMIT %d OFFSET %d';
+		$rows_query = 'rows_query';
+
+		$results = [
+			[
+				'id' => 'a',
+				'campaign_id' => 7,
+				'amount' => 1000,
+				'currency_code' => 'USD',
+				'status' => 'pending',
+				'created_at' => '2026-01-01 10:00:00.000000',
+				'updated_at' => null,
+			],
+		];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $count_sql, $table )
+			->andReturn( $count_query );
+
+		$this->wpdb
+			->shouldReceive( 'get_var' )
+			->once()
+			->with( $count_query )
+			->andReturn( '21' );
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $rows_sql, $table, $per_page, 20 )
+			->andReturn( $rows_query );
+
+		$this->wpdb
+			->shouldReceive( 'get_results' )
+			->once()
+			->with( $rows_query, ARRAY_A )
+			->andReturn( $results );
+
+		self::assertSame(
+			[ $results, 21 ],
+			$this->db->paginate( $table, $page, $per_page ),
+		);
+	}
+
+	#[Test]
 	public function get_all_throws_when_query_fails(): void {
 
 		$table = 'wp_table';

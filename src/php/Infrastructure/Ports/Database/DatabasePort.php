@@ -41,6 +41,20 @@ interface DatabasePort {
 	public function get_all( string $table ): array;
 
 	/**
+	 * Retrieves all rows from the given table by IDs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int|string ...$ids Row IDs to fetch.
+	 *
+	 * @return list<array<string, int|float|string|bool|null>> The list of matching rows.
+	 *
+	 * @throws DatabaseExceptionInterface When the query fails.
+	 */
+	public function get_all_by_ids( string $table, int|string ...$ids ): array;
+
+	/**
 	 * Retrieves all rows from the given table filtered by a column value.
 	 *
 	 * @since 1.0.0
@@ -54,6 +68,21 @@ interface DatabasePort {
 	 * @throws DatabaseExceptionInterface When the query fails.
 	 */
 	public function get_all_by_column( string $table, string $column, int|float|string|bool|null $value ): array;
+
+	/**
+	 * Retrieves a paginated list of rows from the given table.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table The table name.
+	 * @param int $page Page number.
+	 * @param int $per_page Rows per page.
+	 *
+	 * @return array{0:list<array<string, int|float|string|bool|null>>,1:int} The rows and total count.
+	 *
+	 * @throws DatabaseExceptionInterface When the query fails.
+	 */
+	public function paginate( string $table, int $page, int $per_page ): array;
 
 	/**
 	 * Determines whether the table exists.
