@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Kernel\Container;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRead\DonationReadPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryApplicationEventUpdater;
@@ -18,6 +19,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
+use Fundrik\WordPress\Infrastructure\Repositories\DonationReadRepository\DonationReadRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationRepository;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
@@ -80,6 +82,7 @@ final readonly class ContainerBindingsRegistry {
 			StoragePort::class => WordPressOptionsStorage::class,
 
 			CampaignReadPort::class => CampaignReadRepository::class,
+			DonationReadPort::class => DonationReadRepository::class,
 			CampaignRepositoryPort::class => CampaignRepository::class,
 			DonationRepositoryPort::class => DonationRepository::class,
 
