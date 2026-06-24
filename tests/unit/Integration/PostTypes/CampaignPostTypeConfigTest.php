@@ -85,7 +85,7 @@ final class CampaignPostTypeConfigTest extends WordPressTestCase {
 				'new_item' => __( 'New Campaign', 'fundrik' ),
 				'edit_item' => __( 'Edit Campaign', 'fundrik' ),
 				'view_item' => __( 'View Campaign', 'fundrik' ),
-				'all_items' => __( 'All Campaigns', 'fundrik' ),
+				'all_items' => __( 'Campaigns', 'fundrik' ),
 				'search_items' => __( 'Search Campaigns', 'fundrik' ),
 				'parent_item_colon' => __( 'Parent Campaigns:', 'fundrik' ),
 				'not_found' => __( 'No campaigns found.', 'fundrik' ),

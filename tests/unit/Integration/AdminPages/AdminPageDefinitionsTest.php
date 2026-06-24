@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\AdminPages;
 
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
+use Fundrik\WordPress\Integration\AdminPages\Pages\DonationsAdminPage;
+use Fundrik\WordPress\Integration\AdminPages\Pages\RootAdminPage;
 use Fundrik\WordPress\Integration\AdminPages\Pages\SettingsAdminPage;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -18,6 +20,8 @@ final class AdminPageDefinitionsTest extends FundrikTestCase {
 
 		$this->assertSame(
 			[
+				RootAdminPage::class,
+				DonationsAdminPage::class,
 				SettingsAdminPage::class,
 			],
 			AdminPageDefinitions::classes(),

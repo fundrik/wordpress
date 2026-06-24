@@ -28,7 +28,7 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function register_registers_root_menu_settings_submenu_and_render_callback(): void {
+	public function register_registers_settings_submenu_and_render_callback(): void {
 
 		$page_state = new ArrayObject(
 			[
@@ -36,13 +36,14 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 			],
 		);
 
-		Functions\expect( 'add_menu_page' )
+			Functions\expect( 'add_submenu_page' )
 			->once()
 			->with(
-				__( 'Fundrik Settings', 'fundrik' ),
-				__( 'Fundrik', 'fundrik' ),
-				'edit_posts',
 				AdminPageDefinitions::ROOT_MENU_SLUG,
+				__( 'Fundrik Settings', 'fundrik' ),
+				__( 'Settings', 'fundrik' ),
+				AdminPageDefinitions::SETTINGS_CAPABILITY,
+				AdminPageDefinitions::SETTINGS_PAGE_ID,
 				Mockery::on(
 					static function ( callable $callback ) use ( $page_state ): bool {
 
@@ -51,20 +52,8 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 						return true;
 					},
 				),
-				'dashicons-heart',
 			)
-			->andReturn( 'toplevel_page_fundrik' );
-
-		Functions\expect( 'add_submenu_page' )
-			->once()
-			->with(
-				AdminPageDefinitions::ROOT_MENU_SLUG,
-				__( 'Fundrik Settings', 'fundrik' ),
-				__( 'Settings', 'fundrik' ),
-				'edit_posts',
-				AdminPageDefinitions::ROOT_MENU_SLUG,
-			)
-			->andReturn( 'fundrik_page_fundrik' );
+			->andReturn( 'fundrik_page_fundrik_settings' );
 
 		Functions\expect( 'settings_errors' )
 			->once()
