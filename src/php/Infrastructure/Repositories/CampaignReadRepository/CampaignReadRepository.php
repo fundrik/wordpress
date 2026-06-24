@@ -73,6 +73,42 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 	}
 
 	/**
+	 * Retrieves campaigns by their IDs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param list<int|string> $ids Campaign IDs.
+	 *
+	 * @return array<int, Campaign> Campaigns keyed by ID.
+	 *
+	 * @throws CampaignReadException When the lookup fails.
+	 */
+	#[Override]
+	public function find_by_ids( array $ids ): array {
+
+		$campaign_ids = $this->require_campaign_ids( $ids );
+
+		if ( $campaign_ids === [] ) {
+			return [];
+		}
+
+		try {
+			$rows = $this->db->get_all_by_ids( self::TABLE_NAME, ...$campaign_ids );
+		} catch ( DatabaseExceptionInterface $e ) {
+			throw new CampaignReadException( 'Failed to retrieve campaigns.', previous: $e );
+		}
+
+		$campaigns = [];
+
+		foreach ( $rows as $row ) {
+			$campaign = $this->map_row_to_campaign( $row );
+			$campaigns[ $campaign->get_id() ] = $campaign;
+		}
+
+		return $campaigns;
+	}
+
+	/**
 	 * Returns campaign ID as an integer.
 	 *
 	 * @since 1.0.0
@@ -90,6 +126,28 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 		} catch ( InvalidCampaignIdException $e ) {
 			throw new CampaignReadException( $e->getMessage(), previous: $e );
 		}
+	}
+
+	/**
+	 * Returns campaign IDs as integers.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param list<int|string> $ids Campaign IDs.
+	 *
+	 * @return list<int> Campaign IDs.
+	 *
+	 * @throws CampaignReadException When any ID cannot be represented as a positive integer.
+	 */
+	private function require_campaign_ids( array $ids ): array {
+
+		$campaign_ids = [];
+
+		foreach ( $ids as $id ) {
+			$campaign_ids[] = $this->require_campaign_id( EntityId::create( $id ) );
+		}
+
+		return array_values( array_unique( $campaign_ids ) );
 	}
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength

@@ -161,6 +161,36 @@ final class CampaignReadRepositoryTest extends MockeryTestCase {
 		$this->repository->find_by_id( $id );
 	}
 
+	#[Test]
+	public function find_by_ids_maps_rows_to_campaigns_keyed_by_id(): void {
+
+		$this->db
+			->shouldReceive( 'get_all_by_ids' )
+			->once()
+			->with( self::TABLE_NAME, 7, 8 )
+			->andReturn(
+				[
+					$this->campaign_row( id: 8, title: 'Second' ),
+					$this->campaign_row( id: 7, title: 'First' ),
+				],
+			);
+
+		$result = $this->repository->find_by_ids( [ 7, 8, 7 ] );
+
+		self::assertArrayHasKey( 7, $result );
+		self::assertArrayHasKey( 8, $result );
+		self::assertSame( 'First', $result[7]->get_title() );
+		self::assertSame( 'Second', $result[8]->get_title() );
+	}
+
+	#[Test]
+	public function find_by_ids_returns_empty_array_when_given_no_ids(): void {
+
+		$this->db->shouldNotReceive( 'get_all_by_ids' );
+
+		self::assertSame( [], $this->repository->find_by_ids( [] ) );
+	}
+
 	/**
 	 * Returns a campaign row.
 	 *
