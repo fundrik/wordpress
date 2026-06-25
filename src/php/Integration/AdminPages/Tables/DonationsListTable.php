@@ -52,6 +52,13 @@ final class DonationsListTable extends WP_List_Table {
 
 		$this->items = $paginated_donations->get_items();
 
+		// TODO: Decide if it is really necessary.
+		$this->_column_headers = [
+			$this->get_columns(),
+			[],
+			[],
+		];
+
 		$this->set_pagination_args(
 			[
 				'total_items' => $paginated_donations->get_total(),

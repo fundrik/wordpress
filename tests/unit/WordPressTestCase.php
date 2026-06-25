@@ -19,6 +19,19 @@ abstract class WordPressTestCase extends FundrikTestCase {
 
 		Monkey\Functions\stubEscapeFunctions();
 		Monkey\Functions\stubTranslationFunctions();
+		Monkey\Functions\when( 'get_option' )->alias(
+			static fn ( string $option ) => match ( $option ) {
+				'date_format' => 'Y-m-d',
+				'time_format' => 'H:i:s',
+				default => '',
+			},
+		);
+		Monkey\Functions\when( 'wp_date' )->alias(
+			static fn ( string $format, int $timestamp ): string => gmdate( $format, $timestamp ),
+		);
+		Monkey\Functions\when( 'number_format_i18n' )->alias(
+			static fn ( float $number, int $decimals = 0 ): string => number_format( $number, $decimals, '.', ',' ),
+		);
 	}
 
 	protected function tearDown(): void {
