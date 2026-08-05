@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\SyncPostToCampaign;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdException;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdHandler;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
@@ -26,11 +26,11 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	 * @since 1.0.0
 	 *
 	 * @param CampaignFactory $campaign_factory Builds Campaign entities from primitives.
-	 * @param CampaignRepositoryPort $campaign_repository Retrieves campaigns for version checks.
+	 * @param FindCampaignByIdHandler $find_campaign_by_id Retrieves campaigns for version checks.
 	 */
 	public function __construct(
 		private CampaignFactory $campaign_factory,
-		private CampaignRepositoryPort $campaign_repository,
+		private FindCampaignByIdHandler $find_campaign_by_id,
 	) {}
 
 	/**
@@ -131,8 +131,8 @@ final readonly class RestPreInsertCampaignSyncDataValidator {
 	private function validate_version_or_error( RestCampaignSyncData $data ): ?WP_Error {
 
 		try {
-			$persisted = $this->campaign_repository->find_by_id( $data->id->to_entity_id() );
-		} catch ( CampaignRepositoryExceptionInterface $e ) {
+			$persisted = $this->find_campaign_by_id->handle( $data->id->to_entity_id() );
+		} catch ( FindCampaignByIdException $e ) {
 
 			return new WP_Error(
 				'fundrik_campaign_version_check_failed',

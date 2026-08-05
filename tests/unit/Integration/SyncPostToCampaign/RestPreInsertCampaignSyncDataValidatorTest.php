@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Tests\Integration\SyncPostToCampaign;
 
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdHandler;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
@@ -26,6 +27,7 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 
 	private CampaignFactory $campaign_factory;
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
+	private FindCampaignByIdHandler $find_campaign_by_id;
 
 	private RestPreInsertCampaignSyncDataValidator $validator;
 
@@ -35,10 +37,11 @@ final class RestPreInsertCampaignSyncDataValidatorTest extends MockeryTestCase {
 
 		$this->campaign_factory = new CampaignFactory();
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
+		$this->find_campaign_by_id = new FindCampaignByIdHandler( $this->campaign_repository );
 
 		$this->validator = new RestPreInsertCampaignSyncDataValidator(
 			$this->campaign_factory,
-			$this->campaign_repository,
+			$this->find_campaign_by_id,
 		);
 	}
 

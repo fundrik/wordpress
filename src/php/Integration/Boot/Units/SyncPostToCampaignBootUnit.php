@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\Boot\Units;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
-use Fundrik\Core\Components\Campaigns\Application\Services\CampaignCommandService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdException;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotException;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
@@ -64,8 +64,8 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 * @param RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook The REST after-insert action hook for campaigns.
 	 * @param DeletePostActionHookDispatcher $delete_post_hook The post deletion action hook.
 	 * @param EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook The block editor assets action hook.
-	 * @param CampaignRepositoryPort $campaign_repository The campaign repository for reading the persisted version.
-	 * @param CampaignCommandService $campaign_command Provides campaign write operations for synchronization callbacks.
+	 * @param FindCampaignByIdHandler $find_campaign_by_id The campaign read use case for persisted version lookup.
+	 * @param DeleteCampaignHandler $delete_campaign Provides campaign deletion for post removal.
 	 * @param RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor The extractor for pre-insert synchronization data.
 	 * @param RestPreInsertCampaignSyncDataValidator $pre_insert_validator The validator for pre-insert synchronization data.
 	 * @param RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor The extractor for after-insert synchronization data.
@@ -78,8 +78,8 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		private RestAfterInsertCampaignActionHookDispatcher $rest_after_insert_hook,
 		private DeletePostActionHookDispatcher $delete_post_hook,
 		private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook,
-		private CampaignRepositoryPort $campaign_repository,
-		private CampaignCommandService $campaign_command,
+		private FindCampaignByIdHandler $find_campaign_by_id,
+		private DeleteCampaignHandler $delete_campaign,
 		private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor,
 		private RestPreInsertCampaignSyncDataValidator $pre_insert_validator,
 		private RestAfterInsertCampaignSyncDataExtractor $after_insert_extractor,
@@ -161,8 +161,8 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		$campaign_id = CampaignId::from_value( $post_id );
 
 		try {
-			$campaign = $this->campaign_repository->find_by_id( $campaign_id->to_entity_id() );
-		} catch ( CampaignRepositoryExceptionInterface $e ) {
+			$campaign = $this->find_campaign_by_id->handle( $campaign_id->to_entity_id() );
+		} catch ( FindCampaignByIdException $e ) {
 
 			$this->logger->log_error(
 				'Failed to resolve campaign version for REST response.',
@@ -260,7 +260,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 			$this->after_insert_synchronizer->sync( $data );
 
 		} catch (
-			CampaignRepositoryExceptionInterface |
+			FindCampaignByIdException |
 			CreateCampaignException |
 			SyncCampaignFromSnapshotException $e
 		) {
@@ -298,7 +298,7 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 		$campaign_id = CampaignId::from_value( $post_id );
 
 		try {
-			$this->campaign_command->delete( $campaign_id->to_entity_id() );
+			$this->delete_campaign->handle( $campaign_id->to_entity_id() );
 		} catch ( DeleteCampaignException $e ) {
 
 			$this->logger->log_error(

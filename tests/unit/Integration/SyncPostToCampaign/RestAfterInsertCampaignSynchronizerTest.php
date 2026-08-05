@@ -11,6 +11,7 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\EnableCampaignDonations\EnableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\RenameCampaign\RenameCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\SyncCampaignFromSnapshot\SyncCampaignFromSnapshotHandler;
@@ -39,6 +40,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 	private CampaignRepositoryPort&MockInterface $campaign_repository;
 	private DonationRepositoryPort&MockInterface $donation_repository;
 	private ApplicationEventBusPort&MockInterface $event_bus;
+	private FindCampaignByIdHandler $find_campaign_by_id;
 
 	private RestAfterInsertCampaignSynchronizer $synchronizer;
 
@@ -50,6 +52,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		$this->campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->donation_repository = Mockery::mock( DonationRepositoryPort::class );
 		$this->event_bus = Mockery::mock( ApplicationEventBusPort::class );
+		$this->find_campaign_by_id = new FindCampaignByIdHandler( $this->campaign_repository );
 
 		$this->synchronizer = new RestAfterInsertCampaignSynchronizer(
 			self::new_campaign_command_service(
@@ -57,7 +60,7 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 				$this->donation_repository,
 				$this->event_bus,
 			),
-			$this->campaign_repository,
+			$this->find_campaign_by_id,
 		);
 	}
 
@@ -75,10 +78,10 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 
 		$this->campaign_repository
-			->shouldReceive( 'exists_by_id' )
+			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
-			->andReturn( false );
+			->andReturn( null );
 		$this->campaign_repository->shouldNotReceive( 'update' );
 		Functions\expect( 'delete_post_meta' )
 			->once()
@@ -127,10 +130,6 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 
 		$this->campaign_repository
-			->shouldReceive( 'exists_by_id' )
-			->once()
-			->with( Mockery::type( EntityId::class ) )
-			->andReturn( true );
 		$this->campaign_repository->shouldNotReceive( 'insert' );
 		Functions\expect( 'delete_post_meta' )->never();
 
@@ -184,10 +183,10 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 
 		$this->campaign_repository
-			->shouldReceive( 'exists_by_id' )
+			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
-			->andReturn( true );
+			->andReturn( $persisted );
 		$this->campaign_repository->shouldNotReceive( 'insert' );
 
 		$this->campaign_repository
@@ -235,10 +234,10 @@ final class RestAfterInsertCampaignSynchronizerTest extends MockeryTestCase {
 		);
 
 		$this->campaign_repository
-			->shouldReceive( 'exists_by_id' )
+			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
-			->andReturn( false );
+			->andReturn( null );
 		$this->campaign_repository->shouldNotReceive( 'update' );
 
 		$this->campaign_repository
