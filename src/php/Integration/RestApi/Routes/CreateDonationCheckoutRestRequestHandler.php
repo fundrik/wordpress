@@ -17,8 +17,8 @@ use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
-use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaGateway;
-use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use InvalidArgumentException;
@@ -43,15 +43,15 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 	 *
 	 * @param RestRouteHandlerLogger $logger Writes structured log entries for REST route handler operations.
 	 * @param CreateDonationIdempotentlyHandler $create_donation_idempotently Handles idempotent donation creation.
-	 * @param YooKassaSettingsReader $settings_reader Reads YooKassa settings.
-	 * @param YooKassaGateway $gateway Creates checkout sessions.
+	 * @param AdminSettingsReader $settings_reader Reads admin settings values.
+	 * @param GatewayResolver $gateway_resolver Resolves the active gateway.
 	 * @param CampaignLookupService $campaign_lookup Resolves campaign data for checkout metadata.
 	 */
 	public function __construct(
 		private RestRouteHandlerLogger $logger,
 		private CreateDonationIdempotentlyHandler $create_donation_idempotently,
-		private YooKassaSettingsReader $settings_reader,
-		private YooKassaGateway $gateway,
+		private AdminSettingsReader $settings_reader,
+		private GatewayResolver $gateway_resolver,
 		private CampaignLookupService $campaign_lookup,
 	) {
 
@@ -84,9 +84,11 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 		}
 
 		try {
+			$gateway = $this->gateway_resolver->resolve_active_gateway();
+
 			$result = ( new CreateDonationCheckoutHandler(
 				$this->create_donation_idempotently,
-				$this->gateway,
+				$gateway,
 			) )->handle( $data );
 		} catch ( CreateDonationCheckoutException $e ) {
 			$donation_creation_data = $data->get_donation_creation_data();
@@ -96,6 +98,10 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 				$donation_creation_data->get_amount()->get_value(),
 				$e,
 			);
+
+			return new WP_Error( 'fundrik_checkout_failed', $e->getMessage(), [ 'status' => 500 ] );
+		} catch ( Throwable $e ) {
+			$this->log_unexpected_failure( $e );
 
 			return new WP_Error( 'fundrik_checkout_failed', $e->getMessage(), [ 'status' => 500 ] );
 		}
