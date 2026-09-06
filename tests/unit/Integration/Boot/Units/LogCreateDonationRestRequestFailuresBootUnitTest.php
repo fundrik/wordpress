@@ -10,6 +10,8 @@ use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailure
 use Fundrik\WordPress\Integration\Boot\Units\RestValidationFailure;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
+use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
@@ -80,7 +82,7 @@ final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTe
 							&& ( $context['component'] ?? null ) === 'boot_units'
 							&& ( $context['layer'] ?? null ) === 'integration'
 							&& ( $context['system'] ?? null ) === 'wordpress'
-							&& ( $context['route'] ?? null ) === '/fundrik/v1/donations'
+							&& ( $context['route'] ?? null ) === RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class )
 							&& ( $context['method'] ?? null ) === 'POST'
 							&& ( $context['status'] ?? null ) === 400
 							&& ( $context['error_code'] ?? null ) === 'rest_invalid_param'
@@ -92,7 +94,7 @@ final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTe
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', '/fundrik/v1/donations' );
+		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
 		$response = new WP_REST_Response(
 			[
 				'code' => 'rest_invalid_param',
@@ -121,7 +123,7 @@ final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTe
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', '/fundrik/v1/donations' );
+		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
 		$response = new WP_REST_Response(
 			[
 				'code' => 'fundrik_invalid_donation_request',
@@ -155,7 +157,7 @@ final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTe
 							&& ( $context['component'] ?? null ) === 'boot_units'
 							&& ( $context['layer'] ?? null ) === 'integration'
 							&& ( $context['system'] ?? null ) === 'wordpress'
-							&& ( $context['route'] ?? null ) === '/fundrik/v1/donations'
+							&& ( $context['route'] ?? null ) === RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class )
 							&& ( $context['method'] ?? null ) === 'POST'
 							&& ( $context['status'] ?? null ) === 400
 							&& ( $context['response_data_type'] ?? null ) === 'array'
@@ -166,7 +168,7 @@ final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTe
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', '/fundrik/v1/donations' );
+		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
 		$response = new WP_REST_Response(
 			[
 				'message' => 'Bad request.',

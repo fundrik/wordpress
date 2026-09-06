@@ -89,7 +89,7 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	}
 
 	/**
-	 * Sanitizes the setting value without side effects.
+	 * Sanitizes the setting value.
 	 *
 	 * @since 1.0.0
 	 *
@@ -125,7 +125,7 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: int|string
+	 *     value: int
 	 * } $args
 	 */
 	#[Override]

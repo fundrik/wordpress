@@ -21,6 +21,7 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 
 	private const string ID = 'donation_form';
 
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Constructor.
 	 *
@@ -34,6 +35,7 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 		private DonationFormDefaultAmountLabelSetting $default_amount_label_setting,
 	) {
 	}
+	// phpcs:enable
 
 	/**
 	 * Returns the group ID.
@@ -69,10 +71,7 @@ final readonly class DonationFormSettingsGroup implements AdminSettingsGroupInte
 	#[Override]
 	public function render_section_description(): void {
 
-		echo '<p>' . esc_html__(
-			'Configure the defaults used by donation form blocks.',
-			'fundrik',
-		) . '</p>';
+		echo '<p>' . esc_html__( 'Configure the defaults used by donation form blocks.', 'fundrik' ) . '</p>';
 	}
 
 	/**

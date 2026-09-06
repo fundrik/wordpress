@@ -12,6 +12,7 @@ use Fundrik\Core\Components\Campaigns\Application\UseCases\ChangeCampaignTarget\
 use Fundrik\Core\Components\Campaigns\Application\UseCases\CreateCampaign\CreateCampaignHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignException;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DeleteCampaign\DeleteCampaignHandler;
+use Fundrik\Core\Components\Campaigns\Application\UseCases\FindCampaignById\FindCampaignByIdHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\DisableCampaignDonations\DisableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\EnableCampaignDonations\EnableCampaignDonationsHandler;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\RenameCampaign\RenameCampaignHandler;
@@ -113,8 +114,12 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 	private CampaignRepositoryPort&MockInterface $validator_campaign_repository;
 	private CampaignRepositoryPort&MockInterface $synchronizer_campaign_repository;
 	private DonationRepositoryPort&MockInterface $donation_repository;
+	private FindCampaignByIdHandler $find_campaign_by_id;
+	private FindCampaignByIdHandler $validator_find_campaign_by_id;
+	private FindCampaignByIdHandler $synchronizer_find_campaign_by_id;
 	private ApplicationEventBusPort&MockInterface $event_bus;
 	private CampaignCommandService $campaign_command;
+	private DeleteCampaignHandler $delete_campaign;
 
 	private RestPreInsertCampaignSyncDataExtractor $pre_insert_extractor;
 	private RestPreInsertCampaignSyncDataValidator $pre_insert_validator;
@@ -179,8 +184,16 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->validator_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->synchronizer_campaign_repository = Mockery::mock( CampaignRepositoryPort::class );
 		$this->donation_repository = Mockery::mock( DonationRepositoryPort::class );
+		$this->find_campaign_by_id = new FindCampaignByIdHandler( $this->campaign_repository );
+		$this->validator_find_campaign_by_id = new FindCampaignByIdHandler( $this->validator_campaign_repository );
+		$this->synchronizer_find_campaign_by_id = new FindCampaignByIdHandler( $this->synchronizer_campaign_repository );
 		$this->event_bus = Mockery::mock( ApplicationEventBusPort::class );
 		$this->campaign_command = self::new_campaign_command_service(
+			$this->synchronizer_campaign_repository,
+			$this->donation_repository,
+			$this->event_bus,
+		);
+		$this->delete_campaign = new DeleteCampaignHandler(
 			$this->synchronizer_campaign_repository,
 			$this->donation_repository,
 			$this->event_bus,
@@ -190,12 +203,12 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->pre_insert_extractor = new RestPreInsertCampaignSyncDataExtractor( $settings_reader );
 		$this->pre_insert_validator = new RestPreInsertCampaignSyncDataValidator(
 			$this->campaign_factory,
-			$this->validator_campaign_repository,
+			$this->validator_find_campaign_by_id,
 		);
 		$this->after_insert_extractor = new RestAfterInsertCampaignSyncDataExtractor( $settings_reader );
 		$this->after_insert_synchronizer = new RestAfterInsertCampaignSynchronizer(
 			$this->campaign_command,
-			$this->synchronizer_campaign_repository,
+			$this->synchronizer_find_campaign_by_id,
 		);
 
 		$this->logger = new BootUnitLogger( $this->psr_logger );
@@ -206,8 +219,8 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 			$this->rest_after_insert_hook,
 			$this->delete_post_hook,
 			$this->enqueue_block_editor_assets_hook,
-			$this->campaign_repository,
-			$this->campaign_command,
+			$this->find_campaign_by_id,
+			$this->delete_campaign,
 			$this->pre_insert_extractor,
 			$this->pre_insert_validator,
 			$this->after_insert_extractor,
@@ -471,6 +484,10 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 				),
 			);
 
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( Mockery::type( 'string' ) );
+
 		$response = Mockery::mock( WP_REST_Response::class );
 		$response->shouldNotReceive( 'get_data' );
 		$response->shouldNotReceive( 'set_data' );
@@ -710,12 +727,6 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		);
 
 		$this->synchronizer_campaign_repository
-			->shouldReceive( 'exists_by_id' )
-			->once()
-			->with( Mockery::type( EntityId::class ) )
-			->andReturn( true );
-
-		$this->synchronizer_campaign_repository
 			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
@@ -754,12 +765,10 @@ final class SyncPostToCampaignBootUnitTest extends WordPressTestCase {
 		$this->expect_after_insert_meta_defaults( 23 );
 
 		$this->synchronizer_campaign_repository
-			->shouldReceive( 'exists_by_id' )
+			->shouldReceive( 'find_by_id' )
 			->once()
 			->with( Mockery::type( EntityId::class ) )
-			->andReturn( false );
-
-		$this->synchronizer_campaign_repository->shouldNotReceive( 'find_by_id' );
+			->andReturn( null );
 
 		$this->synchronizer_campaign_repository
 			->shouldReceive( 'insert' )

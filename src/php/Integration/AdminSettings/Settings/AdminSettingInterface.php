@@ -53,7 +53,7 @@ interface AdminSettingInterface {
 	public function get_value_type(): WpSchemaType;
 
 	/**
-	 * Sanitizes the setting value without side effects.
+	 * Sanitizes the setting value.
 	 *
 	 * @since 1.0.0
 	 *

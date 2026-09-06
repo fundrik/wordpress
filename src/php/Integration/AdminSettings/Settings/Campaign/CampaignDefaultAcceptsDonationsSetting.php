@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign;
 
+use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\WpSchemaType;
+use InvalidArgumentException;
 use Override;
 
 /**
@@ -87,18 +89,20 @@ final readonly class CampaignDefaultAcceptsDonationsSetting implements AdminSett
 	}
 
 	/**
-	 * Sanitizes the setting value without side effects.
+	 * Sanitizes the setting value.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
 	 * @return bool Sanitized setting value.
+	 *
+	 * @throws InvalidArgumentException When the value cannot be converted to bool.
 	 */
 	#[Override]
 	public function sanitize_value( mixed $value ): bool {
 
-		return (bool) $value;
+		return TypeCaster::to_bool( $value );
 	}
 
 	/**
@@ -111,7 +115,7 @@ final readonly class CampaignDefaultAcceptsDonationsSetting implements AdminSett
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: int|string|bool
+	 *     value: bool
 	 * } $args
 	 */
 	#[Override]
@@ -120,7 +124,7 @@ final readonly class CampaignDefaultAcceptsDonationsSetting implements AdminSett
 		$this->field_renderer->render_checkbox_field(
 			$args['field_name'],
 			$args['input_id'],
-			(bool) $args['value'],
+			$args['value'],
 			__( 'New campaigns accept donations.', 'fundrik' ),
 		);
 	}

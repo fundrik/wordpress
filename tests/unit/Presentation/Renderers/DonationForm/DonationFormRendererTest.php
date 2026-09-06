@@ -31,7 +31,7 @@ final class DonationFormRendererTest extends WordPressTestCase {
 
 		$data = new DonationFormRenderData(
 			campaign_id: 42,
-			rest_url: 'http://example.test/wp-json/fundrik/v1/donations',
+			checkout_url: 'http://example.test/wp-json/fundrik/v1/checkout',
 			default_amount: 10,
 			amount_label: 'Amount',
 		);

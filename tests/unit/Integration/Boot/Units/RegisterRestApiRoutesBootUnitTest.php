@@ -9,18 +9,35 @@ use Closure;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonation\CreateDonationHandler;
-use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
-use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
-use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
-use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationIdempotently\CreateDonationIdempotentlyHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\FindDonationById\FindDonationByIdHandler;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
-use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CheckoutSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutCancelUrlSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutSuccessUrlSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\ActiveGatewaySetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
+use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
-use Fundrik\WordPress\Integration\RestApi\Routes\CreateDonationRestRequestHandler;
-use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
+use Fundrik\WordPress\Integration\RestApi\Routes\CreateDonationCheckoutRestRequestHandler;
+use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
+use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
@@ -44,7 +61,7 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 
 	private RestApiInitActionHookDispatcher $rest_api_init_hook;
 	private Closure $rest_api_init_callback;
-	private DonationsRestRoute $route;
+	private DonationCheckoutRestRoute $route;
 	private RegisterRestApiRoutesBootUnit $boot_unit;
 	private WP_REST_Server $rest_server;
 	private LoggerInterface&MockInterface $psr_logger;
@@ -63,7 +80,7 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 			$this->rest_api_init_hook->register( ... ),
 		);
 
-		$this->route = new DonationsRestRoute(
+		$this->route = new DonationCheckoutRestRoute(
 			$this->create_request_handler(),
 		);
 		$this->rest_server = Mockery::mock( WP_REST_Server::class );
@@ -81,8 +98,8 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'register_rest_route' )
 			->once()
 			->with(
-				RestRouteDefinitions::get_route_namespace( DonationsRestRoute::class ),
-				RestRouteDefinitions::get_route_path( DonationsRestRoute::class ),
+				DonationCheckoutRestRoute::get_route_namespace(),
+				DonationCheckoutRestRoute::get_route_path(),
 				Mockery::on( self::matches_route_args( ... ) ),
 			)
 			->andReturn( true );
@@ -100,15 +117,15 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 		Functions\expect( 'register_rest_route' )
 			->once()
 			->with(
-				RestRouteDefinitions::get_route_namespace( DonationsRestRoute::class ),
-				RestRouteDefinitions::get_route_path( DonationsRestRoute::class ),
+				DonationCheckoutRestRoute::get_route_namespace(),
+				DonationCheckoutRestRoute::get_route_path(),
 				Mockery::on( self::matches_route_args( ... ) ),
 			)
 			->andReturn( false );
 
 		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
-			->with( 'Failed to register REST route "fundrik/v1/donations".' );
+			->with( 'Failed to register REST route "fundrik/v1/checkout".' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
@@ -135,7 +152,7 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 						}
 
 						return ( $context['exception'] ?? null ) instanceof RuntimeException
-							&& ( $context['exception'] ?? null )->getMessage() === 'Failed to register REST route "fundrik/v1/donations".';
+							&& ( $context['exception'] ?? null )->getMessage() === 'Failed to register REST route "fundrik/v1/checkout".';
 					},
 				),
 			);
@@ -175,11 +192,15 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return CreateDonationRestRequestHandler Request handler.
+	 * @return CreateDonationCheckoutRestRequestHandler Request handler.
 	 */
-	private function create_request_handler(): CreateDonationRestRequestHandler {
+	private function create_request_handler(): CreateDonationCheckoutRestRequestHandler {
 
-		return new CreateDonationRestRequestHandler(
+		$handler_logger = new RestRouteHandlerLogger( $this->psr_logger );
+		$handler_logger->set_rest_route_handler_class( CreateDonationCheckoutRestRequestHandler::class );
+
+		return new CreateDonationCheckoutRestRequestHandler(
+			$handler_logger,
 			new CreateDonationIdempotentlyHandler(
 				new CreateDonationHandler(
 					Mockery::mock( CampaignRepositoryPort::class ),
@@ -191,7 +212,30 @@ final class RegisterRestApiRoutesBootUnitTest extends WordPressTestCase {
 					Mockery::mock( DonationRepositoryPort::class ),
 				),
 			),
-			new RestRouteHandlerLogger( $this->psr_logger ),
+			new AdminSettingsReader(
+				new OptionReader(
+					Mockery::mock( StoragePort::class ),
+				),
+				new GeneralSettingsGroup( new CurrencySetting( new AdminSettingsFieldRenderer() ) ),
+				new CheckoutSettingsGroup(
+					new ActiveGatewaySetting(
+						new AdminSettingsFieldRenderer(),
+						Mockery::mock( \Fundrik\WordPress\Integration\Gateways\GatewayInterface::class ),
+					),
+					new CheckoutSuccessUrlSetting( new AdminSettingsFieldRenderer() ),
+					new CheckoutCancelUrlSetting( new AdminSettingsFieldRenderer() ),
+				),
+				new CampaignSettingsGroup(
+					new CampaignDefaultAcceptsDonationsSetting( new AdminSettingsFieldRenderer() ),
+					new CampaignDefaultHasTargetSetting( new AdminSettingsFieldRenderer() ),
+				),
+				new DonationFormSettingsGroup(
+					new DonationFormDefaultAmountSetting( new AdminSettingsFieldRenderer() ),
+					new DonationFormDefaultAmountLabelSetting( new AdminSettingsFieldRenderer() ),
+				),
+			),
+			Mockery::mock( GatewayResolver::class ),
+			Mockery::mock( CampaignLookupService::class ),
 		);
 	}
 }

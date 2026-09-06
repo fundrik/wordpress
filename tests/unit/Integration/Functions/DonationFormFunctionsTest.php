@@ -21,9 +21,9 @@ use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaSettingsReader;
 use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
-use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
-use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
+use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Integration\Services\DonationFormDisplayService;
@@ -111,10 +111,12 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 	#[Test]
 	public function fundrik_get_donation_form_returns_rendered_markup_for_the_given_campaign(): void {
 
+		$checkout_route = DonationCheckoutRestRoute::get_route_namespace() . DonationCheckoutRestRoute::get_route_path();
+
 		Functions\expect( 'rest_url' )
 			->once()
-			->with( RestRouteDefinitions::get_route( DonationsRestRoute::class ) )
-			->andReturn( 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class ) );
+			->with( $checkout_route )
+			->andReturn( 'http://example.test/wp-json/' . $checkout_route );
 
 		$campaign = $this->make_campaign( 42 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
@@ -147,7 +149,7 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 
 		self::assertStringContainsString( 'class="fundrik-donation-form"', $markup );
 		self::assertStringContainsString(
-			'data-rest-url="http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class ) . '"',
+			'data-checkout-url="http://example.test/wp-json/' . $checkout_route . '"',
 			$markup,
 		);
 		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
@@ -158,10 +160,12 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 	#[Test]
 	public function fundrik_the_donation_form_echoes_the_rendered_markup(): void {
 
+		$checkout_route = DonationCheckoutRestRoute::get_route_namespace() . DonationCheckoutRestRoute::get_route_path();
+
 		Functions\expect( 'rest_url' )
 			->once()
-			->with( RestRouteDefinitions::get_route( DonationsRestRoute::class ) )
-			->andReturn( 'http://example.test/wp-json/' . RestRouteDefinitions::get_route( DonationsRestRoute::class ) );
+			->with( $checkout_route )
+			->andReturn( 'http://example.test/wp-json/' . $checkout_route );
 
 		$campaign = $this->make_campaign( 42 );
 		Filters\expectApplied( 'fundrik_get_campaign' )
@@ -206,6 +210,7 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 				new NullLogger(),
 			),
 			$this->create_settings_reader( 10, 'Amount' ),
+			$this->create_yookassa_settings_reader( true ),
 			new DonationFormRenderer(),
 		);
 	}
@@ -233,6 +238,18 @@ final class DonationFormFunctionsTest extends WordPressTestCase {
 				new DonationFormDefaultAmountLabelSetting( $field_renderer ),
 			),
 		);
+	}
+
+	private function create_yookassa_settings_reader( bool $enabled ): YooKassaSettingsReader {
+
+		$storage = Mockery::mock( StoragePort::class );
+		$storage
+			->shouldReceive( 'get' )
+			->zeroOrMoreTimes()
+			->with( 'fundrik_yookassa_enabled_setting' )
+			->andReturn( $enabled );
+
+		return new YooKassaSettingsReader( new OptionReader( $storage ) );
 	}
 
 	private function make_campaign( int $id, bool $accepts_donations = true ): Campaign {

@@ -102,6 +102,37 @@ final readonly class AdminSettingsFieldRenderer {
 	}
 
 	/**
+	 * Renders a select field.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $field_name HTML field name.
+	 * @param string $input_id HTML input ID.
+	 * @param string $value Current field value.
+	 * @param array<string, string> $options Select options keyed by value.
+	 */
+	public function render_select_field( string $field_name, string $input_id, string $value, array $options, ): void {
+
+		printf(
+			'<select name="%s" id="%s" class="regular-text">',
+			esc_attr( $field_name ),
+			esc_attr( $input_id ),
+		);
+
+		foreach ( $options as $option_value => $option_label ) {
+
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $option_value ),
+				selected( $value, $option_value, false ),
+				esc_html( $option_label ),
+			);
+		}
+
+		echo '</select>';
+	}
+
+	/**
 	 * Builds optional HTML attributes for a number input field.
 	 *
 	 * @since 1.0.0

@@ -22,23 +22,24 @@ final class GeneralSettingsGroupTest extends WordPressTestCase {
 
 		parent::setUp();
 
-		$this->settings = new GeneralSettingsGroup( new CurrencySetting( new AdminSettingsFieldRenderer() ) );
+		$this->settings = new GeneralSettingsGroup(
+			new CurrencySetting( new AdminSettingsFieldRenderer() ),
+		);
 	}
 
 	#[Test]
-	public function it_returns_the_expected_currency_setting(): void {
+	public function it_returns_the_expected_general_settings(): void {
 
 		$settings = $this->settings->get_settings();
-		$currency_setting = $settings[0];
 
 		self::assertCount( 1, $settings );
 		self::assertInstanceOf( CurrencySetting::class, $settings[0] );
-		self::assertSame( 'currency', $currency_setting->get_id() );
+		self::assertSame( 'currency', $settings[0]->get_id() );
 		self::assertSame( 'Currency', $settings[0]->get_label() );
-		self::assertSame( 'RUB', $currency_setting->get_default_value() );
+		self::assertSame( 'RUB', $settings[0]->get_default_value() );
 
 		ob_start();
-		$currency_setting->render(
+		$settings[0]->render(
 			[
 				'field_name' => 'fundrik_general_currency_setting',
 				'input_id' => 'fundrik_general_currency_setting',
@@ -59,5 +60,4 @@ final class GeneralSettingsGroupTest extends WordPressTestCase {
 
 		self::assertStringContainsString( 'Configure global Fundrik settings.', $output );
 	}
-
 }

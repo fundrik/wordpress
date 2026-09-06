@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm;
+namespace Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout;
 
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
@@ -12,17 +12,15 @@ use InvalidArgumentException;
 use Override;
 
 /**
- * Represents the admin setting for the default amount label.
+ * Represents the admin setting for the checkout cancel URL.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class DonationFormDefaultAmountLabelSetting implements AdminSettingInterface {
+final readonly class CheckoutCancelUrlSetting implements AdminSettingInterface {
 
-	private const string ID = 'default_amount_label';
-
-	private const string DEFAULT_VALUE = 'Amount';
+	private const string ID = 'cancel_url';
 
 	/**
 	 * Constructor.
@@ -33,8 +31,7 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 	 */
 	public function __construct(
 		private AdminSettingsFieldRenderer $field_renderer,
-	) {
-	}
+	) {}
 
 	/**
 	 * Returns the setting ID.
@@ -59,7 +56,7 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 	#[Override]
 	public function get_label(): string {
 
-		return __( 'Default amount label', 'fundrik' );
+		return __( 'Cancel URL', 'fundrik' );
 	}
 
 	/**
@@ -72,7 +69,7 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 	#[Override]
 	public function get_default_value(): string {
 
-		return self::DEFAULT_VALUE;
+		return '';
 	}
 
 	/**
@@ -97,21 +94,21 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 	 *
 	 * @return string Sanitized setting value.
 	 *
-	 * @throws InvalidArgumentException When the value is empty.
+	 * @throws InvalidArgumentException When the value is not a valid URL.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	#[Override]
 	public function sanitize_value( mixed $value ): string {
 
-		$default_amount_label = trim( TypeCaster::to_string( $value ) );
+		$url = TypeCaster::to_string( $value );
 
-		if ( $default_amount_label !== '' ) {
-			return $default_amount_label;
+		if ( filter_var( $url, FILTER_VALIDATE_URL ) !== false ) {
+			return $url;
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Default amount label must not be empty. Given: %s.', $value ),
+			sprintf( 'Cancel URL must be a valid URL. Given: %s.', $value ),
 		);
 	}
 

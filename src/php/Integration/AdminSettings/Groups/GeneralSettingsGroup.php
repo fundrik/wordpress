@@ -29,8 +29,7 @@ final readonly class GeneralSettingsGroup implements AdminSettingsGroupInterface
 	 */
 	public function __construct(
 		private CurrencySetting $currency_setting,
-	) {
-	}
+	) {}
 
 	/**
 	 * Returns the group ID.

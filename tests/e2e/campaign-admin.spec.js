@@ -362,10 +362,10 @@ test.describe( 'Fundrik campaign admin', () => {
 		await amountInput.fill( '123' );
 
 		const initialDonationId = await form.getAttribute( 'data-donation-id' );
-		const restUrl = await form.getAttribute( 'data-rest-url' );
+		const checkoutUrl = await form.getAttribute( 'data-checkout-url' );
 
 		expect( initialDonationId ).toBeTruthy();
-		expect( restUrl ).toBeTruthy();
+		expect( checkoutUrl ).toBeTruthy();
 
 		await page.evaluate(
 			( { campaignPostId } ) => {
@@ -383,7 +383,7 @@ test.describe( 'Fundrik campaign admin', () => {
 		const donationResponsePromise = page.waitForResponse(
 			( response ) =>
 				response.request().method().toUpperCase() === 'POST' &&
-				decodeURIComponent( response.url() ).includes( '/fundrik/v1/donations' ),
+				decodeURIComponent( response.url() ).includes( '/fundrik/v1/donation-checkout' ),
 		);
 
 		await submitButton.click();
@@ -427,7 +427,7 @@ test.describe( 'Fundrik campaign admin', () => {
 				};
 			},
 			{
-				url: restUrl,
+				url: checkoutUrl,
 				donationId: initialDonationId,
 				postIdValue: postId,
 			},

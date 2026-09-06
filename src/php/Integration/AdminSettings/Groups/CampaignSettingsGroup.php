@@ -21,6 +21,7 @@ final readonly class CampaignSettingsGroup implements AdminSettingsGroupInterfac
 
 	private const string ID = 'campaign';
 
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Constructor.
 	 *
@@ -34,6 +35,7 @@ final readonly class CampaignSettingsGroup implements AdminSettingsGroupInterfac
 		private CampaignDefaultHasTargetSetting $default_has_target_setting,
 	) {
 	}
+	// phpcs:enable
 
 	/**
 	 * Returns the group ID.

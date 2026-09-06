@@ -7,9 +7,12 @@ namespace Fundrik\WordPress\Integration\AdminSettings;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutCancelUrlSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutSuccessUrlSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\SelectedGatewaySetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use LogicException;
 use UnexpectedValueException;
@@ -24,7 +27,7 @@ use UnexpectedValueException;
 final readonly class AdminSettingsReader {
 
 	/**
-	 * The configured admin settings groups.
+	 * Registered admin settings groups.
 	 *
 	 * @var list<AdminSettingsGroupInterface>
 	 */
@@ -51,12 +54,11 @@ final readonly class AdminSettingsReader {
 	) {
 
 		$this->admin_setting_groups = $admin_setting_groups;
-
 		$this->index_settings();
 	}
 
 	/**
-	 * Returns the configured currency value.
+	 * Returns the currency code.
 	 *
 	 * @since 1.0.0
 	 *
@@ -68,7 +70,43 @@ final readonly class AdminSettingsReader {
 	}
 
 	/**
-	 * Returns the configured default accepts donations value for new campaigns.
+	 * Returns the selected gateway ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Active gateway ID.
+	 */
+	public function get_selected_gateway_id(): string {
+
+		return $this->get_string_setting( SelectedGatewaySetting::class );
+	}
+
+	/**
+	 * Returns the checkout success URL.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Checkout success URL.
+	 */
+	public function get_success_url(): string {
+
+		return $this->get_string_setting( CheckoutSuccessUrlSetting::class );
+	}
+
+	/**
+	 * Returns the checkout cancel URL.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Checkout cancel URL.
+	 */
+	public function get_cancel_url(): string {
+
+		return $this->get_string_setting( CheckoutCancelUrlSetting::class );
+	}
+
+	/**
+	 * Returns the default accepts donations value for new campaigns.
 	 *
 	 * @since 1.0.0
 	 *
@@ -80,7 +118,7 @@ final readonly class AdminSettingsReader {
 	}
 
 	/**
-	 * Returns the configured default has target value for new campaigns.
+	 * Returns the default has target value for new campaigns.
 	 *
 	 * @since 1.0.0
 	 *
@@ -92,7 +130,7 @@ final readonly class AdminSettingsReader {
 	}
 
 	/**
-	 * Returns the configured donation form default amount.
+	 * Returns the donation form default amount.
 	 *
 	 * @since 1.0.0
 	 *
@@ -104,7 +142,7 @@ final readonly class AdminSettingsReader {
 	}
 
 	/**
-	 * Returns the configured donation form default amount label.
+	 * Returns the donation form default amount label.
 	 *
 	 * @since 1.0.0
 	 *
@@ -117,7 +155,7 @@ final readonly class AdminSettingsReader {
 
 	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
 	/**
-	 * Indexes all registered setting classes by settings group position.
+	 * Indexes registered settings by setting class.
 	 *
 	 * @since 1.0.0
 	 */
@@ -128,7 +166,6 @@ final readonly class AdminSettingsReader {
 		foreach ( $this->admin_setting_groups as $admin_setting_group ) {
 
 			foreach ( $admin_setting_group->get_settings() as $setting ) {
-
 				$setting_class = $setting::class;
 
 				if ( isset( $setting_configs[ $setting_class ] ) ) {
@@ -166,7 +203,6 @@ final readonly class AdminSettingsReader {
 		$option_name = $this->get_setting_option_name( $group_id, $setting );
 		$default_value = $setting->get_default_value();
 
-		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			return $this->option_reader->find_string_option( $option_name ) ?? $default_value;
 		} catch ( UnexpectedValueException ) {
@@ -192,7 +228,6 @@ final readonly class AdminSettingsReader {
 		$option_name = $this->get_setting_option_name( $group_id, $setting );
 		$default_value = $setting->get_default_value();
 
-		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			return $this->option_reader->find_bool_option( $option_name ) ?? $default_value;
 		} catch ( UnexpectedValueException ) {
@@ -218,7 +253,6 @@ final readonly class AdminSettingsReader {
 		$option_name = $this->get_setting_option_name( $group_id, $setting );
 		$default_value = $setting->get_default_value();
 
-		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			return $this->option_reader->find_int_option( $option_name ) ?? $default_value;
 		} catch ( UnexpectedValueException ) {
