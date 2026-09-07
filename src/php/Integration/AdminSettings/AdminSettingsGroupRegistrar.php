@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Integration\AdminSettings;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
 use UnexpectedValueException;
@@ -97,9 +98,8 @@ final readonly class AdminSettingsGroupRegistrar {
 	): AdminSettingRegistration {
 
 		$group_id = $group->get_id();
-		$option_name = sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
+		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 
-		// Fall back to the setting default when the stored option is missing or invalid.
 		try {
 			$current_value = match ( $setting->get_value_type() ) {
 				WpSchemaType::Boolean => $this->option_reader->find_bool_option( $option_name ),

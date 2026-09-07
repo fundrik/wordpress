@@ -14,6 +14,7 @@ use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFo
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\SelectedGatewaySetting;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use LogicException;
 use UnexpectedValueException;
 
@@ -200,7 +201,7 @@ final readonly class AdminSettingsReader {
 
 		$setting = $this->setting_configs[ $setting_class ]['setting'];
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
-		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
 
 		try {
@@ -225,7 +226,7 @@ final readonly class AdminSettingsReader {
 
 		$setting = $this->setting_configs[ $setting_class ]['setting'];
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
-		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
 
 		try {
@@ -250,7 +251,7 @@ final readonly class AdminSettingsReader {
 
 		$setting = $this->setting_configs[ $setting_class ]['setting'];
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
-		$option_name = $this->get_setting_option_name( $group_id, $setting );
+		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
 
 		try {
@@ -258,20 +259,5 @@ final readonly class AdminSettingsReader {
 		} catch ( UnexpectedValueException ) {
 			return $default_value;
 		}
-	}
-
-	/**
-	 * Returns the setting option name.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $group_id Settings group ID.
-	 * @param AdminSettingInterface $setting Setting definition.
-	 *
-	 * @return string Setting option name.
-	 */
-	private function get_setting_option_name( string $group_id, AdminSettingInterface $setting ): string {
-
-		return sprintf( 'fundrik_%s_%s_setting', $group_id, $setting->get_id() );
 	}
 }

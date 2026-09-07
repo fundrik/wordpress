@@ -24,7 +24,7 @@ final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 	private const string ID = 'selected_gateway';
 
 	/**
-	 * Configured gateway instances.
+	 * Gateway instances.
 	 *
 	 * @var list<GatewayInterface>
 	 */
@@ -36,7 +36,7 @@ final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 	 * @since 1.0.0
 	 *
 	 * @param AdminSettingsFieldRenderer $field_renderer Renders the setting control.
-	 * @param GatewayInterface ...$gateways Configured gateway instances.
+	 * @param GatewayInterface ...$gateways Gateway instances.
 	 */
 	public function __construct(
 		private AdminSettingsFieldRenderer $field_renderer,
