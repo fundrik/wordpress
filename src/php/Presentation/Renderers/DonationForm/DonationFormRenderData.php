@@ -19,13 +19,13 @@ final readonly class DonationFormRenderData {
 	 * @since 1.0.0
 	 *
 	 * @param int $campaign_id Campaign ID.
-	 * @param string $rest_url Donation form REST URL.
+	 * @param string $checkout_url Donation checkout URL.
 	 * @param int $default_amount Default donation amount.
 	 * @param string $amount_label Visible amount label.
 	 */
 	public function __construct(
 		public int $campaign_id,
-		public string $rest_url,
+		public string $checkout_url,
 		public int $default_amount,
 		public string $amount_label,
 	) {}

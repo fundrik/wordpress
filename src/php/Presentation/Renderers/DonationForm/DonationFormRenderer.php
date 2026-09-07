@@ -70,10 +70,10 @@ final readonly class DonationFormRenderer {
 		return sprintf(
 			'<form'
 			. ' class="fundrik-donation-form"'
-			. ' data-rest-url="%s"'
+			. ' data-checkout-url="%s"'
 			. ' data-campaign-id="%d"'
 			. '>',
-			esc_url( $data->rest_url ),
+			esc_url( $data->checkout_url ),
 			$data->campaign_id,
 		);
 	}
