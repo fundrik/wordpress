@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Integration\AdminSettings;
+namespace Fundrik\WordPress\Integration\Helpers;
 
 /**
- * Provides rendering for primitive admin settings fields.
+ * Provides rendering for setting fields.
  *
  * @since 1.0.0
  *
  * @internal
  */
-final readonly class AdminSettingsFieldRenderer {
+final readonly class SettingFieldRenderer {
 
 	/**
 	 * Renders a number input field.
@@ -25,7 +25,7 @@ final readonly class AdminSettingsFieldRenderer {
 	 * @param int|null $max Maximum accepted value, if configured.
 	 * @param int|null $step Step attribute value, if configured.
 	 */
-	public function render_number_field(
+	public static function render_number_field(
 		string $field_name,
 		string $input_id,
 		int $value,
@@ -40,7 +40,7 @@ final readonly class AdminSettingsFieldRenderer {
 			esc_attr( $input_id ),
 			(int) $value,
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Optional attributes are built from escaped values.
-			$this->build_optional_number_attributes( $min, $max, $step ),
+			self::build_optional_number_attributes( $min, $max, $step ),
 		);
 	}
 
@@ -54,7 +54,7 @@ final readonly class AdminSettingsFieldRenderer {
 	 * @param string $value Current field value.
 	 * @param int|null $maxlength Maximum accepted length, if configured.
 	 */
-	public function render_text_field(
+	public static function render_text_field(
 		string $field_name,
 		string $input_id,
 		string $value,
@@ -87,7 +87,12 @@ final readonly class AdminSettingsFieldRenderer {
 	 * @param bool $checked Whether the checkbox is checked.
 	 * @param string $label Checkbox label.
 	 */
-	public function render_checkbox_field( string $field_name, string $input_id, bool $checked, string $label, ): void {
+	public static function render_checkbox_field(
+		string $field_name,
+		string $input_id,
+		bool $checked,
+		string $label,
+	): void {
 
 		printf(
 			'<input type="hidden" name="%1$s" value="0">'
@@ -111,7 +116,12 @@ final readonly class AdminSettingsFieldRenderer {
 	 * @param string $value Current field value.
 	 * @param array<string, string> $options Select options keyed by value.
 	 */
-	public function render_select_field( string $field_name, string $input_id, string $value, array $options, ): void {
+	public static function render_select_field(
+		string $field_name,
+		string $input_id,
+		string $value,
+		array $options,
+	): void {
 
 		printf(
 			'<select name="%s" id="%s" class="regular-text">',
@@ -143,7 +153,7 @@ final readonly class AdminSettingsFieldRenderer {
 	 *
 	 * @return string HTML attributes markup.
 	 */
-	private function build_optional_number_attributes( ?int $min, ?int $max, ?int $step ): string {
+	private static function build_optional_number_attributes( ?int $min, ?int $max, ?int $step ): string {
 
 		$attributes = '';
 

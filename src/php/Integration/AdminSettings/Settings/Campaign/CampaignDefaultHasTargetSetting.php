@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Integration\Helpers\SettingFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
@@ -23,18 +23,6 @@ final readonly class CampaignDefaultHasTargetSetting implements AdminSettingInte
 	private const string ID = 'default_has_target';
 
 	private const bool DEFAULT_VALUE = false;
-
-	/**
-	 * Constructor.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param AdminSettingsFieldRenderer $field_renderer Renders the setting control.
-	 */
-	public function __construct(
-		private AdminSettingsFieldRenderer $field_renderer,
-	) {
-	}
 
 	/**
 	 * Returns the setting ID.
@@ -121,7 +109,7 @@ final readonly class CampaignDefaultHasTargetSetting implements AdminSettingInte
 	#[Override]
 	public function render( array $args ): void {
 
-		$this->field_renderer->render_checkbox_field(
+		SettingFieldRenderer::render_checkbox_field(
 			$args['field_name'],
 			$args['input_id'],
 			$args['value'],

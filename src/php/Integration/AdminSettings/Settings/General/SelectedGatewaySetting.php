@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings\General;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\Gateways\GatewayInterface;
+use Fundrik\WordPress\Integration\Helpers\SettingFieldRenderer;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
 use Override;
@@ -35,11 +35,9 @@ final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param AdminSettingsFieldRenderer $field_renderer Renders the setting control.
 	 * @param GatewayInterface ...$gateways Gateway instances.
 	 */
 	public function __construct(
-		private AdminSettingsFieldRenderer $field_renderer,
 		GatewayInterface ...$gateways,
 	) {
 
@@ -156,7 +154,7 @@ final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 	#[Override]
 	public function render( array $args ): void {
 
-		$this->field_renderer->render_select_field(
+		SettingFieldRenderer::render_select_field(
 			$args['field_name'],
 			$args['input_id'],
 			$args['value'],
