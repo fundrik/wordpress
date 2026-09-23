@@ -8,6 +8,7 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
+use Fundrik\WordPress\Integration\Gateways\GatewaySettingsRegistrar;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Override;
@@ -31,6 +32,7 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 	 * @param AdminInitActionHookDispatcher $admin_init_hook Dispatches the WordPress 'admin_init' action.
 	 * @param AdminPageRegistrar $admin_page_registrar Registers configured admin pages.
 	 * @param AdminSettingsGroupRegistrar $admin_settings_registrar Registers configured admin settings groups.
+	 * @param GatewaySettingsRegistrar $gateway_settings_registrar Registers configured gateway settings.
 	 * @param BootUnitLogger $logger Writes structured log entries.
 	 */
 	public function __construct(
@@ -38,6 +40,7 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 		private AdminInitActionHookDispatcher $admin_init_hook,
 		private AdminPageRegistrar $admin_page_registrar,
 		private AdminSettingsGroupRegistrar $admin_settings_registrar,
+		private GatewaySettingsRegistrar $gateway_settings_registrar,
 		private BootUnitLogger $logger,
 	) {
 
@@ -88,6 +91,7 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 
 		try {
 			$this->admin_settings_registrar->register_all();
+			$this->gateway_settings_registrar->register_all();
 		} catch ( Throwable $e ) {
 
 			$this->logger->log_error(

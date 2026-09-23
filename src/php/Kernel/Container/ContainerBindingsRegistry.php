@@ -28,6 +28,7 @@ use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\SelectedGatewaySetting;
 use Fundrik\WordPress\Integration\ApplicationEventToWordPressActionBridge;
 use Fundrik\WordPress\Integration\Boot\BootUnitDefinitions;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
@@ -36,6 +37,10 @@ use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUn
 use Fundrik\WordPress\Integration\Boot\Units\RegisterPostTypesBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterRestApiRoutesBootUnit;
 use Fundrik\WordPress\Integration\Database\WpdbDatabase;
+use Fundrik\WordPress\Integration\Gateways\GatewayDefinitions;
+use Fundrik\WordPress\Integration\Gateways\GatewayInterface;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
+use Fundrik\WordPress\Integration\Gateways\GatewaySettingsRegistrar;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherDefinitions;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherRegistrar;
@@ -135,6 +140,11 @@ final readonly class ContainerBindingsRegistry {
 				BootUnitDefinitions::classes(),
 			),
 			new ContextualBindingDefinition(
+				SelectedGatewaySetting::class,
+				GatewayInterface::class,
+				GatewayDefinitions::classes(),
+			),
+			new ContextualBindingDefinition(
 				HookDispatcherRegistrar::class,
 				HookDispatcherInterface::class,
 				HookDispatcherDefinitions::classes(),
@@ -158,6 +168,16 @@ final readonly class ContainerBindingsRegistry {
 				RegisterRestApiRoutesBootUnit::class,
 				RestRouteInterface::class,
 				RestRouteDefinitions::classes(),
+			),
+			new ContextualBindingDefinition(
+				GatewayResolver::class,
+				GatewayInterface::class,
+				GatewayDefinitions::classes(),
+			),
+			new ContextualBindingDefinition(
+				GatewaySettingsRegistrar::class,
+				GatewayInterface::class,
+				GatewayDefinitions::classes(),
 			),
 			new ContextualBindingDefinition(
 				RegisterPostTypesBootUnit::class,
