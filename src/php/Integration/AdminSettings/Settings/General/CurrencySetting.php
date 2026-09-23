@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminSettings\Settings\General;
 
 use Fundrik\Toolbox\TypeCaster;
-use Fundrik\WordPress\Integration\Helpers\SettingFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
+use Fundrik\WordPress\Integration\Helpers\SettingFieldRenderer;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
 use Override;
@@ -119,12 +119,7 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 	#[Override]
 	public function render( array $args ): void {
 
-		SettingFieldRenderer::render_text_field(
-			$args['field_name'],
-			$args['input_id'],
-			$args['value'],
-			maxlength: 3,
-		);
+		SettingFieldRenderer::render_text_field( $args['field_name'], $args['input_id'], $args['value'], maxlength: 3 );
 
 		printf(
 			'<p class="description">%s</p>',
