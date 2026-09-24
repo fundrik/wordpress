@@ -13,6 +13,7 @@ use Throwable;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
+use YooKassa\Client;
 use YooKassa\Model\Notification\NotificationEventType;
 use YooKassa\Model\Notification\NotificationFactory;
 
@@ -30,10 +31,12 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param Client $client Checks YooKassa notification IP addresses.
 	 * @param RestRouteHandlerLogger $logger Writes structured log entries for REST route handler operations.
 	 * @param ProcessDonationPaymentResultHandler $process_payment_result Processes normalized donation payment results.
 	 */
 	public function __construct(
+		private Client $client,
 		private RestRouteHandlerLogger $logger,
 		private ProcessDonationPaymentResultHandler $process_payment_result,
 	) {
@@ -50,12 +53,24 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 * @param WP_REST_Request $request Incoming REST request.
 	 *
 	 * @return WP_REST_Response|WP_Error Notification response or error details.
-	 *
-	 * @todo Add YooKassa notification verification.
 	 */
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 
 		$payload = json_decode( $request->get_body(), true );
+		$verified = apply_filters(
+			'fundrik_yookassa_notification_verified',
+			$this->verify_notification_ip(),
+			$request,
+			$payload,
+		);
+
+		if ( ! $verified ) {
+			return new WP_Error(
+				'fundrik_notification_verification_failed',
+				'YooKassa notification verification failed.',
+				[ 'status' => 403 ],
+			);
+		}
 
 		try {
 			$notification = ( new NotificationFactory() )->factory( $payload );
@@ -95,6 +110,25 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		return new WP_REST_Response( [ 'status' => 'processed' ], 200 );
 	}
 	// phpcs:enable
+
+	/**
+	 * Checks whether the request originated from a YooKassa IP address.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when the request IP belongs to YooKassa.
+	 */
+	private function verify_notification_ip(): bool {
+
+		// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$remote_address = wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' );
+
+		try {
+			return $this->client->isNotificationIPTrusted( $remote_address );
+		} catch ( Throwable ) {
+			return false;
+		}
+	}
 
 	/**
 	 * Logs a failed YooKassa notification processing attempt (error).

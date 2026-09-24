@@ -87,5 +87,4 @@ final readonly class YooKassaSettingsReader {
 			return '';
 		}
 	}
-
 }

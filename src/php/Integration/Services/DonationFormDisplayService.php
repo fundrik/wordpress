@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\Services;
 
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolutionException;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
 use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
-use Fundrik\WordPress\Integration\RestApi\Routes\DonationsRestRoute;
+use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
 use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
 
@@ -27,11 +29,13 @@ final readonly class DonationFormDisplayService {
 	 *
 	 * @param CampaignLookupService $campaign_lookup Provides campaign lookup for donation form display.
 	 * @param AdminSettingsReader $settings_reader Provides resolved admin settings values.
+	 * @param GatewayResolver $gateway_resolver Resolves the active gateway.
 	 * @param DonationFormRenderer $donation_form_renderer Renders donation form markup for known campaigns.
 	 */
 	public function __construct(
 		private CampaignLookupService $campaign_lookup,
 		private AdminSettingsReader $settings_reader,
+		private GatewayResolver $gateway_resolver,
 		private DonationFormRenderer $donation_form_renderer,
 	) {}
 
@@ -53,6 +57,12 @@ final readonly class DonationFormDisplayService {
 		}
 
 		if ( ! $campaign->accepts_donations() ) {
+			return '';
+		}
+
+		try {
+			$this->gateway_resolver->resolve_active_gateway();
+		} catch ( GatewayResolutionException ) {
 			return '';
 		}
 
@@ -84,7 +94,7 @@ final readonly class DonationFormDisplayService {
 
 		return new DonationFormRenderData(
 			campaign_id: $campaign->get_id(),
-			rest_url: RestRouteDefinitions::get_route_url( DonationsRestRoute::class ),
+			checkout_url: RestRouteDefinitions::get_route_url( DonationCheckoutRestRoute::class ),
 			default_amount: $this->settings_reader->get_donation_form_default_amount(),
 			amount_label: $this->settings_reader->get_donation_form_default_amount_label(),
 		);
