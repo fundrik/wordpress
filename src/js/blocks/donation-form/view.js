@@ -45,7 +45,7 @@ class DonationForm {
 		this.form = form;
 		this.elements = null;
 		this.campaignId = null;
-		this.restUrl = '';
+		this.checkoutUrl = '';
 		this.donationId = generateDonationId();
 		this.state = FORM_STATE.IDLE;
 		this.initialized = false;
@@ -74,7 +74,7 @@ class DonationForm {
 		}
 
 		this.campaignId = formConfig.campaignId;
-		this.restUrl = formConfig.restUrl;
+		this.checkoutUrl = formConfig.checkoutUrl;
 
 		this.form.addEventListener( 'submit', this.handleSubmit );
 		this.initialized = true;
@@ -106,15 +106,15 @@ class DonationForm {
 			return null;
 		}
 
-		const restUrl = this.form.dataset.restUrl;
+		const checkoutUrl = this.form.dataset.checkoutUrl;
 
-		if ( ! restUrl ) {
+		if ( ! checkoutUrl ) {
 			return null;
 		}
 
 		return {
 			campaignId,
-			restUrl,
+			checkoutUrl,
 		};
 	}
 
@@ -146,9 +146,8 @@ class DonationForm {
 				return;
 			}
 
-			this.resetFormAfterSuccess();
-			this.state = FORM_STATE.SUCCESS;
-			this.showSuccess();
+			window.location.assign( result.redirectUrl );
+			return;
 
 		} finally {
 			if ( this.state === FORM_STATE.SUBMITTING ) {
@@ -168,7 +167,7 @@ class DonationForm {
 		}
 
 		return {
-			restUrl: this.restUrl,
+			checkoutUrl: this.checkoutUrl,
 			payload: {
 				donation_id: this.donationId,
 				campaign_id: this.campaignId,
@@ -180,7 +179,7 @@ class DonationForm {
 	async submitDonation( request ) {
 
 		try {
-			const response = await fetch( request.restUrl, {
+			const response = await fetch( request.checkoutUrl, {
 				method: 'POST',
 				credentials: 'same-origin',
 				headers: {
@@ -198,7 +197,17 @@ class DonationForm {
 				};
 			}
 
-			return { ok: true };
+			if ( typeof responseData.redirect_url !== 'string' || responseData.redirect_url === '' ) {
+				return {
+					ok: false,
+					message: __( 'Checkout redirect URL is missing.', 'fundrik' ),
+				};
+			}
+
+			return {
+				ok: true,
+				redirectUrl: responseData.redirect_url,
+			};
 
 		} catch {
 			return {

@@ -32,7 +32,8 @@
 		"fundrik/toolbox": "dev-main as 0.1.0",
 		"psr/log": "^3.0",
 		"monolog/monolog": "^3.9",
-		"illuminate/container": "^12.19"
+		"illuminate/container": "^12.19",
+		"yoomoney/yookassa-sdk-php": "^3.14"
 	},
 	"require-dev": {
 		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -84,4 +85,3 @@
 		}
 	}
 }
-
