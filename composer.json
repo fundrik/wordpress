@@ -37,11 +37,7 @@
 	},
 	"require-dev": {
 		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
-		"fundrik/coding-standard": "^0.1.0",
-		"wp-coding-standards/wpcs": "^3.1",
-		"phpcompatibility/php-compatibility": "10.0.0-alpha2 as 9.4.0",
-		"phpcompatibility/phpcompatibility-wp": "^2.1",
-		"slevomat/coding-standard": "^8.22",
+		"fundrik/coding-standard": "^0.9.0",
 		"phpunit/phpunit": "^12.5",
 		"brain/monkey": "^2.6",
 		"mockery/mockery": "^1.6",
