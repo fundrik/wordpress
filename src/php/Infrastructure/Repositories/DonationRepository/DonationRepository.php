@@ -10,6 +10,7 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
 use Fundrik\Core\Components\Donations\Domain\Exceptions\DonationFactoryException;
+use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
@@ -70,6 +71,38 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 		} catch ( DatabaseExceptionInterface $e ) {
 			throw new DonationRepositoryException(
 				sprintf( 'Failed to fetch donation "%s".', $id_value ),
+				previous: $e,
+			);
+		}
+
+		if ( $row === null ) {
+			return null;
+		}
+
+		return $this->map_row_to_donation( $row );
+	}
+
+	/**
+	 * Retrieves a donation by its provider payment ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param PaymentId $payment_id Provider payment ID.
+	 *
+	 * @return Donation|null Donation if found, null otherwise.
+	 *
+	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
+	 */
+	#[Override]
+	public function find_by_payment_id( PaymentId $payment_id ): ?Donation {
+
+		$payment_id_value = $payment_id->get_value();
+
+		try {
+			$row = $this->db->get_by_column( self::TABLE_NAME, 'payment_id', $payment_id_value );
+		} catch ( DatabaseExceptionInterface $e ) {
+			throw new DonationRepositoryException(
+				sprintf( 'Failed to fetch donation for payment "%s".', $payment_id_value ),
 				previous: $e,
 			);
 		}
@@ -274,6 +307,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 				amount: ArrayExtractor::extract_int_required( $row, 'amount' ),
 				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
 				status: ArrayExtractor::extract_string_required( $row, 'status' ),
+				payment_id: ArrayExtractor::extract_string_nullable_required( $row, 'payment_id' ),
 			);
 		} catch ( DonationFactoryException | ArrayExtractionException $e ) {
 
@@ -309,6 +343,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 			'amount' => $donation->get_money()->get_amount()->get_value(),
 			'currency_code' => $donation->get_money()->get_currency()->get_code(),
 			'status' => $donation->get_status()->value,
+			'payment_id' => $donation->get_payment_id()?->get_value(),
 			'created_at' => $created_at,
 			'updated_at' => null,
 		];
@@ -327,6 +362,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 
 		return [
 			'status' => $donation->get_status()->value,
+			'payment_id' => $donation->get_payment_id()?->get_value(),
 			'updated_at' => $this->current_utc_timestamp(),
 		];
 	}

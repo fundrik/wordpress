@@ -148,6 +148,7 @@ final readonly class DonationReadRepository implements DonationReadPort {
 				amount: ArrayExtractor::extract_int_required( $row, 'amount' ),
 				currency_code: ArrayExtractor::extract_string_required( $row, 'currency_code' ),
 				status: ArrayExtractor::extract_string_required( $row, 'status' ),
+				payment_id: ArrayExtractor::extract_string_nullable_required( $row, 'payment_id' ),
 				created_at: UtcDateTime::create_from_format(
 					ArrayExtractor::extract_string_required( $row, 'created_at' ),
 					self::DATETIME_DB_FORMAT,

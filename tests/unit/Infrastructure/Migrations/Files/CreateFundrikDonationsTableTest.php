@@ -54,9 +54,11 @@ final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 						&& str_contains( $sql, '`campaign_id` BIGINT UNSIGNED NOT NULL' )
 						&& str_contains( $sql, '`amount` INT UNSIGNED NOT NULL' )
 						&& str_contains( $sql, '`currency_code` CHAR(3) NOT NULL' )
+						&& str_contains( $sql, '`payment_id` VARCHAR(191) NULL' )
 						&& str_contains( $sql, '`created_at` DATETIME(6) NOT NULL' )
 						&& str_contains( $sql, '`updated_at` DATETIME(6) NULL' )
-						&& str_contains( $sql, 'KEY `campaign_id` (`campaign_id`)' ),
+						&& str_contains( $sql, 'KEY `campaign_id` (`campaign_id`)' )
+						&& str_contains( $sql, 'UNIQUE KEY `payment_id` (`payment_id`)' ),
 				),
 				$table_name,
 			);

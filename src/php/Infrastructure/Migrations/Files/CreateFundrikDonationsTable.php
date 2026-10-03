@@ -54,10 +54,12 @@ final readonly class CreateFundrikDonationsTable extends AbstractMigration {
 				`amount` INT UNSIGNED NOT NULL,
 				`currency_code` CHAR(3) NOT NULL,
 				`status` VARCHAR(16) NOT NULL,
+				`payment_id` VARCHAR(191) NULL,
 				`created_at` DATETIME(6) NOT NULL,
 				`updated_at` DATETIME(6) NULL,
 				PRIMARY KEY (`id`),
-				KEY `campaign_id` (`campaign_id`)
+				KEY `campaign_id` (`campaign_id`),
+				UNIQUE KEY `payment_id` (`payment_id`)
 			) ENGINE=InnoDB {$charset_collate};
 		";
 

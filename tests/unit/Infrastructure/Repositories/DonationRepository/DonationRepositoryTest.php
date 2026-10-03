@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\DonationRepository
 
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
+use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\DonationRepository\DonationNotFoundException;
@@ -68,6 +69,22 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		self::assertSame( 1_000, $result?->get_money()->get_amount()->get_value() );
 		self::assertSame( 'USD', $result?->get_money()->get_currency()->get_code() );
 		self::assertSame( 'succeeded', $result?->get_status()->value );
+		self::assertSame( 'payment-123', $result?->get_payment_id()?->get_value() );
+	}
+
+	#[Test]
+	public function find_by_id_maps_created_donation_without_payment(): void {
+
+		$this->db
+			->shouldReceive( 'get_by_id' )
+			->once()
+			->with( self::TABLE_NAME, self::DONATION_ID )
+			->andReturn( self::make_row( [ 'status' => 'created', 'payment_id' => null ] ) );
+
+		$result = $this->repository->find_by_id( EntityId::create( self::DONATION_ID ) );
+
+		self::assertSame( 'created', $result?->get_status()->value );
+		self::assertNull( $result?->get_payment_id() );
 	}
 
 	#[Test]
@@ -134,6 +151,47 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		);
 
 		$this->repository->find_by_id( $id );
+	}
+
+	#[Test]
+	public function find_by_payment_id_maps_matching_row(): void {
+
+		$this->db
+			->shouldReceive( 'get_by_column' )
+			->once()
+			->with( self::TABLE_NAME, 'payment_id', 'payment-123' )
+			->andReturn( self::make_row() );
+
+		$result = $this->repository->find_by_payment_id( PaymentId::create( 'payment-123' ) );
+
+		self::assertSame( self::DONATION_ID, $result?->get_id()->get_value() );
+		self::assertSame( 'payment-123', $result?->get_payment_id()?->get_value() );
+	}
+
+	#[Test]
+	public function find_by_payment_id_returns_null_when_not_found(): void {
+
+		$this->db
+			->shouldReceive( 'get_by_column' )
+			->once()
+			->with( self::TABLE_NAME, 'payment_id', 'payment-123' )
+			->andReturn( null );
+
+		self::assertNull( $this->repository->find_by_payment_id( PaymentId::create( 'payment-123' ) ) );
+	}
+
+	#[Test]
+	public function find_by_payment_id_throws_when_database_query_fails(): void {
+
+		$this->db
+			->shouldReceive( 'get_by_column' )
+			->once()
+			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+
+		$this->expectException( DonationRepositoryException::class );
+		$this->expectExceptionMessage( 'Failed to fetch donation for payment "payment-123".' );
+
+		$this->repository->find_by_payment_id( PaymentId::create( 'payment-123' ) );
 	}
 
 	#[Test]
@@ -247,6 +305,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 		self::assertSame( self::DONATION_ID, $result->get_id()->get_value() );
 		self::assertSame( 1, $result->get_version()->get_value() );
 		self::assertSame( 'pending', $result->get_status()->value );
+		self::assertSame( 'payment-123', $result->get_payment_id()?->get_value() );
 	}
 
 	#[Test]
@@ -346,6 +405,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 
 		self::assertSame( self::DONATION_ID, $result->get_id()->get_value() );
 		self::assertSame( 4, $result->get_version()->get_value() );
+		self::assertSame( 'payment-123', $result->get_payment_id()?->get_value() );
 	}
 
 	#[Test]
@@ -460,6 +520,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			'amount' => '1000',
 			'currency_code' => 'USD',
 			'status' => 'succeeded',
+			'payment_id' => 'payment-123',
 			'created_at' => '2026-01-01 10:00:00.000000',
 			'updated_at' => '2026-01-01 11:00:00.000000',
 		];
@@ -474,6 +535,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			amount: 1_000,
 			currency_code: 'USD',
 			status: 'pending',
+			payment_id: 'payment-123',
 		);
 	}
 
@@ -490,6 +552,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 			&& ( $row['amount'] ?? null ) === 1_000
 			&& ( $row['currency_code'] ?? null ) === 'USD'
 			&& ( $row['status'] ?? null ) === 'pending'
+			&& ( $row['payment_id'] ?? null ) === 'payment-123'
 			&& is_string( $row['created_at'] ?? null )
 			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/', $row['created_at'] ) === 1
 			&& ( $row['updated_at'] ?? null ) === null
@@ -505,6 +568,7 @@ final class DonationRepositoryTest extends MockeryTestCase {
 	private static function matches_update_row( array $row, int $version, string $status ): bool {
 
 		return ( $row['status'] ?? null ) === $status
+			&& ( $row['payment_id'] ?? null ) === 'payment-123'
 			&& ( $row['version'] ?? null ) === $version
 			&& is_string( $row['updated_at'] ?? null )
 			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/', $row['updated_at'] ) === 1

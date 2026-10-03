@@ -54,8 +54,24 @@ final class DonationReadRepositoryTest extends MockeryTestCase {
 		self::assertSame( 1_000, $result?->get_amount() );
 		self::assertSame( 'USD', $result?->get_currency_code() );
 		self::assertSame( 'succeeded', $result?->get_status() );
+		self::assertSame( 'payment-123', $result?->get_payment_id() );
 		self::assertSame( '2026-01-01 10:00:00', $result?->get_created_at()->format( 'Y-m-d H:i:s' ) );
 		self::assertSame( '2026-01-01 11:00:00', $result?->get_updated_at()?->format( 'Y-m-d H:i:s' ) );
+	}
+
+	#[Test]
+	public function find_by_id_maps_created_donation_without_payment(): void {
+
+		$this->db
+			->shouldReceive( 'get_by_id' )
+			->once()
+			->with( self::TABLE_NAME, self::DONATION_ID )
+			->andReturn( self::make_row( [ 'status' => 'created', 'payment_id' => null ] ) );
+
+		$result = $this->repository->find_by_id( EntityId::create( self::DONATION_ID ) );
+
+		self::assertSame( 'created', $result?->get_status() );
+		self::assertNull( $result?->get_payment_id() );
 	}
 
 	#[Test]
@@ -196,6 +212,7 @@ final class DonationReadRepositoryTest extends MockeryTestCase {
 			'amount' => 1_000,
 			'currency_code' => 'USD',
 			'status' => 'succeeded',
+			'payment_id' => 'payment-123',
 			'created_at' => '2026-01-01 10:00:00.000000',
 			'updated_at' => '2026-01-01 11:00:00.000000',
 		];

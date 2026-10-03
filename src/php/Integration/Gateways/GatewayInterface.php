@@ -36,7 +36,6 @@ interface GatewayInterface extends DonationGatewayPort {
 	 * Renders the gateway settings description.
 	 *
 	 * @since 1.0.0
-	 *
 	 */
 	public function render_settings_description(): void;
 
