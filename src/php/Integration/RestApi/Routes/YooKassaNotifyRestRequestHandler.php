@@ -16,6 +16,9 @@ use WP_REST_Response;
 use YooKassa\Client;
 use YooKassa\Model\Notification\NotificationEventType;
 use YooKassa\Model\Notification\NotificationFactory;
+use YooKassa\Model\Notification\NotificationInterface;
+use YooKassa\Model\Payment\PaymentInterface;
+use YooKassa\Model\Refund\Refund;
 
 /**
  * Handles YooKassa notification requests.
@@ -44,7 +47,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		$this->logger->set_rest_route_handler_class( self::class );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
 	/**
 	 * Handles incoming notification requests.
 	 *
@@ -53,18 +56,18 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 * @param WP_REST_Request $request Incoming REST request.
 	 *
 	 * @return WP_REST_Response|WP_Error Notification response or error details.
+	 *
+	 * @todo Resolve notifications by persisted gateway payment ID and add optional YooKassa API verification.
 	 */
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 
-		$payload = json_decode( $request->get_body(), true );
-		$verified = apply_filters(
-			'fundrik_yookassa_notification_verified',
-			$this->verify_notification_ip(),
-			$request,
-			$payload,
-		);
+		$payload = $this->get_payload( $request );
 
-		if ( ! $verified ) {
+		if ( $payload instanceof WP_Error ) {
+			return $payload;
+		}
+
+		if ( ! $this->verify_notification_ip( $request, $payload ) ) {
 			return new WP_Error(
 				'fundrik_notification_verification_failed',
 				'YooKassa notification verification failed.',
@@ -78,25 +81,22 @@ final readonly class YooKassaNotifyRestRequestHandler {
 			return new WP_REST_Response( [ 'status' => 'ignored' ], 200 );
 		}
 
+		$event = $notification->getEvent();
+		$result_type = $this->map_yookassa_event_to_donation_payment_result_type( $event );
+
+		if ( $result_type === null ) {
+			return new WP_REST_Response( [ 'status' => 'ignored' ], 200 );
+		}
+
+		$notification_object = $this->get_notification_object( $notification );
+
+		if ( $notification_object === null ) {
+			return new WP_REST_Response( [ 'status' => 'ignored' ], 200 );
+		}
+
 		try {
-			$event = $notification->getEvent();
-
-			$result_type = [
-				NotificationEventType::PAYMENT_SUCCEEDED => DonationPaymentResultType::Succeeded,
-				NotificationEventType::PAYMENT_CANCELED => DonationPaymentResultType::Rejected,
-				NotificationEventType::REFUND_SUCCEEDED => DonationPaymentResultType::Refunded,
-			][ $event ] ?? null;
-
-			if ( $result_type === null ) {
-				return new WP_REST_Response( [ 'status' => 'ignored' ], 200 );
-			}
-
-			$notification_object = $notification->getObject();
-			// phpcs:ignore SlevomatCodingStandard.Files.LineLength.LineTooLong
-			$donation_id = DonationId::from_value( $notification_object->getMetadata()?->toArray()['donation_id'] ?? '' );
-
 			$result = new DonationPaymentResult(
-				$donation_id->to_entity_id(),
+				$this->get_donation_id( $notification_object )->to_entity_id(),
 				$result_type,
 			);
 
@@ -112,22 +112,125 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	// phpcs:enable
 
 	/**
+	 * Returns the decoded notification payload.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Incoming REST request.
+	 *
+	 * @return array<string, mixed>|WP_Error Decoded payload or validation error.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function get_payload( WP_REST_Request $request ): array|WP_Error {
+
+		$payload = json_decode( $request->get_body(), true );
+
+		if ( ! is_array( $payload ) ) {
+			return new WP_Error(
+				'fundrik_yookassa_invalid_notification_payload',
+				'YooKassa notification payload must decode to an array. Given: invalid payload.',
+				[ 'status' => 400 ],
+			);
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Converts a YooKassa event to a donation payment result type.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $event YooKassa notification event.
+	 *
+	 * @return DonationPaymentResultType|null Result type, if supported.
+	 */
+	private function map_yookassa_event_to_donation_payment_result_type( string $event ): ?DonationPaymentResultType {
+
+		return [
+			NotificationEventType::PAYMENT_SUCCEEDED => DonationPaymentResultType::Succeeded,
+			NotificationEventType::PAYMENT_CANCELED => DonationPaymentResultType::Rejected,
+			NotificationEventType::REFUND_SUCCEEDED => DonationPaymentResultType::Refunded,
+		][ $event ] ?? null;
+	}
+
+	/**
+	 * Returns the supported object from a YooKassa notification.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param NotificationInterface $notification YooKassa notification.
+	 *
+	 * @return PaymentInterface|Refund|null Notification object, if supported.
+	 */
+	private function get_notification_object( NotificationInterface $notification ): PaymentInterface|Refund|null {
+
+		$notification_object = $notification->getObject();
+
+		if ( ! $notification_object instanceof PaymentInterface && ! $notification_object instanceof Refund ) {
+			return null;
+		}
+
+		return $notification_object;
+	}
+
+	/**
+	 * Returns the donation ID from YooKassa metadata.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param PaymentInterface|Refund $notification_object YooKassa notification object.
+	 *
+	 * @return DonationId Donation ID.
+	 */
+	private function get_donation_id( PaymentInterface|Refund $notification_object ): DonationId {
+
+		return DonationId::from_value(
+			$notification_object->getMetadata()?->toArray()['donation_id'] ?? '',
+		);
+	}
+
+	/**
 	 * Checks whether the request originated from a YooKassa IP address.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return bool True when the request IP belongs to YooKassa.
+	 * @param WP_REST_Request $request Incoming REST request.
+	 * @param array<string, mixed> $payload Decoded notification payload.
+	 *
+	 * @return bool True when the request IP is verified.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function verify_notification_ip(): bool {
+	private function verify_notification_ip( WP_REST_Request $request, array $payload ): bool {
 
 		// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$remote_address = wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' );
 
 		try {
-			return $this->client->isNotificationIPTrusted( $remote_address );
+			$verified_by_ip = $this->client->isNotificationIPTrusted( $remote_address );
 		} catch ( Throwable ) {
-			return false;
+			$verified_by_ip = false;
 		}
+
+		/**
+		 * Filters whether a YooKassa notification is verified by source IP address.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool $verified_by_ip Whether the notification IP address is verified.
+		 * @param WP_REST_Request $request Incoming REST request.
+		 * @param array<string, mixed> $payload Decoded notification payload.
+		 *
+		 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+		 */
+		return (bool) apply_filters(
+			'fundrik_yookassa_notification_verified_by_ip',
+			$verified_by_ip,
+			$request,
+			$payload,
+		);
 	}
 
 	/**
