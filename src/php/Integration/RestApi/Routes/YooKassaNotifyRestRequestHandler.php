@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\RestApi\Routes;
 
+use Fundrik\Core\Components\Donations\Application\UseCases\FindDonationByPaymentId\FindDonationByPaymentIdHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResult;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResultType;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\ProcessDonationPaymentResultHandler;
-use Fundrik\WordPress\Components\Donations\Domain\DonationId;
+use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
+use RuntimeException;
 use Throwable;
 use WP_Error;
 use WP_REST_Request;
@@ -37,11 +39,13 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 * @param Client $client Checks YooKassa notification IP addresses.
 	 * @param RestRouteHandlerLogger $logger Writes structured log entries for REST route handler operations.
 	 * @param ProcessDonationPaymentResultHandler $process_payment_result Processes normalized donation payment results.
+	 * @param FindDonationByPaymentIdHandler $find_donation_by_payment_id Finds donations by provider payment ID.
 	 */
 	public function __construct(
 		private Client $client,
 		private RestRouteHandlerLogger $logger,
 		private ProcessDonationPaymentResultHandler $process_payment_result,
+		private FindDonationByPaymentIdHandler $find_donation_by_payment_id,
 	) {
 
 		$this->logger->set_rest_route_handler_class( self::class );
@@ -57,7 +61,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 *
 	 * @return WP_REST_Response|WP_Error Notification response or error details.
 	 *
-	 * @todo Resolve notifications by persisted gateway payment ID and add optional YooKassa API verification.
+	 * @todo Add optional YooKassa API verification.
 	 */
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 
@@ -95,8 +99,21 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		}
 
 		try {
+			$payment_id = $this->get_payment_id( $notification_object );
+			$donation = $this->find_donation_by_payment_id->handle( $payment_id );
+
+			if ( $donation === null ) {
+				throw new RuntimeException(
+					sprintf(
+						'Cannot process notification for payment "%s": donation not found.',
+						$payment_id->get_value(),
+					),
+				);
+			}
+
 			$result = new DonationPaymentResult(
-				$this->get_donation_id( $notification_object )->to_entity_id(),
+				$donation->get_id(),
+				$payment_id,
 				$result_type,
 			);
 
@@ -176,18 +193,20 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	}
 
 	/**
-	 * Returns the donation ID from YooKassa metadata.
+	 * Returns the original payment ID from a YooKassa notification object.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param PaymentInterface|Refund $notification_object YooKassa notification object.
 	 *
-	 * @return DonationId Donation ID.
+	 * @return PaymentId Provider payment ID.
 	 */
-	private function get_donation_id( PaymentInterface|Refund $notification_object ): DonationId {
+	private function get_payment_id( PaymentInterface|Refund $notification_object ): PaymentId {
 
-		return DonationId::from_value(
-			$notification_object->getMetadata()?->toArray()['donation_id'] ?? '',
+		return PaymentId::create(
+			$notification_object instanceof Refund
+				? $notification_object->getPaymentId() ?? ''
+				: $notification_object->getId() ?? '',
 		);
 	}
 

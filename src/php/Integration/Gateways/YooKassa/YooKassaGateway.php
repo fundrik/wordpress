@@ -6,6 +6,7 @@ namespace Fundrik\WordPress\Integration\Gateways\YooKassa;
 
 use Fundrik\Core\Components\Donations\Application\Ports\Gateway\DonationGatewayCheckoutRequest;
 use Fundrik\Core\Components\Donations\Application\Ports\Gateway\DonationGatewayCheckoutResult;
+use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Core\Components\Shared\Application\Url;
 use Fundrik\Core\Components\Shared\Domain\Money;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
@@ -126,6 +127,7 @@ final readonly class YooKassaGateway implements GatewayInterface {
 			);
 
 			return new DonationGatewayCheckoutResult(
+				PaymentId::create( $payment->getId() ?? '' ),
 				Url::create( $payment->getConfirmation()->getConfirmationUrl() ),
 			);
 		} catch ( Throwable $e ) {

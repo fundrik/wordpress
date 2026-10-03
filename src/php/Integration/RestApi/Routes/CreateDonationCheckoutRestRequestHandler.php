@@ -9,7 +9,6 @@ use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationCheckou
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationCheckout\CreateDonationCheckoutException;
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationCheckout\CreateDonationCheckoutHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationCheckout\CreateDonationCheckoutResult;
-use Fundrik\Core\Components\Donations\Application\UseCases\CreateDonationIdempotently\CreateDonationIdempotentlyHandler;
 use Fundrik\Core\Components\Shared\Application\Exceptions\InvalidUrlException;
 use Fundrik\Core\Components\Shared\Application\Url;
 use Fundrik\Core\Components\Shared\Domain\Amount;
@@ -18,7 +17,6 @@ use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
-use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use InvalidArgumentException;
@@ -42,16 +40,14 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 	 * @since 1.0.0
 	 *
 	 * @param RestRouteHandlerLogger $logger Writes structured log entries for REST route handler operations.
-	 * @param CreateDonationIdempotentlyHandler $create_donation_idempotently Handles idempotent donation creation.
+	 * @param CreateDonationCheckoutHandler $create_donation_checkout Creates payment checkouts.
 	 * @param AdminSettingsReader $settings_reader Reads admin settings values.
-	 * @param GatewayResolver $gateway_resolver Resolves the active gateway.
 	 * @param CampaignLookupService $campaign_lookup Resolves campaign data for checkout metadata.
 	 */
 	public function __construct(
 		private RestRouteHandlerLogger $logger,
-		private CreateDonationIdempotentlyHandler $create_donation_idempotently,
+		private CreateDonationCheckoutHandler $create_donation_checkout,
 		private AdminSettingsReader $settings_reader,
-		private GatewayResolver $gateway_resolver,
 		private CampaignLookupService $campaign_lookup,
 	) {
 
@@ -84,12 +80,7 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 		}
 
 		try {
-			$gateway = $this->gateway_resolver->resolve_active_gateway();
-
-			$result = ( new CreateDonationCheckoutHandler(
-				$this->create_donation_idempotently,
-				$gateway,
-			) )->handle( $data );
+			$result = $this->create_donation_checkout->handle( $data );
 		} catch ( CreateDonationCheckoutException $e ) {
 			$donation_creation_data = $data->get_donation_creation_data();
 
@@ -178,6 +169,7 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 				'campaign_id' => $result->get_campaign_id()->get_value(),
 				'amount' => $result->get_money()->get_amount()->get_value(),
 				'currency' => $result->get_money()->get_currency()->get_code(),
+				'payment_id' => $result->get_payment_id()->get_value(),
 				'redirect_url' => $result->get_redirect_url()->get_value(),
 			],
 			201,
