@@ -498,6 +498,74 @@ final class WpdbDatabaseTest extends MockeryTestCase {
 	}
 
 	// ---------------------------------------------------------------------
+	// get_by_column()
+	// ---------------------------------------------------------------------
+
+	#[Test]
+	public function get_by_column_returns_matching_row(): void {
+
+		$sql = 'SELECT * FROM %i WHERE %i = %s LIMIT 1';
+		$row = [ 'id' => 7, 'payment_id' => 'payment-123' ];
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( $sql, 'wp_table', 'payment_id', 'payment-123' )
+			->andReturn( 'prepared_query' );
+
+		$this->wpdb
+			->shouldReceive( 'get_row' )
+			->once()
+			->with( 'prepared_query', ARRAY_A )
+			->andReturn( $row );
+
+		self::assertSame( $row, $this->db->get_by_column( 'table', 'payment_id', 'payment-123' ) );
+	}
+
+	#[Test]
+	public function get_by_column_returns_null_when_no_row_matches(): void {
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( 'SELECT * FROM %i WHERE %i IS NULL LIMIT 1', 'wp_table', 'payment_id' )
+			->andReturn( 'prepared_query' );
+
+		$this->wpdb
+			->shouldReceive( 'get_row' )
+			->once()
+			->with( 'prepared_query', ARRAY_A )
+			->andReturn( null );
+
+		self::assertNull( $this->db->get_by_column( 'table', 'payment_id', null ) );
+	}
+
+	#[Test]
+	public function get_by_column_throws_when_query_fails(): void {
+
+		$this->wpdb
+			->shouldReceive( 'prepare' )
+			->once()
+			->with( 'SELECT * FROM %i WHERE %i = %s LIMIT 1', 'wp_table', 'payment_id', 'payment-123' )
+			->andReturn( 'prepared_query' );
+
+		$this->wpdb
+			->shouldReceive( 'get_row' )
+			->once()
+			->with( 'prepared_query', ARRAY_A )
+			->andReturn( null );
+
+		$this->wpdb->last_error = 'Boom';
+
+		$this->expectException( WpdbDatabaseException::class );
+		$this->expectExceptionMessage(
+			'Failed to fetch row from table "wp_table" by column "payment_id" and value "payment-123".',
+		);
+
+		$this->db->get_by_column( 'table', 'payment_id', 'payment-123' );
+	}
+
+	// ---------------------------------------------------------------------
 	// get_all_by_column()
 	// ---------------------------------------------------------------------
 

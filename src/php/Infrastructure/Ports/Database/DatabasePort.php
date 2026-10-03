@@ -28,6 +28,21 @@ interface DatabasePort {
 	public function get_by_id( string $table, int|string $id ): ?array;
 
 	/**
+	 * Fetches the row matching a column value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table Table name.
+	 * @param string $column Column to filter by.
+	 * @param int|float|string|bool|null $value Value to match.
+	 *
+	 * @return array<string, int|float|string|bool|null>|null Matching row, null otherwise.
+	 *
+	 * @throws DatabaseExceptionInterface When the query fails.
+	 */
+	public function get_by_column( string $table, string $column, int|float|string|bool|null $value ): ?array;
+
+	/**
 	 * Retrieves all rows from the given table.
 	 *
 	 * @since 1.0.0

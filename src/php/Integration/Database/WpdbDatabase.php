@@ -93,6 +93,50 @@ final readonly class WpdbDatabase implements DatabasePort {
 	}
 
 	/**
+	 * Fetches the row matching a column value.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $table Table name.
+	 * @param string $column Column to filter by.
+	 * @param int|float|string|bool|null $value Value to match.
+	 *
+	 * @return array<string, int|float|string|bool|null>|null Matching row, null otherwise.
+	 *
+	 * @throws WpdbDatabaseException When the query fails.
+	 */
+	#[Override]
+	public function get_by_column( string $table, string $column, int|float|string|bool|null $value ): ?array {
+
+		$table = $this->qualify_table_name( $table );
+		[ $where_sql, $where_args ] = $this->build_column_value_filter( $column, $value );
+
+		$sql = "SELECT * FROM %i {$where_sql} LIMIT 1";
+		$query = $this->prepare_query( $sql, $table, ...$where_args );
+
+		// phpcs:ignore Generic.Commenting.DocComment.MissingShort, SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+		/** @var array<string, mixed>|null $row */
+		$row = $this->wpdb->get_row( $query, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		if ( $this->wpdb->last_error !== '' ) {
+			throw new WpdbDatabaseException(
+				sprintf(
+					'Failed to fetch row from table "%s" by column "%s" and value "%s".',
+					$table,
+					$column,
+					$value === null ? 'NULL' : (string) $value,
+				),
+			);
+		}
+
+		if ( $row === null ) {
+			return null;
+		}
+
+		return $this->sanitize_db_row( $row );
+	}
+
+	/**
 	 * Retrieves all rows from the given table.
 	 *
 	 * @since 1.0.0
