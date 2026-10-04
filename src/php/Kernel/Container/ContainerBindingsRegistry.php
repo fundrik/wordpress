@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Kernel\Container;
 
+use Closure;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRead\DonationReadPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
+use Fundrik\Core\Components\Donations\Application\Ports\Gateway\DonationGatewayPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryApplicationEventUpdater;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
@@ -54,6 +56,7 @@ use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
 use Fundrik\WordPress\Kernel\Ports\BootUnitRunnerPort;
 use Fundrik\WordPress\Kernel\Ports\HookDispatcherRegistrarPort;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
+use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -101,19 +104,23 @@ final readonly class ContainerBindingsRegistry {
 	}
 	// phpcs:enable
 
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Returns the list of abstract-to-concrete transient bindings.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, string> The array of [abstract => concrete] bindings.
-	 *
-	 * @phpstan-return array<class-string, class-string>
+	 * @return array<class-string, class-string|Closure(LaravelContainerInterface): DonationGatewayPort> The array of bindings.
 	 */
 	public function get_bindings(): array {
 
-		return [];
+		return [
+			DonationGatewayPort::class => static fn ( LaravelContainerInterface $container ): DonationGatewayPort => $container->make(
+				GatewayResolver::class,
+			)->resolve_active_gateway(),
+		];
 	}
+	// phpcs:enable
 
 	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
