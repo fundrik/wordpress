@@ -334,6 +334,8 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 			'accepts_donations' => $campaign->accepts_donations(),
 			'currency_code' => $target->get_currency()->get_code(),
 			'target_amount' => $target_amount?->get_value(),
+			'collected_amount' => 0,
+			'donations_count' => 0,
 			'created_at' => $created_at,
 			'updated_at' => null,
 		];

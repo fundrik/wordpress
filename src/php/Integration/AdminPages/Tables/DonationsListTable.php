@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Integration\AdminPages\Tables;
 
 use Fundrik\WordPress\Integration\ReadModels\DonationAdminListItem;
-use Fundrik\WordPress\Integration\Services\DonationsListService;
+use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
 use Override;
 use WP_List_Table;
 
@@ -25,10 +25,10 @@ final class DonationsListTable extends WP_List_Table {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DonationsListService $donations_list_service Provides paginated donation rows.
+	 * @param DonationsAdminListService $donations_list_service Provides paginated donation rows.
 	 */
 	public function __construct(
-		private readonly DonationsListService $donations_list_service,
+		private readonly DonationsAdminListService $donations_list_service,
 	) {
 
 		parent::__construct(

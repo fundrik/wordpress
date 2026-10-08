@@ -9,6 +9,7 @@ use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCam
 use Fundrik\Core\Components\Donations\Application\ReadModels\Donation as CoreDonation;
 use Fundrik\Core\Components\Donations\Application\ReadModels\PaginatedDonations;
 use Fundrik\Core\Components\Donations\Application\Services\DonationQueryService;
+use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
@@ -26,7 +27,7 @@ use Psr\Log\LoggerInterface;
  *
  * @internal
  */
-final readonly class DonationsListService {
+final readonly class DonationsAdminListService {
 
 	/**
 	 * Constructor.
@@ -60,20 +61,20 @@ final readonly class DonationsListService {
 	public function paginate( int $page, int $per_page ): PaginatedDonationsAdminList {
 
 		$paginated_donations = $this->donation_query->paginate( $page, $per_page );
-		$rows = $this->normalize_rows( $paginated_donations );
-		$campaign_ids = array_values( array_unique( array_column( $rows, 'campaign_id' ) ) );
 
-		$campaigns = $this->campaign_read->find_by_ids( $campaign_ids );
+		$rows = $this->prepare_rows( $paginated_donations );
+
+		$campaigns = $this->find_campaigns_for_rows( $rows );
 
 		return new PaginatedDonationsAdminList(
-			$this->map_items( $rows, $campaigns ),
+			$this->build_admin_list_items( $rows, $campaigns ),
 			$paginated_donations->get_page(),
 			$paginated_donations->get_per_page(),
 			$paginated_donations->get_total(),
 		);
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Normalizes donation rows for campaign lookup and display mapping.
 	 *
@@ -81,23 +82,23 @@ final readonly class DonationsListService {
 	 *
 	 * @param PaginatedDonations $paginated_donations Paginated donations.
 	 *
-	 * @return list<array{donation: CoreDonation, donation_id: string, campaign_id: int}> Normalized donation rows.
+	 * @return list<array{donation: CoreDonation, donation_id: DonationId, campaign_id: CampaignId}> Prepared donation rows.
 	 */
-	private function normalize_rows( PaginatedDonations $paginated_donations ): array {
+	private function prepare_rows( PaginatedDonations $paginated_donations ): array {
 
 		$rows = [];
 
 		foreach ( $paginated_donations->get_items() as $donation ) {
 
 			try {
-				$donation_id = DonationId::from_entity_id_value( $donation->get_id() )->get_value();
+				$donation_id = DonationId::from_entity_id_value( $donation->get_id() );
 			} catch ( InvalidDonationIdException ) {
 				$this->log_invalid_donation_id( $donation );
 				continue;
 			}
 
 			try {
-				$campaign_id = CampaignId::from_entity_id_value( $donation->get_campaign_id() )->get_value();
+				$campaign_id = CampaignId::from_entity_id_value( $donation->get_campaign_id() );
 			} catch ( InvalidCampaignIdException ) {
 				$this->log_invalid_campaign_id( $donation );
 				continue;
@@ -114,18 +115,45 @@ final readonly class DonationsListService {
 	}
 	// phpcs:enable
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
+	/**
+	 * Finds campaigns referenced by prepared donation rows.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param list<array{donation: CoreDonation, donation_id: DonationId, campaign_id: CampaignId}> $rows Prepared donation rows.
+	 *
+	 * @return array<int, CoreCampaign> Campaigns keyed by ID.
+	 */
+	private function find_campaigns_for_rows( array $rows ): array {
+
+		$campaign_ids = [];
+
+		foreach ( $rows as $row ) {
+			$campaign_ids[ $row['campaign_id']->get_value() ] = $row['campaign_id'];
+		}
+
+		$campaign_entity_ids = array_map(
+			static fn ( CampaignId $campaign_id ): EntityId => $campaign_id->to_entity_id(),
+			array_values( $campaign_ids ),
+		);
+
+		return $this->campaign_read->find_by_ids( $campaign_entity_ids );
+	}
+	// phpcs:enable
+
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength, SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Maps donation read models into display rows.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<array{donation: CoreDonation, donation_id: string, campaign_id: int}> $rows Normalized donation rows.
+	 * @param list<array{donation: CoreDonation, donation_id: DonationId, campaign_id: CampaignId}> $rows Prepared donation rows.
 	 * @param array<int, CoreCampaign> $campaigns Campaigns keyed by ID.
 	 *
 	 * @return list<DonationAdminListItem> Donation rows.
 	 */
-	private function map_items( array $rows, array $campaigns ): array {
+	private function build_admin_list_items( array $rows, array $campaigns ): array {
 
 		$items = [];
 
@@ -133,7 +161,7 @@ final readonly class DonationsListService {
 
 			$donation = $row['donation'];
 			$donation_id = $row['donation_id'];
-			$campaign_id = $row['campaign_id'];
+			$campaign_id = $row['campaign_id']->get_value();
 			$campaign = $campaigns[ $campaign_id ] ?? null;
 
 			if ( $campaign === null ) {
@@ -142,7 +170,7 @@ final readonly class DonationsListService {
 			}
 
 			$items[] = new DonationAdminListItem(
-				id: $donation_id,
+				id: $donation_id->get_value(),
 				campaign_title: $campaign->get_title(),
 				campaign_edit_url: admin_url( sprintf( 'post.php?post=%d&action=edit', $campaign->get_id() ) ),
 				amount: $this->money_formatter->format( $donation->get_amount(), $donation->get_currency_code() ),

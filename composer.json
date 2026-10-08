@@ -15,6 +15,8 @@
 	"homepage": "https://fundrik.ru",
 	"type": "wordpress-plugin",
 	"license": "GPL-3.0-or-later",
+	"minimum-stability": "dev",
+	"prefer-stable": true,
 	"authors": [
 		{
 			"name": "Denis Yanchevskiy",
@@ -28,30 +30,30 @@
 	},
 	"require": {
 		"php": "^8.3",
-		"fundrik/core": "dev-main as 0.2.0",
-		"fundrik/toolbox": "dev-main as 0.1.0",
+		"fundrik/core": "dev-v1.1-dev",
+		"fundrik/toolbox": "^1.0",
 		"psr/log": "^3.0",
-		"monolog/monolog": "^3.9",
-		"illuminate/container": "^12.19",
-		"yoomoney/yookassa-sdk-php": "^3.14"
+		"monolog/monolog": "^3.12",
+		"illuminate/container": "^13.34",
+		"yoomoney/yookassa-sdk-php": "^3.15"
 	},
 	"require-dev": {
-		"dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+		"dealerdirect/phpcodesniffer-composer-installer": "^1.2",
 		"fundrik/coding-standard": "^0.9.0",
 		"phpunit/phpunit": "^12.5",
 		"brain/monkey": "^2.6",
 		"mockery/mockery": "^1.6",
-		"phpstan/phpstan": "^2.1",
+		"phpstan/phpstan": "^2.2",
 		"phpstan/extension-installer": "^1.4",
 		"phpstan/phpstan-strict-rules": "^2.0",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"swissspidy/phpstan-no-private": "^1.0",
-		"spaze/phpstan-disallowed-calls": "^4.6",
+		"spaze/phpstan-disallowed-calls": "^4.14",
 		"szepeviktor/phpstan-wordpress": "^2.0",
-		"johnbillion/wp-compat": "^1.2",
-		"deptrac/deptrac": "^3.0",
-		"infection/infection": "^0.31.9",
-		"rector/rector": "^2.3"
+		"johnbillion/wp-compat": "^2.0",
+		"deptrac/deptrac": "^4.7",
+		"infection/infection": "^0.35",
+		"rector/rector": "^2.6"
 	},
 	"autoload": {
 		"psr-4": {

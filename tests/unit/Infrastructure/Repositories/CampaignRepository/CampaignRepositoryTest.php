@@ -615,6 +615,8 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			&& ( $row['accepts_donations'] ?? null ) === $accepts_donations
 			&& ( $row['currency_code'] ?? null ) === $currency_code
 			&& ( $row['target_amount'] ?? null ) === $target_amount
+			&& ( $row['collected_amount'] ?? null ) === 0
+			&& ( $row['donations_count'] ?? null ) === 0
 			&& is_string( $row['created_at'] ?? null )
 			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $row['created_at'] ) === 1
 			&& ( $row['updated_at'] ?? null ) === null;

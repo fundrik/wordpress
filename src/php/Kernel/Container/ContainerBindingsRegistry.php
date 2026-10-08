@@ -81,7 +81,7 @@ final readonly class ContainerBindingsRegistry {
 
 		// phpcs:disable SlevomatCodingStandard.Arrays.DisallowPartiallyKeyed.DisallowedPartiallyKeyed
 		return [
-			// TODO: Implement Monolog logger.
+			// TODO: Implement logger.
 			LoggerInterface::class => NullLogger::class,
 
 			MigrationRunnerPort::class => MigrationRunner::class,
@@ -110,7 +110,7 @@ final readonly class ContainerBindingsRegistry {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<class-string, class-string|Closure(LaravelContainerInterface): DonationGatewayPort> The array of bindings.
+	 * @return array<class-string, class-string|Closure> The array of bindings.
 	 */
 	public function get_bindings(): array {
 

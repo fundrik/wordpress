@@ -14,7 +14,7 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\DonationsAdminPage;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
-use Fundrik\WordPress\Integration\Services\DonationsListService;
+use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
 use Fundrik\WordPress\Presentation\Formatters\DateTimeFormatter;
 use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
 use Fundrik\WordPress\Tests\WordPressTestCase;
@@ -78,7 +78,7 @@ final class DonationsAdminPageTest extends WordPressTestCase {
 		self::assertIsCallable( $page_state['callback'] );
 	}
 
-	private function create_donations_list_service(): DonationsListService {
+	private function create_donations_list_service(): DonationsAdminListService {
 
 		$donation_read = Mockery::mock( DonationReadPort::class );
 		$donation_query = new DonationQueryService(
@@ -90,7 +90,7 @@ final class DonationsAdminPageTest extends WordPressTestCase {
 		$campaign_read = new CampaignReadRepository( $database );
 		$logger = Mockery::mock( LoggerInterface::class );
 
-		return new DonationsListService(
+		return new DonationsAdminListService(
 			$donation_query,
 			$campaign_read,
 			$logger,

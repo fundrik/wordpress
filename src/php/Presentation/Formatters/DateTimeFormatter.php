@@ -44,11 +44,13 @@ final readonly class DateTimeFormatter {
 			);
 		}
 
-		if ( $date instanceof DateTimeImmutable ) {
-			return wp_date( $this->get_display_format(), $date->getTimestamp() );
+		if ( ! $date instanceof DateTimeImmutable ) {
+			return $datetime;
 		}
 
-		return $datetime;
+		$formatted = wp_date( $this->get_display_format(), $date->getTimestamp() );
+
+		return is_string( $formatted ) ? $formatted : $datetime;
 	}
 
 	/**

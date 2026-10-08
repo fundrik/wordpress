@@ -18,7 +18,7 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
 use Fundrik\WordPress\Integration\ReadModels\DonationAdminListItem;
 use Fundrik\WordPress\Integration\ReadModels\PaginatedDonationsAdminList;
-use Fundrik\WordPress\Integration\Services\DonationsListService;
+use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
 use Fundrik\WordPress\Presentation\Formatters\DateTimeFormatter;
 use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
 use Fundrik\WordPress\Tests\WordPressTestCase;
@@ -27,8 +27,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\LoggerInterface;
 
-#[CoversClass( DonationsListService::class )]
-final class DonationsListServiceTest extends WordPressTestCase {
+#[CoversClass( DonationsAdminListService::class )]
+final class DonationsAdminListServiceTest extends WordPressTestCase {
 
 	protected function setUp(): void {
 
@@ -53,7 +53,7 @@ final class DonationsListServiceTest extends WordPressTestCase {
 		$campaign_read = new CampaignReadRepository( $database );
 		$logger = Mockery::mock( LoggerInterface::class );
 
-		$service = new DonationsListService(
+		$service = new DonationsAdminListService(
 			$donation_query,
 			$campaign_read,
 			$logger,
@@ -98,7 +98,7 @@ final class DonationsListServiceTest extends WordPressTestCase {
 			->with(
 				'Donation row skipped because campaign could not be loaded.',
 				Mockery::on(
-					static fn ( array $context ): bool => $context['service_class'] === DonationsListService::class
+					static fn ( array $context ): bool => $context['service_class'] === DonationsAdminListService::class
 						&& $context['component'] === 'donations_list'
 						&& $context['layer'] === 'integration'
 						&& $context['system'] === 'wordpress'

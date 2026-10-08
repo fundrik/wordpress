@@ -7,7 +7,7 @@ namespace Fundrik\WordPress\Integration\AdminPages\Pages;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\Tables\DonationsListTable;
-use Fundrik\WordPress\Integration\Services\DonationsListService;
+use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
 use Override;
 
 /**
@@ -24,10 +24,10 @@ final readonly class DonationsAdminPage implements AdminPageInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DonationsListService $donations_list_service Provides paginated donation rows.
+	 * @param DonationsAdminListService $donations_list_service Provides paginated donation rows.
 	 */
 	public function __construct(
-		private DonationsListService $donations_list_service,
+		private DonationsAdminListService $donations_list_service,
 	) {}
 
 	/**
