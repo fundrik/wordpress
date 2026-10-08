@@ -79,20 +79,21 @@ final readonly class CampaignLookupService {
 		 */
 		$filtered_campaign = apply_filters( 'fundrik_get_campaign', $campaign, $campaign_id );
 
-		if ( $filtered_campaign instanceof Campaign ) {
-			return $filtered_campaign;
+		if ( ! $filtered_campaign instanceof Campaign ) {
+			
+			_doing_it_wrong(
+				'fundrik_get_campaign',
+				sprintf(
+					'Filter must return a campaign read model. Given: %s.',
+					esc_html( get_debug_type( $filtered_campaign ) ),
+				),
+				'1.0.0',
+			);
+
+			return $campaign;
 		}
 
-		_doing_it_wrong(
-			'fundrik_get_campaign',
-			sprintf(
-				'Filter must return a campaign read model. Given: %s.',
-				esc_html( get_debug_type( $filtered_campaign ) ),
-			),
-			'1.0.0',
-		);
-
-		return $campaign;
+		return $filtered_campaign;
 	}
 	// phpcs:enable
 
