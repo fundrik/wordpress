@@ -64,9 +64,44 @@ final readonly class CampaignSummaryDisplayService {
 		 * @param CampaignSummaryRenderData $render_data Campaign summary render data.
 		 * @param Campaign $campaign Campaign.
 		 */
-		$render_data = apply_filters( 'fundrik_campaign_summary_render_data', $render_data, $campaign );
+		$filtered_render_data = apply_filters( 'fundrik_campaign_summary_render_data', $render_data, $campaign );
+
+		$render_data = $this->ensure_render_data_filter_result( $filtered_render_data, $render_data );
 
 		return $this->campaign_summary_renderer->render( $render_data );
+	}
+
+	/**
+	 * Ensures the filter returned campaign summary render data.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_render_data Filter result.
+	 * @param CampaignSummaryRenderData $render_data Original render data.
+	 *
+	 * @return CampaignSummaryRenderData Filtered render data, or original render data when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_render_data_filter_result(
+		mixed $filtered_render_data,
+		CampaignSummaryRenderData $render_data,
+	): CampaignSummaryRenderData {
+
+		if ( $filtered_render_data instanceof CampaignSummaryRenderData ) {
+			return $filtered_render_data;
+		}
+
+		_doing_it_wrong(
+			'fundrik_campaign_summary_render_data',
+			sprintf(
+				'Filter must return campaign summary render data. Given: %s.',
+				esc_html( get_debug_type( $filtered_render_data ) ),
+			),
+			'1.0.0',
+		);
+
+		return $render_data;
 	}
 
 	/**

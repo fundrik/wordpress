@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Presentation\Renderers\DonationForm;
 
+use Fundrik\Toolbox\TypeCaster;
+use InvalidArgumentException;
+
 /**
  * Renders HTML markup for the donation form.
  *
@@ -13,6 +16,7 @@ namespace Fundrik\WordPress\Presentation\Renderers\DonationForm;
  */
 final readonly class DonationFormRenderer {
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Returns the donation form markup for the given render data.
 	 *
@@ -39,8 +43,12 @@ final readonly class DonationFormRenderer {
 		 *
 		 * @param array<string, string> $parts Donation form markup parts keyed by fragment name.
 		 * @param DonationFormRenderData $data Donation form render data.
+		 *
+		 * @return array<string, string> Filtered donation form markup parts.
 		 */
-		$parts = apply_filters( 'fundrik_donation_form_markup_parts', $parts, $data );
+		$filtered_parts = apply_filters( 'fundrik_donation_form_markup_parts', $parts, $data );
+
+		$parts = $this->ensure_markup_parts_filter_result( $filtered_parts, $parts );
 
 		$markup = implode( '', $parts );
 
@@ -52,8 +60,99 @@ final readonly class DonationFormRenderer {
 		 * @param string $markup Donation form markup.
 		 * @param DonationFormRenderData $data Donation form render data.
 		 * @param array<string, string> $parts Donation form markup parts keyed by fragment name.
+		 *
+		 * @return string Filtered donation form markup.
 		 */
-		return apply_filters( 'fundrik_donation_form_markup', $markup, $data, $parts );
+		$filtered_markup = apply_filters( 'fundrik_donation_form_markup', $markup, $data, $parts );
+
+		return $this->ensure_markup_filter_result( $filtered_markup, $markup );
+	}
+	// phpcs:enable
+
+	/**
+	 * Ensures markup parts contain only string keys and values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_parts Filter result.
+	 * @param array<string, string> $parts Original markup parts.
+	 *
+	 * @return array<string, string> Filtered markup parts, or original parts when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_markup_parts_filter_result( mixed $filtered_parts, array $parts ): array {
+
+		if ( ! $this->is_string_map( $filtered_parts ) ) {
+
+			_doing_it_wrong(
+				'fundrik_donation_form_markup_parts',
+				'Filter must return an array of string markup parts.',
+				'1.0.0',
+			);
+
+			return $parts;
+		}
+
+		return $filtered_parts;
+	}
+
+	/**
+	 * Checks whether a value is a string-keyed map of strings.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $value Value to check.
+	 *
+	 * @return bool True when the value is a string-keyed map of strings.
+	 *
+	 * @phpstan-assert-if-true array<string, string> $value
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function is_string_map( mixed $value ): bool {
+
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		try {
+
+			foreach ( $value as $key => $part ) {
+
+				TypeCaster::to_string( $key );
+				TypeCaster::to_string( $part );
+			}
+		} catch ( InvalidArgumentException ) {
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Ensures the filter returned a string.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_markup Filter result.
+	 * @param string $markup Original markup.
+	 *
+	 * @return string Filtered markup, or original markup when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_markup_filter_result( mixed $filtered_markup, string $markup ): string {
+
+		try {
+			return TypeCaster::to_string( $filtered_markup );
+		} catch ( InvalidArgumentException ) {
+
+			_doing_it_wrong( 'fundrik_donation_form_markup', 'Filter must return a string.', '1.0.0' );
+
+			return $markup;
+		}
 	}
 
 	/**

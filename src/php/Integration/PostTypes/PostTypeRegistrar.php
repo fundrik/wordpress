@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes;
 
+use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
+use InvalidArgumentException;
 use WP_Error;
 
 /**
@@ -44,6 +46,8 @@ final readonly class PostTypeRegistrar {
 
 		$id = $post_type_config->get_id();
 
+		$labels = $post_type_config->get_labels();
+
 		/**
 		 * Filters the post type labels before registration.
 		 *
@@ -51,7 +55,11 @@ final readonly class PostTypeRegistrar {
 		 *
 		 * @param array<string, string> $labels The post type labels.
 		 */
-		$labels = apply_filters( "fundrik_{$id}_post_type_labels", $post_type_config->get_labels() );
+		$filtered_labels = apply_filters( "fundrik_{$id}_post_type_labels", $labels );
+
+		$labels = $this->ensure_labels_filter_result( $filtered_labels, $labels, $id );
+
+		$slug = $post_type_config->get_slug();
 
 		/**
 		 * Filters the post type rewrite slug before registration.
@@ -60,7 +68,9 @@ final readonly class PostTypeRegistrar {
 		 *
 		 * @param string $slug The post type slug.
 		 */
-		$slug = apply_filters( "fundrik_{$id}_post_type_slug", $post_type_config->get_slug() );
+		$filtered_slug = apply_filters( "fundrik_{$id}_post_type_slug", $slug );
+
+		$slug = $this->ensure_slug_filter_result( $filtered_slug, $slug, $id );
 
 		$args = [
 			'labels' => $labels,
@@ -92,11 +102,113 @@ final readonly class PostTypeRegistrar {
 	// phpcs:enable
 
 	/**
+	 * Ensures the filtered post type labels have valid types.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_labels Filtered labels.
+	 * @param array<string, string> $labels Original labels.
+	 * @param string $post_type_id Post type ID.
+	 *
+	 * @return array<string, string> Filtered labels, or original labels when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_labels_filter_result(
+		mixed $filtered_labels,
+		array $labels,
+		string $post_type_id,
+	): array {
+
+		if ( ! $this->is_string_map( $filtered_labels ) ) {
+
+			_doing_it_wrong(
+				"fundrik_{$post_type_id}_post_type_labels",
+				sprintf(
+					'Filter must return an array of strings. Given: %s.',
+					esc_html( get_debug_type( $filtered_labels ) ),
+				),
+				'1.0.0',
+			);
+
+			return $labels;
+		}
+
+		return $filtered_labels;
+	}
+
+	/**
+	 * Checks whether a value is a string-keyed map of strings.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $value Value to check.
+	 *
+	 * @return bool True when the value is a string-keyed map of strings.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function is_string_map( mixed $value ): bool {
+
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		try {
+
+			foreach ( $value as $key => $part ) {
+
+				TypeCaster::to_string( $key );
+				TypeCaster::to_string( $part );
+			}
+		} catch ( InvalidArgumentException ) {
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Ensures the filtered post type slug is a string.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_slug Filtered slug.
+	 * @param string $slug Original slug.
+	 * @param string $post_type_id Post type ID.
+	 *
+	 * @return string Filtered slug, or original slug when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_slug_filter_result( mixed $filtered_slug, string $slug, string $post_type_id ): string {
+
+		try {
+			return TypeCaster::to_string( $filtered_slug );
+		} catch ( InvalidArgumentException ) {
+
+			_doing_it_wrong(
+				"fundrik_{$post_type_id}_post_type_slug",
+				sprintf(
+					'Filter must return a string. Given: %s.',
+					esc_html( get_debug_type( $filtered_slug ) ),
+				),
+				'1.0.0',
+			);
+
+			return $slug;
+		}
+	}
+
+	/**
 	 * Registers all meta fields for the given post type.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param PostTypeConfigInterface $post_type_config Provides the post type config.
+	 *
+	 * @throws PostMetaRegistrationException When meta field registration fails.
 	 */
 	private function register_post_meta_fields( PostTypeConfigInterface $post_type_config ): void {
 

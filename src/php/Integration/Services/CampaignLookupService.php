@@ -38,7 +38,6 @@ final readonly class CampaignLookupService {
 		private LoggerInterface $logger,
 	) {}
 
-	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Returns a campaign by ID or current campaign post.
 	 *
@@ -79,23 +78,38 @@ final readonly class CampaignLookupService {
 		 */
 		$filtered_campaign = apply_filters( 'fundrik_get_campaign', $campaign, $campaign_id );
 
-		if ( ! $filtered_campaign instanceof Campaign ) {
-			
-			_doing_it_wrong(
-				'fundrik_get_campaign',
-				sprintf(
-					'Filter must return a campaign read model. Given: %s.',
-					esc_html( get_debug_type( $filtered_campaign ) ),
-				),
-				'1.0.0',
-			);
+		return $this->ensure_campaign_filter_result( $filtered_campaign, $campaign );
+	}
 
-			return $campaign;
+	/**
+	 * Ensures the filter returned a campaign read model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_campaign Filter result.
+	 * @param Campaign $campaign Original campaign read model.
+	 *
+	 * @return Campaign Filtered campaign, or original campaign when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_campaign_filter_result( mixed $filtered_campaign, Campaign $campaign ): Campaign {
+
+		if ( $filtered_campaign instanceof Campaign ) {
+			return $filtered_campaign;
 		}
 
-		return $filtered_campaign;
+		_doing_it_wrong(
+			'fundrik_get_campaign',
+			sprintf(
+				'Filter must return a campaign read model. Given: %s.',
+				esc_html( get_debug_type( $filtered_campaign ) ),
+			),
+			'1.0.0',
+		);
+
+		return $campaign;
 	}
-	// phpcs:enable
 
 	/**
 	 * Resolves a campaign ID from the given input or current WordPress post context.

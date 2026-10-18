@@ -9,7 +9,9 @@ use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymen
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResultType;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\ProcessDonationPaymentResultHandler;
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
+use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
+use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 use WP_Error;
@@ -71,7 +73,9 @@ final readonly class YooKassaNotifyRestRequestHandler {
 			return $payload;
 		}
 
-		if ( ! $this->verify_notification_ip( $request, $payload ) ) {
+		$verified_by_ip = $this->verify_notification_ip( $request, $payload );
+
+		if ( ! $verified_by_ip ) {
 			return new WP_Error(
 				'fundrik_notification_verification_failed',
 				'YooKassa notification verification failed.',
@@ -244,12 +248,45 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		 *
 		 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 		 */
-		return (bool) apply_filters(
+		$filtered_verified_by_ip = apply_filters(
 			'fundrik_yookassa_notification_verified_by_ip',
 			$verified_by_ip,
 			$request,
 			$payload,
 		);
+
+		return $this->ensure_notification_ip_filter_result( $filtered_verified_by_ip, $verified_by_ip );
+	}
+
+	/**
+	 * Ensures the notification IP filter returned a boolean.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_verified_by_ip Filter result.
+	 * @param bool $verified_by_ip Original verification result.
+	 *
+	 * @return bool Filtered result, or original result when the filter result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_notification_ip_filter_result( mixed $filtered_verified_by_ip, bool $verified_by_ip ): bool {
+
+		try {
+			return TypeCaster::to_bool( $filtered_verified_by_ip );
+		} catch ( InvalidArgumentException ) {
+
+			_doing_it_wrong(
+				'fundrik_yookassa_notification_verified_by_ip',
+				sprintf(
+					'Filter must return a boolean. Given: %s.',
+					esc_html( get_debug_type( $filtered_verified_by_ip ) ),
+				),
+				'1.0.0',
+			);
+
+			return $verified_by_ip;
+		}
 	}
 
 	/**

@@ -76,9 +76,44 @@ final readonly class DonationFormDisplayService {
 		 * @param DonationFormRenderData $render_data Donation form render data.
 		 * @param Campaign $campaign Campaign.
 		 */
-		$render_data = apply_filters( 'fundrik_donation_form_render_data', $render_data, $campaign );
+		$filtered_render_data = apply_filters( 'fundrik_donation_form_render_data', $render_data, $campaign );
+
+		$render_data = $this->ensure_render_data_filter_result( $filtered_render_data, $render_data );
 
 		return $this->donation_form_renderer->render( $render_data );
+	}
+
+	/**
+	 * Ensures the filter returned donation form render data.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $filtered_render_data Filter result.
+	 * @param DonationFormRenderData $render_data Original render data.
+	 *
+	 * @return DonationFormRenderData Filtered render data, or original render data when the result is invalid.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function ensure_render_data_filter_result(
+		mixed $filtered_render_data,
+		DonationFormRenderData $render_data,
+	): DonationFormRenderData {
+
+		if ( $filtered_render_data instanceof DonationFormRenderData ) {
+			return $filtered_render_data;
+		}
+
+		_doing_it_wrong(
+			'fundrik_donation_form_render_data',
+			sprintf(
+				'Filter must return donation form render data. Given: %s.',
+				esc_html( get_debug_type( $filtered_render_data ) ),
+			),
+			'1.0.0',
+		);
+
+		return $render_data;
 	}
 
 	/**
