@@ -32,11 +32,12 @@ final class CampaignIdTest extends FundrikTestCase {
 	}
 
 	#[Test]
-	public function from_entity_id_value_returns_campaign_id_for_numeric_string(): void {
+	public function from_entity_id_value_throws_for_numeric_string(): void {
 
-		$id = CampaignId::from_entity_id_value( '24' );
+		$this->expectException( InvalidCampaignIdException::class );
+		$this->expectExceptionMessage( 'Campaign ID must be a positive integer. Given: 24.' );
 
-		self::assertSame( 24, $id->get_value() );
+		CampaignId::from_entity_id_value( '24' );
 	}
 
 	#[Test]

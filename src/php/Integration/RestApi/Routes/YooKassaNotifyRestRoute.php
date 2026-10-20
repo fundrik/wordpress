@@ -60,7 +60,7 @@ final readonly class YooKassaNotifyRestRoute implements RestRouteInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, mixed> The registration arguments.
+	 * @return list<array<string, mixed>> Route registration arguments.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

@@ -184,7 +184,7 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 		} catch ( ArrayExtractionException | InvalidUtcDateTimeException $e ) {
 
 			$id = $row['id'] ?? null;
-			$id_for_error = is_int( $id ) || is_string( $id ) ? (string) $id : '<unavailable>';
+			$id_for_error = is_int( $id ) || is_string( $id ) ? $id : '<unavailable>';
 
 			throw new CampaignReadException(
 				sprintf( 'Failed to map campaign row "%s".', $id_for_error ),

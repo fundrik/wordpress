@@ -302,7 +302,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 		} catch ( CampaignFactoryException | ArrayExtractionException $e ) {
 
 			$id = $row['id'] ?? null;
-			$id_for_error = is_int( $id ) || is_string( $id ) ? (string) $id : '<unavailable>';
+			$id_for_error = is_int( $id ) || is_string( $id ) ? $id : '<unavailable>';
 
 			throw new CampaignRepositoryException(
 				sprintf( 'Failed to map campaign row "%s".', $id_for_error ),

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\HookDispatchers\Dispatchers;
 
-use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherInterface;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
-use InvalidArgumentException;
 use Override;
 use Throwable;
 use WP_Block_Editor_Context;
@@ -142,17 +140,22 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 *
 	 * @return array<string>|bool The validated and normalized allowed block types.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException When the value is not an array of strings or a boolean.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_allowed( mixed $allowed ): array|bool {
 
 		if ( is_array( $allowed ) ) {
 
-			try {
-				return array_map( TypeCaster::to_string( ... ), $allowed );
-			} catch ( InvalidArgumentException ) {
-				throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+			foreach ( $allowed as $allowed_type ) {
+
+				if ( ! is_string( $allowed_type ) ) {
+					throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+				}
 			}
+
+			return $allowed;
 		}
 
 		if ( $allowed !== true && $allowed !== false ) {
@@ -170,6 +173,8 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 * @param mixed $editor_context The context passed by WordPress.
 	 *
 	 * @return WP_Block_Editor_Context The validated context.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When the value is not a WP_Block_Editor_Context instance.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

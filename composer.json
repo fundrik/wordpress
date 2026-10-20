@@ -31,7 +31,7 @@
 	"require": {
 		"php": "^8.3",
 		"fundrik/core": "dev-v1.1-dev",
-		"fundrik/toolbox": "^1.0",
+		"fundrik/toolbox": "^v1.1.x-dev",
 		"psr/log": "^3.0",
 		"monolog/monolog": "^3.12",
 		"illuminate/container": "^13.34",

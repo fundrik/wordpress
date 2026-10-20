@@ -127,6 +127,8 @@ final class DeletePostActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @return int The validated post ID.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException When the post ID is not an integer.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_post_id( mixed $post_id ): int {
@@ -146,6 +148,8 @@ final class DeletePostActionHookDispatcher implements HookDispatcherInterface {
 	 * @param mixed $post The incoming post object.
 	 *
 	 * @return WP_Post The validated post.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When the post is not a WP_Post instance.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

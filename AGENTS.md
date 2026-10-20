@@ -59,6 +59,14 @@
 - Do not catch exceptions from `RuntimeContainer::get()` or container `make()` in public integration functions such as `fundrik_get_*`/`fundrik_the_*`; treat container access and service resolution failures as critical plugin failures.
 - Port interface docblocks should use the standard wording `Provides the <inbound|outbound> port for ...` for consistency across the codebase.
 
+# Type Boundary Conventions
+
+- Choose validation by the input contract, not by whether the value is used later.
+- Use `TypeCaster` at raw-data boundaries when the contract explicitly accepts multiple scalar representations (for example, an integer or its decimal string) and needs one normalized value. Handle cast failures at that boundary.
+- Use `is_*`, `instanceof`, or a shape validator when the contract requires the exact incoming type or shape, or when an invalid result selects a fallback. Do not silently accept another representation of a declared WordPress hook or filter return type.
+- A strict `TypeCaster` method may also assert a type when failure must throw; prefer a direct type check when the caller branches or returns a fallback. In particular, `TypeCaster::to_string()` accepts only strings.
+- Validate domain constraints separately after type normalization; a valid scalar type does not prove that an ID, amount, or other domain value is valid.
+
 # Project Scripts
 
 - Source of truth for runnable project commands is the `scripts` section in `composer.json` and `package.json`.

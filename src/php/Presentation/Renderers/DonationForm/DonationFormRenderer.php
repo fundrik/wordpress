@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Presentation\Renderers\DonationForm;
 
-use Fundrik\Toolbox\TypeCaster;
-use InvalidArgumentException;
+use Fundrik\Toolbox\ArrayValidator;
 
 /**
  * Renders HTML markup for the donation form.
@@ -83,7 +82,7 @@ final readonly class DonationFormRenderer {
 	 */
 	private function ensure_markup_parts_filter_result( mixed $filtered_parts, array $parts ): array {
 
-		if ( ! $this->is_string_map( $filtered_parts ) ) {
+		if ( ! ArrayValidator::is_array_with_string_keys_and_values( $filtered_parts ) ) {
 
 			_doing_it_wrong(
 				'fundrik_donation_form_markup_parts',
@@ -95,40 +94,6 @@ final readonly class DonationFormRenderer {
 		}
 
 		return $filtered_parts;
-	}
-
-	/**
-	 * Checks whether a value is a string-keyed map of strings.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Value to check.
-	 *
-	 * @return bool True when the value is a string-keyed map of strings.
-	 *
-	 * @phpstan-assert-if-true array<string, string> $value
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function is_string_map( mixed $value ): bool {
-
-		if ( ! is_array( $value ) ) {
-			return false;
-		}
-
-		try {
-
-			foreach ( $value as $key => $part ) {
-
-				TypeCaster::to_string( $key );
-				TypeCaster::to_string( $part );
-			}
-		} catch ( InvalidArgumentException ) {
-
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
@@ -145,14 +110,14 @@ final readonly class DonationFormRenderer {
 	 */
 	private function ensure_markup_filter_result( mixed $filtered_markup, string $markup ): string {
 
-		try {
-			return TypeCaster::to_string( $filtered_markup );
-		} catch ( InvalidArgumentException ) {
+		if ( ! is_string( $filtered_markup ) ) {
 
 			_doing_it_wrong( 'fundrik_donation_form_markup', 'Filter must return a string.', '1.0.0' );
 
 			return $markup;
 		}
+
+		return $filtered_markup;
 	}
 
 	/**

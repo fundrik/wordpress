@@ -36,7 +36,7 @@ interface RestRouteInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, mixed> The REST route registration arguments.
+	 * @return list<array<string, mixed>> REST route registration arguments.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

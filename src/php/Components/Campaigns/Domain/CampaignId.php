@@ -95,7 +95,7 @@ final readonly class CampaignId {
 	 */
 	public static function from_entity_id_value( int|string $value ): self {
 
-		if ( is_string( $value ) && ! ctype_digit( $value ) ) {
+		if ( ! is_int( $value ) ) {
 			throw new InvalidCampaignIdException(
 				sprintf(
 					'Campaign ID must be a positive integer. Given: %s.',
@@ -104,7 +104,7 @@ final readonly class CampaignId {
 			);
 		}
 
-		return self::from_value( (int) $value );
+		return self::from_value( $value );
 	}
 
 	/**

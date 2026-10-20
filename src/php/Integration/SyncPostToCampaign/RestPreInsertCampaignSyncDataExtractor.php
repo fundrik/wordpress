@@ -159,6 +159,9 @@ final readonly class RestPreInsertCampaignSyncDataExtractor {
 	 *
 	 * @return string The campaign title.
 	 *
+	 * @throws ArrayExtractionException When the payload title is present but invalid.
+	 * @throws InvalidArgumentException When the persisted post title is not a string.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function resolve_title( array $params, int $post_id ): string {

@@ -9,9 +9,8 @@ use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymen
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResultType;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\ProcessDonationPaymentResultHandler;
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
-use Fundrik\Toolbox\TypeCaster;
+use Fundrik\Toolbox\ArrayValidator;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
-use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
 use WP_Error;
@@ -147,10 +146,11 @@ final readonly class YooKassaNotifyRestRequestHandler {
 
 		$payload = json_decode( $request->get_body(), true );
 
-		if ( ! is_array( $payload ) ) {
+		if ( ! ArrayValidator::is_array_with_string_keys( $payload ) ) {
+
 			return new WP_Error(
 				'fundrik_yookassa_invalid_notification_payload',
-				'YooKassa notification payload must decode to an array. Given: invalid payload.',
+				'YooKassa notification payload must decode to an array with string keys. Given: invalid payload.',
 				[ 'status' => 400 ],
 			);
 		}
@@ -163,11 +163,15 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $event YooKassa notification event.
+	 * @param string|null $event YooKassa notification event.
 	 *
 	 * @return DonationPaymentResultType|null Result type, if supported.
 	 */
-	private function map_yookassa_event_to_donation_payment_result_type( string $event ): ?DonationPaymentResultType {
+	private function map_yookassa_event_to_donation_payment_result_type( ?string $event ): ?DonationPaymentResultType {
+
+		if ( $event === null ) {
+			return null;
+		}
 
 		return [
 			NotificationEventType::PAYMENT_SUCCEEDED => DonationPaymentResultType::Succeeded,
@@ -231,10 +235,15 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		// phpcs:ignore SlevomatCodingStandard.Variables.DisallowSuperGlobalVariable.DisallowedSuperGlobalVariable, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$remote_address = wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' );
 
-		try {
-			$verified_by_ip = $this->client->isNotificationIPTrusted( $remote_address );
-		} catch ( Throwable ) {
+		if ( ! is_string( $remote_address ) ) {
 			$verified_by_ip = false;
+		} else {
+
+			try {
+				$verified_by_ip = $this->client->isNotificationIPTrusted( $remote_address );
+			} catch ( Throwable ) {
+				$verified_by_ip = false;
+			}
 		}
 
 		/**
@@ -272,9 +281,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 */
 	private function ensure_notification_ip_filter_result( mixed $filtered_verified_by_ip, bool $verified_by_ip ): bool {
 
-		try {
-			return TypeCaster::to_bool( $filtered_verified_by_ip );
-		} catch ( InvalidArgumentException ) {
+		if ( ! is_bool( $filtered_verified_by_ip ) ) {
 
 			_doing_it_wrong(
 				'fundrik_yookassa_notification_verified_by_ip',
@@ -287,6 +294,8 @@ final readonly class YooKassaNotifyRestRequestHandler {
 
 			return $verified_by_ip;
 		}
+
+		return $filtered_verified_by_ip;
 	}
 
 	/**

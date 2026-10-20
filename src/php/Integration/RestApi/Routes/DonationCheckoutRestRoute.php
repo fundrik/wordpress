@@ -61,32 +61,20 @@ final readonly class DonationCheckoutRestRoute implements RestRouteInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array<string, mixed> The registration arguments.
+	 * @return list<array<string, mixed>> Route registration arguments.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	#[Override]
 	public function get_route_args(): array {
 
-		return [ $this->get_checkout_route_arg() ];
-	}
-
-	/**
-	 * Returns the checkout route registration arguments.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array<string, mixed> Route arguments.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function get_checkout_route_arg(): array {
-
 		return [
-			'methods' => WP_REST_Server::CREATABLE,
-			'permission_callback' => __return_true( ... ),
-			'callback' => $this->request_handler->handle( ... ),
-			'args' => $this->get_checkout_route_args(),
+			[
+				'methods' => WP_REST_Server::CREATABLE,
+				'permission_callback' => __return_true( ... ),
+				'callback' => $this->request_handler->handle( ... ),
+				'args' => $this->get_checkout_route_args(),
+			],
 		];
 	}
 

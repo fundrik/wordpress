@@ -109,6 +109,10 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 	 * @param WP_REST_Request $request Incoming REST request.
 	 *
 	 * @return CreateDonationCheckoutData Checkout input data.
+	 *
+	 * @throws InvalidUrlException When a configured checkout URL is invalid.
+	 * @throws FundrikDomainException When a donation ID, campaign ID, or amount is invalid.
+	 * @throws InvalidArgumentException When a request value cannot be converted or its campaign is unavailable.
 	 */
 	private function create_checkout_data( WP_REST_Request $request ): CreateDonationCheckoutData {
 

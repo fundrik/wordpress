@@ -139,6 +139,8 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @return WP_Post The validated post.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException When the post argument is invalid.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_post( mixed $post ): WP_Post {
@@ -159,7 +161,9 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @return WP_REST_Request The validated request.
 	 *
-	 * @phpstan-return WP_REST_Request<array<string, mixed>>
+	 * @phpstan-return WP_REST_Request<array<string, ixed>>
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When the request argument is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -180,6 +184,8 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 * @param mixed $creating The incoming creating flag.
 	 *
 	 * @return bool True when creating a post, false when updating.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When the creating argument is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

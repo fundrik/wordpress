@@ -86,6 +86,7 @@ final readonly class PostTypeMetaFieldReader {
 		foreach ( $reflection->getReflectionConstants() as $constant ) {
 
 			foreach ( $constant->getAttributes( PostTypeMetaField::class ) as $attribute ) {
+				// Meta field attributes are expected only on string constants.
 				$meta_key = TypeCaster::to_string( $constant->getValue() );
 
 				$fields[ $meta_key ] = $attribute->newInstance()->to_definition( $meta_key );

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\PostTypes;
 
-use Fundrik\Toolbox\TypeCaster;
+use Fundrik\Toolbox\ArrayValidator;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
-use InvalidArgumentException;
 use WP_Error;
 
 /**
@@ -120,7 +119,7 @@ final readonly class PostTypeRegistrar {
 		string $post_type_id,
 	): array {
 
-		if ( ! $this->is_string_map( $filtered_labels ) ) {
+		if ( ! ArrayValidator::is_array_with_string_keys_and_values( $filtered_labels ) ) {
 
 			_doing_it_wrong(
 				"fundrik_{$post_type_id}_post_type_labels",
@@ -138,38 +137,6 @@ final readonly class PostTypeRegistrar {
 	}
 
 	/**
-	 * Checks whether a value is a string-keyed map of strings.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param mixed $value Value to check.
-	 *
-	 * @return bool True when the value is a string-keyed map of strings.
-	 *
-	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
-	 */
-	private function is_string_map( mixed $value ): bool {
-
-		if ( ! is_array( $value ) ) {
-			return false;
-		}
-
-		try {
-
-			foreach ( $value as $key => $part ) {
-
-				TypeCaster::to_string( $key );
-				TypeCaster::to_string( $part );
-			}
-		} catch ( InvalidArgumentException ) {
-
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
 	 * Ensures the filtered post type slug is a string.
 	 *
 	 * @since 1.0.0
@@ -184,9 +151,7 @@ final readonly class PostTypeRegistrar {
 	 */
 	private function ensure_slug_filter_result( mixed $filtered_slug, string $slug, string $post_type_id ): string {
 
-		try {
-			return TypeCaster::to_string( $filtered_slug );
-		} catch ( InvalidArgumentException ) {
+		if ( ! is_string( $filtered_slug ) ) {
 
 			_doing_it_wrong(
 				"fundrik_{$post_type_id}_post_type_slug",
@@ -199,6 +164,8 @@ final readonly class PostTypeRegistrar {
 
 			return $slug;
 		}
+
+		return $filtered_slug;
 	}
 
 	/**
