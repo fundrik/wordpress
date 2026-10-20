@@ -147,19 +147,36 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	private function validate_allowed( mixed $allowed ): array|bool {
 
 		if ( is_array( $allowed ) ) {
-
-			foreach ( $allowed as $allowed_type ) {
-
-				if ( ! is_string( $allowed_type ) ) {
-					throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
-				}
-			}
-
-			return $allowed;
+			return $this->validate_allowed_types( $allowed );
 		}
 
 		if ( $allowed !== true && $allowed !== false ) {
 			throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+		}
+
+		return $allowed;
+	}
+
+	/**
+	 * Validates the allowed block type slugs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<mixed> $allowed The allowed block types.
+	 *
+	 * @return array<string> The validated allowed block types.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When a value is not a string.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function validate_allowed_types( array $allowed ): array {
+
+		foreach ( $allowed as $allowed_type ) {
+
+			if ( ! is_string( $allowed_type ) ) {
+				throw InvalidHookDispatcherArgumentException::create( argument: 'allowed', hook: self::HOOK_NAME );
+			}
 		}
 
 		return $allowed;

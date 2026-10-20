@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Integration\RestApi\Routes;
 
+use Fundrik\Core\Components\Donations\Application\UseCases\FindDonationByPaymentId\FindDonationByPaymentIdException;
 use Fundrik\Core\Components\Donations\Application\UseCases\FindDonationByPaymentId\FindDonationByPaymentIdHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResult;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\DonationPaymentResultType;
 use Fundrik\Core\Components\Donations\Application\UseCases\ProcessDonationPaymentResult\ProcessDonationPaymentResultHandler;
+use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Toolbox\ArrayValidator;
 use Fundrik\WordPress\Integration\RestApi\RestRouteHandlerLogger;
@@ -103,16 +105,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 
 		try {
 			$payment_id = $this->get_payment_id( $notification_object );
-			$donation = $this->find_donation_by_payment_id->handle( $payment_id );
-
-			if ( $donation === null ) {
-				throw new RuntimeException(
-					sprintf(
-						'Cannot process notification for payment "%s": donation not found.',
-						$payment_id->get_value(),
-					),
-				);
-			}
+			$donation = $this->get_donation_or_fail( $payment_id );
 
 			$result = new DonationPaymentResult(
 				$donation->get_id(),
@@ -219,6 +212,34 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	}
 
 	/**
+	 * Returns the donation for a payment ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param PaymentId $payment_id Provider payment ID.
+	 *
+	 * @return Donation Donation found for the payment ID.
+	 *
+	 * @throws RuntimeException When no donation exists for the payment ID.
+	 * @throws FindDonationByPaymentIdException When donation retrieval fails.
+	 */
+	private function get_donation_or_fail( PaymentId $payment_id ): Donation {
+
+		$donation = $this->find_donation_by_payment_id->handle( $payment_id );
+
+		if ( $donation === null ) {
+			throw new RuntimeException(
+				sprintf(
+					'Cannot process notification for payment "%s": donation not found.',
+					$payment_id->get_value(),
+				),
+			);
+		}
+
+		return $donation;
+	}
+
+	/**
 	 * Checks whether the request originated from a YooKassa IP address.
 	 *
 	 * @since 1.0.0
@@ -267,6 +288,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		return $this->ensure_notification_ip_filter_result( $filtered_verified_by_ip, $verified_by_ip );
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
 	 * Ensures the notification IP filter returned a boolean.
 	 *
@@ -297,6 +319,7 @@ final readonly class YooKassaNotifyRestRequestHandler {
 
 		return $filtered_verified_by_ip;
 	}
+	// phpcs:enable
 
 	/**
 	 * Logs a failed YooKassa notification processing attempt (error).
