@@ -54,7 +54,7 @@ final class HookDispatcherLogger extends Logger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $class_name The fully qualified class name of the hook dispatcher.
+	 * @param class-string $class_name Fully qualified hook dispatcher class name.
 	 */
 	public function set_hook_dispatcher_class( string $class_name ): void {
 

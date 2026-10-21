@@ -36,7 +36,7 @@ final class RestRouteHandlerLogger extends Logger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $class_name The fully qualified class name of the REST route handler.
+	 * @param class-string $class_name Fully qualified REST route handler class name.
 	 */
 	public function set_rest_route_handler_class( string $class_name ): void {
 

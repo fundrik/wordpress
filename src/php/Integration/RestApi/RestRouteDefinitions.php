@@ -6,7 +6,6 @@ namespace Fundrik\WordPress\Integration\RestApi;
 
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Integration\RestApi\Routes\YooKassaNotifyRestRoute;
-use InvalidArgumentException;
 
 /**
  * Provides REST route metadata and declarations.
@@ -44,8 +43,6 @@ final readonly class RestRouteDefinitions {
 	 * @phpstan-param class-string<RestRouteInterface> $route_class
 	 *
 	 * @return string Request path.
-	 *
-	 * @throws InvalidArgumentException When the route class does not implement RestRouteInterface.
 	 */
 	public static function get_request_path( string $route_class ): string {
 
@@ -62,8 +59,6 @@ final readonly class RestRouteDefinitions {
 	 * @phpstan-param class-string<RestRouteInterface> $route_class
 	 *
 	 * @return string REST route URL.
-	 *
-	 * @throws InvalidArgumentException When the route class does not implement RestRouteInterface.
 	 */
 	public static function get_route_url( string $route_class ): string {
 
@@ -80,19 +75,8 @@ final readonly class RestRouteDefinitions {
 	 * @phpstan-param class-string<RestRouteInterface> $route_class
 	 *
 	 * @return string REST route string.
-	 *
-	 * @throws InvalidArgumentException When the route class does not implement RestRouteInterface.
 	 */
 	private static function get_route( string $route_class ): string {
-
-		if ( ! is_a( $route_class, RestRouteInterface::class, true ) ) {
-			throw new InvalidArgumentException(
-				sprintf(
-					'REST route metadata must be defined for route class "%s".',
-					$route_class,
-				),
-			);
-		}
 
 		return $route_class::get_route_namespace() . $route_class::get_route_path();
 	}

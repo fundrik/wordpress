@@ -36,7 +36,7 @@ final class BootUnitLogger extends Logger {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $class_name The fully qualified class name of the boot unit.
+	 * @param class-string $class_name Fully qualified boot unit class name.
 	 */
 	public function set_boot_unit_class( string $class_name ): void {
 

@@ -85,7 +85,7 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 			$donation_creation_data = $data->get_donation_creation_data();
 
 			$this->log_create_donation_failed(
-				$donation_creation_data->get_campaign_id()->get_value(),
+				CampaignId::from_entity_id( $donation_creation_data->get_campaign_id() )->get_value(),
 				$donation_creation_data->get_amount()->get_value(),
 				$e,
 			);
