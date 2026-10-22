@@ -16,7 +16,16 @@ use ReflectionClass;
  *
  * @internal
  */
-final readonly class PostTypeMetaFieldReader {
+final class PostTypeMetaFieldReader {
+
+	/**
+	 * Cached meta field definitions keyed by post type config class.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array<class-string<PostTypeConfigInterface>, array<string, PostTypeMetaFieldDefinition>>
+	 */
+	private static array $fields_by_config_class = [];
 
 	/**
 	 * Returns meta field definitions from a post type config class.
@@ -41,6 +50,8 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param string $post_type_config_class The post type config class name.
 	 * @param string $meta_key The post meta key.
+	 *
+	 * @phpstan-param class-string<PostTypeConfigInterface> $post_type_config_class
 	 *
 	 * @return int|string|bool|null The declared default value, or null when missing.
 	 */
@@ -69,14 +80,14 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @return array<string, PostTypeMetaFieldDefinition> Declared meta fields keyed by meta key.
 	 *
+	 * @phpstan-param class-string<PostTypeConfigInterface> $post_type_config_class
+	 *
 	 * @throws InvalidArgumentException When a post meta key constant value is not a string.
 	 */
 	private function get_meta_fields_by_config_class( string $post_type_config_class ): array {
 
-		static $cache = [];
-
-		if ( isset( $cache[ $post_type_config_class ] ) ) {
-			return $cache[ $post_type_config_class ];
+		if ( isset( self::$fields_by_config_class[ $post_type_config_class ] ) ) {
+			return self::$fields_by_config_class[ $post_type_config_class ];
 		}
 
 		$reflection = new ReflectionClass( $post_type_config_class );
@@ -95,9 +106,9 @@ final readonly class PostTypeMetaFieldReader {
 
 		$this->validate_meta_field_defaults( $post_type_config_class, $fields );
 
-		$cache[ $post_type_config_class ] = $fields;
+		self::$fields_by_config_class[ $post_type_config_class ] = $fields;
 
-		return $cache[ $post_type_config_class ];
+		return self::$fields_by_config_class[ $post_type_config_class ];
 	}
 
 	/**
@@ -107,6 +118,8 @@ final readonly class PostTypeMetaFieldReader {
 	 *
 	 * @param string $post_type_config_class The post type config class name.
 	 * @param string $meta_key The post meta key.
+	 *
+	 * @phpstan-param class-string<PostTypeConfigInterface> $post_type_config_class
 	 *
 	 * @return PostTypeMetaFieldDefinition|null Meta field definition, or null when missing.
 	 */

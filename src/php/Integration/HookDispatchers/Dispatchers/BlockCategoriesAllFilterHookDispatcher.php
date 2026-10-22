@@ -99,6 +99,7 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 
 		} catch ( Throwable $e ) {
 
+			// Listener exceptions must be logged in listener/BootUnit to avoid duplicate logs here.
 			fundrik_set_failure_message( $e->getMessage() );
 			return $categories;
 		}
@@ -115,6 +116,8 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 	 * @param WP_Block_Editor_Context $editor_context The validated editor context.
 	 *
 	 * @return array<int, array<string, mixed>> The value returned after listeners.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When a listener returns invalid categories.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -138,6 +141,8 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 	 * @param mixed $categories The original value passed by WordPress.
 	 *
 	 * @return array<int, array<string, mixed>> The validated block categories.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When categories are not an array of arrays.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -165,6 +170,8 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 	 * @param mixed $editor_context The context passed by WordPress.
 	 *
 	 * @return WP_Block_Editor_Context The validated context.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When editor context is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

@@ -37,6 +37,7 @@
 				<element value="Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime"/>
 				<element value="Fundrik\WordPress\Kernel\Container\RuntimeContainer"/>
 				<element value="Fundrik\WordPress\Integration\AdminPages\Tables\DonationsListTable"/>
+				<element value="Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader"/>
 			</property>
 		</properties>
 	</rule>

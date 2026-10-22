@@ -19,7 +19,7 @@ final readonly class HookDispatcherRegistrar implements HookDispatcherRegistrarP
 	/**
 	 * The configured hook dispatchers.
 	 *
-	 * @var list<HookDispatcherInterface>
+	 * @var array<HookDispatcherInterface>
 	 */
 	private array $hook_dispatchers;
 

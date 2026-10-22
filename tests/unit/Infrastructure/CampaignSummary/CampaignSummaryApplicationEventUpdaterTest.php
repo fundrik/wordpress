@@ -152,7 +152,7 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function consume_throws_when_donation_lookup_fails(): void {
+	public function consume_logs_error_when_donation_lookup_fails(): void {
 
 		$this->logger->shouldReceive( 'error' )->once();
 
@@ -163,14 +163,11 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
 
-		$this->expectException( CampaignSummaryException::class );
-		$this->expectExceptionMessage( sprintf( 'Failed to retrieve donation "%s".', self::DONATION_ID ) );
-
 		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_throws_when_donation_is_missing(): void {
+	public function consume_logs_error_when_donation_is_missing(): void {
 
 		$this->logger->shouldReceive( 'error' )->once();
 
@@ -181,19 +178,11 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
 
-		$this->expectException( CampaignSummaryException::class );
-		$this->expectExceptionMessage(
-			sprintf(
-				'Cannot update campaign summary for donation "%s": donation not found.',
-				self::DONATION_ID,
-			),
-		);
-
 		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_throws_when_campaign_row_is_missing(): void {
+	public function consume_logs_error_when_campaign_row_is_missing(): void {
 
 		$this->logger->shouldReceive( 'error' )->once();
 
@@ -207,20 +196,11 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 			->once()
 			->andThrow( new FakeDatabaseRowNotFoundException( 'Row not found.' ) );
 
-		$this->expectException( CampaignSummaryException::class );
-		$this->expectExceptionMessage(
-			sprintf(
-				'Cannot update campaign summary for donation "%s": campaign "%d" not found.',
-				self::DONATION_ID,
-				77,
-			),
-		);
-
 		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_logs_error_and_rethrows_summary_update_failures(): void {
+	public function consume_logs_summary_update_failures(): void {
 
 		$this->logger->shouldNotReceive( 'warning' );
 
@@ -260,9 +240,6 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 						&& ( $context['exception'] ?? null ) instanceof CampaignSummaryException,
 				),
 			);
-
-		$this->expectException( CampaignSummaryException::class );
-		$this->expectExceptionMessage( 'Failed to update campaign summary for campaign "77".' );
 
 		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}

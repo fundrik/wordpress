@@ -79,8 +79,6 @@ final readonly class CampaignSummaryApplicationEventUpdater implements Applicati
 			$this->apply_summary_delta( $donation_id, 1 );
 		} catch ( Throwable $e ) {
 			$this->log_summary_update_failure( $event, $donation_id, $e );
-
-			throw $e;
 		}
 	}
 
@@ -99,8 +97,6 @@ final readonly class CampaignSummaryApplicationEventUpdater implements Applicati
 			$this->apply_summary_delta( $donation_id, -1 );
 		} catch ( Throwable $e ) {
 			$this->log_summary_update_failure( $event, $donation_id, $e );
-
-			throw $e;
 		}
 	}
 

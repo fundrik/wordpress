@@ -122,7 +122,7 @@ final readonly class PostTypeRegistrar {
 		if ( ! ArrayValidator::is_array_with_string_keys_and_values( $filtered_labels ) ) {
 
 			_doing_it_wrong(
-				"fundrik_{$post_type_id}_post_type_labels",
+				esc_html( "fundrik_{$post_type_id}_post_type_labels" ),
 				sprintf(
 					'Filter must return an array of strings. Given: %s.',
 					esc_html( get_debug_type( $filtered_labels ) ),
@@ -154,7 +154,7 @@ final readonly class PostTypeRegistrar {
 		if ( ! is_string( $filtered_slug ) ) {
 
 			_doing_it_wrong(
-				"fundrik_{$post_type_id}_post_type_slug",
+				esc_html( "fundrik_{$post_type_id}_post_type_slug" ),
 				sprintf(
 					'Filter must return a string. Given: %s.',
 					esc_html( get_debug_type( $filtered_slug ) ),

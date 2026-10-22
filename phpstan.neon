@@ -5,5 +5,7 @@ parameters:
 	level: max
 	paths:
 		- src/php
+	stubFiles:
+		- phpstan-stubs.php
 	bootstrapFiles:
 		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php

@@ -126,6 +126,8 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 * @param WP_REST_Request $request The validated request.
 	 *
 	 * @return stdClass|WP_Error The value returned after listeners.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When a listener returns an invalid result.
 	 */
 	private function dispatch_to_listeners( stdClass $prepared_post, WP_REST_Request $request ): stdClass|WP_Error {
 
@@ -150,6 +152,8 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 *
 	 * @return stdClass The validated post.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException When the prepared post argument is invalid.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_prepared_post( mixed $prepared_post ): stdClass {
@@ -172,6 +176,8 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 *
 	 * @phpstan-return WP_REST_Request<array<string, mixed>>
 	 *
+	 * @throws InvalidHookDispatcherArgumentException When the request argument is invalid.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_request( mixed $request ): WP_REST_Request {
@@ -191,6 +197,8 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	 * @param mixed $result The returned value.
 	 *
 	 * @return stdClass|WP_Error The validated result.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException When the listener result is invalid.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
