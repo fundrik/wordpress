@@ -11,6 +11,8 @@ use Override;
 /**
  * Represents a text gateway settings field definition.
  *
+ * @implements GatewaySettingFieldInterface<string>
+ *
  * @since 1.0.0
  */
 final readonly class GatewaySettingTextField implements GatewaySettingFieldInterface {
@@ -61,10 +63,10 @@ final readonly class GatewaySettingTextField implements GatewaySettingFieldInter
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int|string|bool Default field value.
+	 * @return string Default field value.
 	 */
 	#[Override]
-	public function get_default_value(): int|string|bool {
+	public function get_default_value(): string {
 
 		return $this->default_value;
 	}
@@ -87,13 +89,7 @@ final readonly class GatewaySettingTextField implements GatewaySettingFieldInter
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, int|string|bool> $args Rendering arguments.
-	 *
-	 * @phpstan-param array{
-	 *     field_name: string,
-	 *     input_id: string,
-	 *     value: string
-	 * } $args
+	 * @param array{field_name: string, input_id: string, value: string} $args Rendering arguments.
 	 */
 	#[Override]
 	public function render( array $args ): void {

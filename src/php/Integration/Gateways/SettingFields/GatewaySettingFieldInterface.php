@@ -9,6 +9,8 @@ use Fundrik\WordPress\Integration\WpSchemaType;
 /**
  * Represents a gateway settings field definition.
  *
+ * @template TValue of int|string|bool = int|string|bool
+ *
  * @since 1.0.0
  */
 interface GatewaySettingFieldInterface {
@@ -36,7 +38,7 @@ interface GatewaySettingFieldInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int|string|bool Default field value.
+	 * @return TValue Default field value.
 	 */
 	public function get_default_value(): int|string|bool;
 
@@ -54,13 +56,7 @@ interface GatewaySettingFieldInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, int|string|bool> $args Rendering arguments.
-	 *
-	 * @phpstan-param array{
-	 *     field_name: string,
-	 *     input_id: string,
-	 *     value: int|string|bool
-	 * } $args
+	 * @param array{field_name: string, input_id: string, value: TValue} $args Rendering arguments.
 	 */
 	public function render( array $args ): void;
 }

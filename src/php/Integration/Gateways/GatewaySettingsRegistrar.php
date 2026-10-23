@@ -29,7 +29,7 @@ final readonly class GatewaySettingsRegistrar {
 	/**
 	 * Gateway instances.
 	 *
-	 * @var list<GatewayInterface>
+	 * @var array<GatewayInterface>
 	 */
 	private array $gateways;
 
@@ -188,6 +188,8 @@ final readonly class GatewaySettingsRegistrar {
 	 * @param GatewaySettingFieldInterface $field Gateway field definition.
 	 *
 	 * @return int|string|bool Current field value.
+	 *
+	 * @throws LogicException When the field type is unsupported.
 	 */
 	private function get_current_value( string $option_name, GatewaySettingFieldInterface $field ): int|string|bool {
 
@@ -196,6 +198,9 @@ final readonly class GatewaySettingsRegistrar {
 				WpSchemaType::Boolean => $this->option_reader->find_bool_option( $option_name ),
 				WpSchemaType::Integer => $this->option_reader->find_int_option( $option_name ),
 				WpSchemaType::String => $this->option_reader->find_string_option( $option_name ),
+				WpSchemaType::Number, WpSchemaType::Array, WpSchemaType::Object => throw new LogicException(
+					'Gateway settings do not support the configured schema type.',
+				),
 			} ?? $field->get_default_value();
 		} catch ( UnexpectedValueException ) {
 			return $field->get_default_value();
@@ -215,6 +220,7 @@ final readonly class GatewaySettingsRegistrar {
 	 * @return int|string|bool Sanitized field value.
 	 *
 	 * @throws InvalidArgumentException When the value cannot be converted to the field type.
+	 * @throws LogicException When the field type is unsupported.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -230,6 +236,9 @@ final readonly class GatewaySettingsRegistrar {
 				WpSchemaType::Boolean => TypeCaster::to_bool( $value ),
 				WpSchemaType::Integer => TypeCaster::to_int( $value ),
 				WpSchemaType::String => TypeCaster::to_string( $value ),
+				WpSchemaType::Number, WpSchemaType::Array, WpSchemaType::Object => throw new LogicException(
+					'Gateway settings do not support the configured schema type.',
+				),
 			};
 		} catch ( InvalidArgumentException $exception ) {
 
