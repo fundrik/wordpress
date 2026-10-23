@@ -38,7 +38,8 @@ final readonly class SettingFieldRenderer {
 			'<input type="number" name="%s" class="regular-text" id="%s" value="%d"%s>',
 			esc_attr( $field_name ),
 			esc_attr( $input_id ),
-			(int) $value,
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer is formatted with %d.
+			$value,
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Optional attributes are built from escaped values.
 			self::build_optional_number_attributes( $min, $max, $step ),
 		);
@@ -64,7 +65,7 @@ final readonly class SettingFieldRenderer {
 		$maxlength_attribute = '';
 
 		if ( $maxlength !== null ) {
-			$maxlength_attribute = sprintf( ' maxlength="%d"', (int) $maxlength );
+			$maxlength_attribute = sprintf( ' maxlength="%d"', $maxlength );
 		}
 
 		printf(
@@ -158,15 +159,15 @@ final readonly class SettingFieldRenderer {
 		$attributes = '';
 
 		if ( $min !== null ) {
-			$attributes .= sprintf( ' min="%d"', (int) $min );
+			$attributes .= sprintf( ' min="%d"', $min );
 		}
 
 		if ( $max !== null ) {
-			$attributes .= sprintf( ' max="%d"', (int) $max );
+			$attributes .= sprintf( ' max="%d"', $max );
 		}
 
 		if ( $step !== null ) {
-			$attributes .= sprintf( ' step="%d"', (int) $step );
+			$attributes .= sprintf( ' step="%d"', $step );
 		}
 
 		return $attributes;

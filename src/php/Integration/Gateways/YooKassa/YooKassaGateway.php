@@ -15,6 +15,7 @@ use Fundrik\WordPress\Integration\Gateways\SettingFields\GatewaySettingFieldInte
 use Fundrik\WordPress\Integration\Gateways\SettingFields\GatewaySettingTextField;
 use Override;
 use Throwable;
+use UnexpectedValueException;
 use YooKassa\Client;
 use YooKassa\Model\Payment\ConfirmationType;
 use YooKassa\Request\Payments\CreatePaymentRequest;
@@ -127,8 +128,8 @@ final readonly class YooKassaGateway implements GatewayInterface {
 			);
 
 			return new DonationGatewayCheckoutResult(
-				PaymentId::create( $payment->getId() ?? '' ),
-				Url::create( $payment->getConfirmation()->getConfirmationUrl() ),
+				PaymentId::create( $payment?->getId() ?? '' ),
+				Url::create( $payment?->getConfirmation()?->getConfirmationUrl() ?? '' ),
 			);
 		} catch ( Throwable $e ) {
 			throw new YooKassaGatewayException(
@@ -138,6 +139,7 @@ final readonly class YooKassaGateway implements GatewayInterface {
 		}
 	}
 
+	// phpcs:disable SlevomatCodingStandard.Functions.FunctionLength.FunctionLength
 	/**
 	 * Creates a YooKassa payment request.
 	 *
@@ -146,13 +148,14 @@ final readonly class YooKassaGateway implements GatewayInterface {
 	 * @param DonationGatewayCheckoutRequest $request Normalized checkout input.
 	 *
 	 * @return CreatePaymentRequestInterface YooKassa payment request.
+	 *
+	 * @throws UnexpectedValueException When the SDK returns an unsupported request type.
 	 */
 	private function create_payment_request( DonationGatewayCheckoutRequest $request ): CreatePaymentRequestInterface {
 
 		$money = $request->get_money();
 
-		return CreatePaymentRequest::builder()
-			->setAmount( $this->format_amount( $money ), $money->get_currency()->get_code() )
+		$payment_request = CreatePaymentRequest::builder()
 			->setCapture( true )
 			->setConfirmation(
 				[
@@ -169,8 +172,20 @@ final readonly class YooKassaGateway implements GatewayInterface {
 					'cancel_url' => $request->get_cancel_url()->get_value(),
 				],
 			)
+			->setAmount( $this->format_amount( $money ), $money->get_currency()->get_code() )
 			->build();
+
+		// The SDK declares a broad build() return type despite this concrete builder creating a payment request.
+		if ( ! $payment_request instanceof CreatePaymentRequestInterface ) {
+
+			throw new UnexpectedValueException(
+				'YooKassa payment request builder returned an unsupported request type.',
+			);
+		}
+
+		return $payment_request;
 	}
+	// phpcs:enable
 
 	/**
 	 * Formats a donation amount in minor units for YooKassa.
@@ -179,7 +194,7 @@ final readonly class YooKassaGateway implements GatewayInterface {
 	 *
 	 * @param Money $money Donation money.
 	 *
-	 * @return string Amount formatted for YooKassa.
+	 * @return numeric-string Amount formatted for YooKassa.
 	 */
 	private function format_amount( Money $money ): string {
 

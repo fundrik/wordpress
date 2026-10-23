@@ -71,8 +71,6 @@ final readonly class YooKassaSettingsReader {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @template T of string|bool
-	 *
 	 * @param string $setting_id Setting ID.
 	 *
 	 * @return string Setting value.
