@@ -70,10 +70,10 @@ final readonly class RegisterBlocksBootUnit implements BootUnitInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<int, array<string, mixed>> $categories Block categories.
+	 * @param array<array<mixed>> $categories Block categories.
 	 * @param WP_Block_Editor_Context $editor_context Block editor context.
 	 *
-	 * @return array<int, array<string, mixed>> Block categories with Fundrik appended.
+	 * @return array<array<mixed>> Block categories with Fundrik appended.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter

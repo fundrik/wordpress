@@ -161,7 +161,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @return WP_REST_Request The validated request.
 	 *
-	 * @phpstan-return WP_REST_Request<array<string, ixed>>
+	 * @phpstan-return WP_REST_Request<array<string, mixed>>
 	 *
 	 * @throws InvalidHookDispatcherArgumentException When the request argument is invalid.
 	 *

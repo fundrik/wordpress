@@ -112,10 +112,10 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<int, array<string, mixed>> $categories The validated block categories.
+	 * @param array<array<mixed>> $categories The validated block categories.
 	 * @param WP_Block_Editor_Context $editor_context The validated editor context.
 	 *
-	 * @return array<int, array<string, mixed>> The value returned after listeners.
+	 * @return array<array<mixed>> The value returned after listeners.
 	 *
 	 * @throws InvalidHookDispatcherArgumentException When a listener returns invalid categories.
 	 *
@@ -140,7 +140,7 @@ final class BlockCategoriesAllFilterHookDispatcher implements HookDispatcherInte
 	 *
 	 * @param mixed $categories The original value passed by WordPress.
 	 *
-	 * @return array<int, array<string, mixed>> The validated block categories.
+	 * @return array<array<mixed>> The validated block categories.
 	 *
 	 * @throws InvalidHookDispatcherArgumentException When categories are not an array of arrays.
 	 *
