@@ -99,7 +99,7 @@ final readonly class CheckoutSuccessUrlSetting implements AdminSettingInterface 
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Success URL must be a valid URL. Given: %s.', $value ),
+			sprintf( 'Success URL must be a valid URL. Given: %s.', $url ),
 		);
 	}
 

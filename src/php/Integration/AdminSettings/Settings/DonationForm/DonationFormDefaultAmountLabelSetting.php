@@ -101,7 +101,7 @@ final readonly class DonationFormDefaultAmountLabelSetting implements AdminSetti
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Default amount label must not be empty. Given: %s.', $value ),
+			sprintf( 'Default amount label must not be empty. Given: %s.', $default_amount_label ),
 		);
 	}
 

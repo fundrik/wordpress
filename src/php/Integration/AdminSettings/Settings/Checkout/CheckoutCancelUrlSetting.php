@@ -99,7 +99,7 @@ final readonly class CheckoutCancelUrlSetting implements AdminSettingInterface {
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Cancel URL must be a valid URL. Given: %s.', $value ),
+			sprintf( 'Cancel URL must be a valid URL. Given: %s.', $url ),
 		);
 	}
 

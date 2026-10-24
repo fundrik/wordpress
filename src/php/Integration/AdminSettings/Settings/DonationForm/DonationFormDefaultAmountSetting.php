@@ -101,7 +101,7 @@ final readonly class DonationFormDefaultAmountSetting implements AdminSettingInt
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $value ),
+			sprintf( 'Default donation amount must be a positive integer. Given: %d.', $default_amount ),
 		);
 	}
 

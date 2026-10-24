@@ -101,7 +101,7 @@ final readonly class CurrencySetting implements AdminSettingInterface {
 		}
 
 		throw new InvalidArgumentException(
-			sprintf( 'Currency must be a 3-letter ISO 4217 code. Given: %s.', $value ),
+			sprintf( 'Currency must be a 3-letter ISO 4217 code. Given: %s.', $currency ),
 		);
 	}
 
