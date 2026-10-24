@@ -67,6 +67,8 @@ final readonly class RegisterRestApiRoutesBootUnit implements BootUnitInterface 
 	 *
 	 * @param WP_REST_Server $server The active REST server.
 	 *
+	 * @throws Throwable When REST route registration fails.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
 	private function register_routes( WP_REST_Server $server ): void {

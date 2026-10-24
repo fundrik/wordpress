@@ -30,7 +30,7 @@ final readonly class AdminSettingsReader {
 	/**
 	 * Registered admin settings groups.
 	 *
-	 * @var list<AdminSettingsGroupInterface>
+	 * @var array<AdminSettingsGroupInterface>
 	 */
 	private array $admin_setting_groups;
 
@@ -48,6 +48,8 @@ final readonly class AdminSettingsReader {
 	 *
 	 * @param OptionReader $option_reader Provides typed reading helpers for WordPress options.
 	 * @param AdminSettingsGroupInterface ...$admin_setting_groups Registered admin settings groups.
+	 *
+	 * @throws LogicException When an admin setting is registered more than once.
 	 */
 	public function __construct(
 		private OptionReader $option_reader,
@@ -55,7 +57,7 @@ final readonly class AdminSettingsReader {
 	) {
 
 		$this->admin_setting_groups = $admin_setting_groups;
-		$this->index_settings();
+		$this->setting_configs = $this->build_setting_configs();
 	}
 
 	/**
@@ -154,13 +156,17 @@ final readonly class AdminSettingsReader {
 		return $this->get_string_setting( DonationFormDefaultAmountLabelSetting::class );
 	}
 
-	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh
+	// phpcs:disable SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh, SlevomatCodingStandard.Files.LineLength.LineTooLong
 	/**
-	 * Indexes registered settings by setting class.
+	 * Builds the setting index keyed by setting class.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @return array<class-string<AdminSettingInterface>, array{group_id: string, setting: AdminSettingInterface}> Setting index.
+	 *
+	 * @throws LogicException When an admin setting is registered more than once.
 	 */
-	private function index_settings(): void {
+	private function build_setting_configs(): array {
 
 		$setting_configs = [];
 
@@ -182,7 +188,7 @@ final readonly class AdminSettingsReader {
 			}
 		}
 
-		$this->setting_configs = $setting_configs;
+		return $setting_configs;
 	}
 	// phpcs:enable
 
@@ -193,13 +199,13 @@ final readonly class AdminSettingsReader {
 	 *
 	 * @param string $setting_class Setting class.
 	 *
-	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
+	 * @phpstan-param class-string<AdminSettingInterface<string>> $setting_class Setting class.
 	 *
 	 * @return string Setting value.
 	 */
 	private function get_string_setting( string $setting_class ): string {
 
-		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$setting = $this->get_setting( $setting_class );
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
 		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
@@ -218,13 +224,13 @@ final readonly class AdminSettingsReader {
 	 *
 	 * @param string $setting_class Setting class.
 	 *
-	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
+	 * @phpstan-param class-string<AdminSettingInterface<bool>> $setting_class Setting class.
 	 *
 	 * @return bool Setting value.
 	 */
 	private function get_bool_setting( string $setting_class ): bool {
 
-		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$setting = $this->get_setting( $setting_class );
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
 		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
@@ -243,13 +249,13 @@ final readonly class AdminSettingsReader {
 	 *
 	 * @param string $setting_class Setting class.
 	 *
-	 * @phpstan-param class-string<AdminSettingInterface> $setting_class Setting class.
+	 * @phpstan-param class-string<AdminSettingInterface<int>> $setting_class Setting class.
 	 *
 	 * @return int Setting value.
 	 */
 	private function get_int_setting( string $setting_class ): int {
 
-		$setting = $this->setting_configs[ $setting_class ]['setting'];
+		$setting = $this->get_setting( $setting_class );
 		$group_id = $this->setting_configs[ $setting_class ]['group_id'];
 		$option_name = SettingOptionName::create( $group_id, $setting->get_id() );
 		$default_value = $setting->get_default_value();
@@ -259,5 +265,23 @@ final readonly class AdminSettingsReader {
 		} catch ( UnexpectedValueException ) {
 			return $default_value;
 		}
+	}
+
+	/**
+	 * Returns a registered setting by its class.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @template TValue of int|string|bool
+	 *
+	 * @param string $setting_class Setting class.
+	 *
+	 * @phpstan-param class-string<AdminSettingInterface<TValue>> $setting_class
+	 *
+	 * @return AdminSettingInterface<TValue> Setting definition.
+	 */
+	private function get_setting( string $setting_class ): AdminSettingInterface {
+
+		return $this->setting_configs[ $setting_class ]['setting'];
 	}
 }
