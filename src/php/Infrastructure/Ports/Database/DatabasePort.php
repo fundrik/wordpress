@@ -227,8 +227,6 @@ interface DatabasePort {
 	 * @param string $table The table name with or without prefix.
 	 *
 	 * @return string The table name with prefix applied.
-	 *
-	 * @throws DatabaseExceptionInterface When the prefix cannot be determined.
 	 */
 	public function qualify_table_name( string $table ): string;
 

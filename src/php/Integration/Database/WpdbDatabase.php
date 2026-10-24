@@ -30,6 +30,8 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 * Constructor.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @throws WpdbDatabaseException When the global database connection is invalid.
 	 */
 	public function __construct() {
 
@@ -196,11 +198,10 @@ final readonly class WpdbDatabase implements DatabasePort {
 		}
 
 		$table = $this->qualify_table_name( $table );
-		$placeholders = $this->build_placeholders( $ids );
 
 		$sql = sprintf(
 			'SELECT * FROM %%i WHERE id IN (%s)',
-			implode( ', ', $placeholders ),
+			implode( ', ', $this->build_placeholders( $ids ) ),
 		);
 		$query = $this->prepare_query( $sql, $table, ...$ids );
 
@@ -697,23 +698,11 @@ final readonly class WpdbDatabase implements DatabasePort {
 	 * @param string $table The table name with or without prefix.
 	 *
 	 * @return string The table name with prefix applied.
-	 *
-	 * @throws WpdbDatabaseException When the prefix cannot be determined.
 	 */
 	#[Override]
 	public function qualify_table_name( string $table ): string {
 
 		$prefix = $this->wpdb->prefix;
-
-		if ( ! is_string( $prefix ) ) {
-
-			throw new WpdbDatabaseException(
-				sprintf(
-					'Database table prefix must be a string. Given: %s.',
-					get_debug_type( $prefix ),
-				),
-			);
-		}
 
 		if ( $prefix === '' || str_starts_with( $table, $prefix ) ) {
 			return $table;
@@ -853,11 +842,11 @@ final readonly class WpdbDatabase implements DatabasePort {
 	}
 
 	/**
-	 * Builds the placeholder list for a set of values.
+	 * Builds the placeholders for a set of values.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<int|string> $values Values to convert to placeholders.
+	 * @param array<int|string> $values Values to convert to placeholders.
 	 *
 	 * @return list<string> Placeholder list.
 	 */
