@@ -13,6 +13,8 @@ use InvalidArgumentException;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @template TValue of int|string|bool = int|string|bool
  */
 interface AdminSettingInterface {
 
@@ -39,7 +41,7 @@ interface AdminSettingInterface {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return int|string|bool Default setting value.
+	 * @return TValue Default setting value.
 	 */
 	public function get_default_value(): int|string|bool;
 
@@ -59,7 +61,7 @@ interface AdminSettingInterface {
 	 *
 	 * @param mixed $value Raw setting value.
 	 *
-	 * @return int|string|bool Sanitized setting value.
+	 * @return TValue Sanitized setting value.
 	 *
 	 * @throws InvalidArgumentException When the value is invalid.
 	 *
@@ -77,7 +79,7 @@ interface AdminSettingInterface {
 	 * @phpstan-param array{
 	 *     field_name: string,
 	 *     input_id: string,
-	 *     value: int|string|bool
+	 *     value: TValue
 	 * } $args
 	 */
 	public function render( array $args ): void;

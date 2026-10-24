@@ -62,8 +62,6 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 	 *
 	 * @return WP_REST_Response Unchanged response.
 	 *
-	 * @phpstan-return WP_REST_Response<array<string, mixed>>
-	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
@@ -209,7 +207,7 @@ final readonly class LogCreateDonationRestRequestFailuresBootUnit implements Boo
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $response_data REST error response payload.
+	 * @param array<mixed> $response_data REST error response payload.
 	 *
 	 * @return list<string> Invalid parameter names.
 	 *

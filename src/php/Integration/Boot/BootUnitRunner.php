@@ -19,7 +19,7 @@ final readonly class BootUnitRunner implements BootUnitRunnerPort {
 	/**
 	 * The configured boot units.
 	 *
-	 * @var list<BootUnitInterface>
+	 * @var array<BootUnitInterface>
 	 */
 	private array $boot_units;
 

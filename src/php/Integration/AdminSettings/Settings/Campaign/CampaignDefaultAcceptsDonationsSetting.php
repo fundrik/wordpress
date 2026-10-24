@@ -17,6 +17,8 @@ use Override;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @implements AdminSettingInterface<bool>
  */
 final readonly class CampaignDefaultAcceptsDonationsSetting implements AdminSettingInterface {
 

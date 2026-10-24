@@ -19,6 +19,8 @@ interface RestRouteInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string REST route namespace.
+	 *
+	 * @phpstan-return non-falsy-string
 	 */
 	public static function get_route_namespace(): string;
 
@@ -28,6 +30,8 @@ interface RestRouteInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string REST route path.
+	 *
+	 * @phpstan-return non-falsy-string
 	 */
 	public static function get_route_path(): string;
 

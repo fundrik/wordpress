@@ -25,7 +25,7 @@ final readonly class RegisterRestApiRoutesBootUnit implements BootUnitInterface 
 	/**
 	 * The configured REST API routes.
 	 *
-	 * @var list<RestRouteInterface>
+	 * @var array<RestRouteInterface>
 	 */
 	private array $rest_routes;
 

@@ -21,7 +21,7 @@ final readonly class GatewayResolver {
 	/**
 	 * Gateway instances.
 	 *
-	 * @var list<GatewayInterface>
+	 * @var array<GatewayInterface>
 	 */
 	private array $gateways;
 

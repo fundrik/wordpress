@@ -17,6 +17,8 @@ use Override;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @implements AdminSettingInterface<string>
  */
 final readonly class CheckoutCancelUrlSetting implements AdminSettingInterface {
 

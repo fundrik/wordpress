@@ -18,6 +18,8 @@ use Override;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @implements AdminSettingInterface<string>
  */
 final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 
@@ -41,7 +43,7 @@ final readonly class SelectedGatewaySetting implements AdminSettingInterface {
 		GatewayInterface ...$gateways,
 	) {
 
-		$this->gateways = $gateways;
+		$this->gateways = array_values( $gateways );
 	}
 
 	/**

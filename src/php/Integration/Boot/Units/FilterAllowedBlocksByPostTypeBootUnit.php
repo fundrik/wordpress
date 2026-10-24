@@ -36,7 +36,7 @@ final readonly class FilterAllowedBlocksByPostTypeBootUnit implements BootUnitIn
 	/**
 	 * The configured post type configs.
 	 *
-	 * @var list<PostTypeConfigInterface>
+	 * @var array<PostTypeConfigInterface>
 	 */
 	private array $post_type_configs;
 

@@ -35,6 +35,8 @@ final readonly class YooKassaNotifyRestRoute implements RestRouteInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string REST route namespace.
+	 *
+	 * @phpstan-return non-falsy-string
 	 */
 	#[Override]
 	public static function get_route_namespace(): string {
@@ -48,6 +50,8 @@ final readonly class YooKassaNotifyRestRoute implements RestRouteInterface {
 	 * @since 1.0.0
 	 *
 	 * @return string REST route path.
+	 *
+	 * @phpstan-return non-falsy-string
 	 */
 	#[Override]
 	public static function get_route_path(): string {

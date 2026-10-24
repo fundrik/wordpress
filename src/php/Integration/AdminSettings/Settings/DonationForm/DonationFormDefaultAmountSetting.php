@@ -17,6 +17,8 @@ use Override;
  * @since 1.0.0
  *
  * @internal
+ *
+ * @implements AdminSettingInterface<int>
  */
 final readonly class DonationFormDefaultAmountSetting implements AdminSettingInterface {
 
