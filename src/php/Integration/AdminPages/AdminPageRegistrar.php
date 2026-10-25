@@ -16,7 +16,7 @@ final readonly class AdminPageRegistrar {
 	/**
 	 * The configured admin pages.
 	 *
-	 * @var list<AdminPageInterface>
+	 * @var array<AdminPageInterface>
 	 */
 	private array $admin_pages;
 

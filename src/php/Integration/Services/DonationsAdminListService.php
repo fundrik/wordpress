@@ -138,7 +138,15 @@ final readonly class DonationsAdminListService {
 			array_values( $campaign_ids ),
 		);
 
-		return $this->campaign_read->find_by_ids( $campaign_entity_ids );
+		$campaigns = $this->campaign_read->find_by_ids( $campaign_entity_ids );
+
+		$campaigns_by_id = [];
+
+		foreach ( $campaigns as $campaign ) {
+			$campaigns_by_id[ $campaign->get_id() ] = $campaign;
+		}
+
+		return $campaigns_by_id;
 	}
 	// phpcs:enable
 

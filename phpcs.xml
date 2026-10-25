@@ -6,7 +6,6 @@
 	<exclude-pattern>vendor/</exclude-pattern>
 	<exclude-pattern>phpstan-scans.php</exclude-pattern>
 	<exclude-pattern>phpstan-stubs.php</exclude-pattern>
-	<exclude-pattern>rector.php</exclude-pattern>
 
 	<arg value="sp"/>
 	<arg name="basepath" value="."/>

@@ -92,7 +92,7 @@ final class DonationsListTable extends WP_List_Table {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param DonationAdminListItem $item Donation row.
+	 * @param array<mixed>|object $item Donation row.
 	 * @param string $column_name Column name.
 	 *
 	 * @return string Column output.

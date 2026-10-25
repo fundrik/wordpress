@@ -10,6 +10,7 @@ use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use Fundrik\WordPress\Integration\WpSchemaType;
 use InvalidArgumentException;
+use LogicException;
 use UnexpectedValueException;
 
 /**
@@ -24,7 +25,7 @@ final readonly class AdminSettingsGroupRegistrar {
 	/**
 	 * The configured admin settings groups.
 	 *
-	 * @var list<AdminSettingsGroupInterface>
+	 * @var array<AdminSettingsGroupInterface>
 	 */
 	private array $groups;
 
@@ -91,6 +92,8 @@ final readonly class AdminSettingsGroupRegistrar {
 	 * @param AdminSettingInterface $setting Setting definition.
 	 *
 	 * @return AdminSettingRegistration Prepared registration data.
+	 *
+	 * @throws LogicException When the setting schema type is unsupported.
 	 */
 	private function prepare_setting_registration(
 		AdminSettingsGroupInterface $group,
@@ -105,6 +108,9 @@ final readonly class AdminSettingsGroupRegistrar {
 				WpSchemaType::Boolean => $this->option_reader->find_bool_option( $option_name ),
 				WpSchemaType::Integer => $this->option_reader->find_int_option( $option_name ),
 				WpSchemaType::String => $this->option_reader->find_string_option( $option_name ),
+				WpSchemaType::Number, WpSchemaType::Array, WpSchemaType::Object => throw new LogicException(
+					'Admin settings do not support the configured schema type.',
+				),
 			} ?? $setting->get_default_value();
 		} catch ( UnexpectedValueException ) {
 			$current_value = $setting->get_default_value();

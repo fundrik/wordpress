@@ -77,9 +77,11 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<int|string> $ids Campaign IDs.
+	 * @param array<EntityId> $ids Campaign IDs.
 	 *
-	 * @return array<int, Campaign> Campaigns keyed by ID.
+	 * @phpstan-param list<EntityId> $ids
+	 *
+	 * @return list<Campaign> Campaign read models.
 	 *
 	 * @throws CampaignReadException When the lookup fails.
 	 */
@@ -101,8 +103,7 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 		$campaigns = [];
 
 		foreach ( $rows as $row ) {
-			$campaign = $this->map_row_to_campaign( $row );
-			$campaigns[ $campaign->get_id() ] = $campaign;
+			$campaigns[] = $this->map_row_to_campaign( $row );
 		}
 
 		return $campaigns;
@@ -133,7 +134,9 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param list<int|string> $ids Campaign IDs.
+	 * @param array<EntityId> $ids Campaign IDs.
+	 *
+	 * @phpstan-param list<EntityId> $ids
 	 *
 	 * @return list<int> Campaign IDs.
 	 *
@@ -144,7 +147,7 @@ final readonly class CampaignReadRepository implements CampaignReadPort {
 		$campaign_ids = [];
 
 		foreach ( $ids as $id ) {
-			$campaign_ids[] = $this->require_campaign_id( EntityId::create( $id ) );
+			$campaign_ids[] = $this->require_campaign_id( $id );
 		}
 
 		return array_values( array_unique( $campaign_ids ) );
