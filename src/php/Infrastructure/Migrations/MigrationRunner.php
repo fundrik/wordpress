@@ -35,7 +35,7 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	/**
 	 * The configured migrations.
 	 *
-	 * @var list<AbstractMigration>
+	 * @var array<AbstractMigration>
 	 */
 	private array $migrations;
 

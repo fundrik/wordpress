@@ -21,7 +21,7 @@ final readonly class ApplicationEventBus implements ApplicationEventBusPort {
 	/**
 	 * Configured event consumers.
 	 *
-	 * @var list<ApplicationEventConsumerInterface>
+	 * @var array<ApplicationEventConsumerInterface>
 	 */
 	private array $consumers;
 

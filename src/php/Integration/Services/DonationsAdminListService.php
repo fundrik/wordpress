@@ -143,7 +143,15 @@ final readonly class DonationsAdminListService {
 		$campaigns_by_id = [];
 
 		foreach ( $campaigns as $campaign ) {
-			$campaigns_by_id[ $campaign->get_id() ] = $campaign;
+
+			try {
+				$campaign_id = CampaignId::from_entity_id_value( $campaign->get_id() );
+			} catch ( InvalidCampaignIdException ) {
+				// Affected donation rows are logged as missing in build_admin_list_items().
+				continue;
+			}
+
+			$campaigns_by_id[ $campaign_id->get_value() ] = $campaign;
 		}
 
 		return $campaigns_by_id;
