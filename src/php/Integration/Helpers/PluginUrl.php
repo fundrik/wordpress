@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Infrastructure\Helpers;
+namespace Fundrik\WordPress\Integration\Helpers;
 
 /**
  * Enumerates URL paths used by the Fundrik plugin.

@@ -6,7 +6,7 @@ namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
 use Closure;
-use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
+use Fundrik\WordPress\Integration\Helpers\PluginPath;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\RegisterBlocksBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\BlockCategoriesAllFilterHookDispatcher;

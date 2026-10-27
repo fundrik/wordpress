@@ -14,10 +14,11 @@ use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\Exceptions\FundrikDomainException;
 use Fundrik\Toolbox\TypeCaster;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
-use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Integration\Boot\BootUnitInterface;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
+use Fundrik\WordPress\Integration\Helpers\PluginUrl;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestAfterInsertCampaignActionHookDispatcher;
@@ -148,6 +149,9 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 *
 	 * @return WP_REST_Response The modified response.
 	 *
+	 * @throws InvalidArgumentException When the post ID cannot be converted to an integer.
+	 * @throws InvalidCampaignIdException When the post ID is not a valid campaign ID.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
 	private function attach_campaign_version_for_sync(
@@ -232,6 +236,13 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 * @param WP_REST_Request $request The REST request object.
 	 * @param bool $creating Whether the post is being created or updated.
 	 *
+	 * @throws FundrikDomainException When the saved post data cannot be normalized.
+	 * @throws InvalidArgumentException When the payload is not usable.
+	 * @throws UnexpectedValueException When stored post meta has an unexpected value.
+	 * @throws FindCampaignByIdException When campaign lookup fails.
+	 * @throws CreateCampaignException When campaign creation fails.
+	 * @throws SyncCampaignFromSnapshotException When campaign synchronization fails.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 	 */
 	private function sync_campaign_after_rest_save( WP_Post $post, WP_REST_Request $request, bool $creating ): void {
@@ -287,6 +298,9 @@ final readonly class SyncPostToCampaignBootUnit implements BootUnitInterface {
 	 *
 	 * @param int $post_id The deleted post ID.
 	 * @param WP_Post $post The deleted post snapshot.
+	 *
+	 * @throws InvalidCampaignIdException When the post ID is not a valid campaign ID.
+	 * @throws DeleteCampaignException When campaign deletion fails.
 	 */
 	private function delete_campaign_after_post_delete( int $post_id, WP_Post $post ): void {
 

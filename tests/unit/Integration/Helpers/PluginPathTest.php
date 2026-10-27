@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Fundrik\WordPress\Tests\Infrastructure\Helpers;
+namespace Fundrik\WordPress\Tests\Integration\Helpers;
 
-use Fundrik\WordPress\Infrastructure\Helpers\PluginPath;
+use Fundrik\WordPress\Integration\Helpers\PluginPath;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

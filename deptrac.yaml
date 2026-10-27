@@ -5,151 +5,138 @@ deptrac:
     - ./src/php
 
   layers:
-
-    # Container
-    - name: Container
-      collectors:
-        - type: bool
-          must:
-            - type: classLike
-              value: ^Fundrik\\WordPress\\Kernel\\Container\\.+$
-          must_not:
-            - type: classLike
-              value: ^Fundrik\\WordPress\\Kernel\\Container\\ContainerBindings(Registrar|Registry)$
-
-    - name: ContainerBindings
+    - name: KernelContainer
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Kernel\\Container\\ContainerBindings(Registrar|Registry)$
+          value: ^Fundrik\\WordPress\\Kernel\\Container\\.+$
 
-    # Kernel
     - name: Kernel
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Kernel\\(?!Ports|Container\\).+
+          value: ^Fundrik\\WordPress\\Kernel\\(?!Container\\|Ports\\).+$
 
     - name: KernelPorts
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Kernel\\Ports\\.+
-
-    # External libs / platform
-    - name: Toolbox
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\Toolbox\\.+
-
-    - name: Laravel
-      collectors:
-        - type: classLike
-          value: ^Illuminate\\.*
-
-    - name: PsrLogger
-      collectors:
-        - type: classLike
-          value: ^Psr\\Log\\.*
-
-    - name: WordPressExternal
-      collectors:
-        - type: classLike
-          value: ^wpdb$
-        - type: classLike
-          value: ^WP_.+$
-
-    # Infrastructure
-    - name: Infrastructure
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\WordPress\\Infrastructure\\.+
-
-    # Integration
-    - name: WordPressIntegration
-      collectors:
-        - type: bool
-          must:
-            - type: classLike
-              value: ^Fundrik\\WordPress\\Integration\\.+$
-          must_not:
-            - type: classLike
-              value: ^Fundrik\\WordPress\\Integration\\.+Resolver$
-
-    - name: WordPressIntegrationResolvers
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\WordPress\\Integration\\.+Resolver$
-
-    # Core / Components
-    - name: CoreDomain
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\Core\\Components\\[^\\]+\\Domain\\.+
-
-    - name: CoreApplication
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\(?!Ports\\).+
-
-    - name: CoreApplicationPorts
-      collectors:
-        - type: classLike
-          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\Ports\\.+
+          value: ^Fundrik\\WordPress\\Kernel\\Ports\\.+$
 
     - name: Domain
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Domain\\.+
+          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Domain\\.+$
 
-    - name: Application
+    - name: InfrastructureShared
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Application\\(?!Ports\\).+
+          value: ^Fundrik\\WordPress\\Infrastructure\\(Ports\\.+|Logger|EventBus\\ApplicationEventConsumerInterface)$
 
-    - name: ApplicationPorts
+    - name: Infrastructure
       collectors:
         - type: classLike
-          value: ^Fundrik\\WordPress\\Components\\[^\\]+\\Application\\Ports\\.+
+          value: ^Fundrik\\WordPress\\Infrastructure\\(?!Ports\\|Logger$|EventBus\\ApplicationEventConsumerInterface$).+$
+
+    - name: Presentation
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Presentation\\.+$
+
+    - name: Integration
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\WordPress\\Integration\\.+$
+
+    - name: IntegrationFunctions
+      collectors:
+        - type: functionName
+          value: ^fundrik_(get|the)_.+$
+
+    - name: CoreDomain
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Domain\\.+$
+
+    - name: CoreApplicationPorts
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\Ports\\.+$
+
+    - name: CoreApplication
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Core\\Components\\[^\\]+\\Application\\(?!Ports\\).+$
+
+    - name: Toolbox
+      collectors:
+        - type: classLike
+          value: ^Fundrik\\Toolbox\\.+$
+
+    - name: LaravelContainer
+      collectors:
+        - type: classLike
+          value: ^Illuminate\\(Container|Contracts\\Container)\\.+$
+
+    - name: PsrLogger
+      collectors:
+        - type: classLike
+          value: ^Psr\\Log\\.+$
+
+    - name: YooKassaSdk
+      collectors:
+        - type: classLike
+          value: ^YooKassa\\.+$
+
+    - name: WordPressClasses
+      collectors:
+        - type: classLike
+          value: ^(WP_.+|wpdb)$
 
   ruleset:
-
-    Container:
-      - Laravel
-
-    ContainerBindings:
-      - Container
-      - WordPressIntegration
-      - PsrLogger
+    KernelContainer:
       - KernelPorts
+      - InfrastructureShared
       - Infrastructure
-      - WordPressIntegration
+      - Integration
       - CoreApplicationPorts
-      - WordPressIntegrationBoot
+      - LaravelContainer
+      - PsrLogger
 
     Kernel:
       - KernelPorts
 
     Domain:
-
-    Application:
-
-    ApplicationPorts:
+      - CoreDomain
 
     Infrastructure:
+      - InfrastructureShared
       - KernelPorts
-      - CoreApplicationPorts
+      - Domain
       - CoreDomain
+      - CoreApplication
+      - CoreApplicationPorts
       - Toolbox
       - PsrLogger
 
-    WordPressIntegration:
-      - WordPressIntegrationResolvers
-      - WordPressExternal
+    # TODO: Should PsrLogger be allowed only in InfrastructureShared?
+    InfrastructureShared:
+      - CoreApplication
+      - PsrLogger
+
+    Presentation:
+      - Toolbox
+
+    Integration:
+      - KernelPorts
+      - Domain
+      - InfrastructureShared
+      - Presentation
       - CoreDomain
+      - CoreApplication
+      - CoreApplicationPorts
       - Toolbox
       - PsrLogger
-      - Infrastructure
-      - CoreApplicationPorts
-      - KernelPorts
+      - YooKassaSdk
+      - WordPressClasses
 
-    WordPressIntegrationResolvers:
-      - WordPressIntegration
-      - Container
+    IntegrationFunctions:
+      - Integration
+      - KernelContainer

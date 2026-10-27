@@ -22,7 +22,7 @@ use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\WordPress\Infrastructure\Helpers\PluginUrl;
+use Fundrik\WordPress\Integration\Helpers\PluginUrl;
 use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
