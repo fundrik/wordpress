@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories\DonationRepository;
 
-use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationNotFoundExceptionInterface;
-use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryExceptionInterface;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationFactory;
@@ -59,7 +57,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation|null Donation if found, null otherwise.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
+	 * @throws DonationRepositoryException Donation lookup failure.
 	 */
 	#[Override]
 	public function find_by_id( EntityId $id ): ?Donation {
@@ -91,7 +89,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation|null Donation if found, null otherwise.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the lookup fails.
+	 * @throws DonationRepositoryException Donation lookup failure.
 	 */
 	#[Override]
 	public function find_by_payment_id( PaymentId $payment_id ): ?Donation {
@@ -123,7 +121,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return bool True when at least one donation exists for the campaign.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the existence check fails.
+	 * @throws DonationRepositoryException Donation existence check failure.
 	 */
 	#[Override]
 	public function exists_by_campaign_id( EntityId $campaign_id ): bool {
@@ -149,7 +147,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return bool True if the donation exists.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the existence check fails.
+	 * @throws DonationRepositoryException Donation existence check failure.
 	 */
 	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
@@ -176,7 +174,8 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation Persisted donation snapshot.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the insert fails.
+	 * @throws DonationAlreadyExistsException Duplicate donation or payment ID.
+	 * @throws DonationRepositoryException Donation insert failure.
 	 */
 	#[Override]
 	public function insert( Donation $donation ): Donation {
@@ -231,8 +230,8 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation Persisted donation snapshot.
 	 *
-	 * @throws DonationNotFoundExceptionInterface When the donation does not exist.
-	 * @throws DonationRepositoryExceptionInterface When the update fails for another reason.
+	 * @throws DonationNotFoundException Donation not found.
+	 * @throws DonationRepositoryException Donation update failure.
 	 */
 	#[Override]
 	public function update( Donation $donation ): Donation {
@@ -293,7 +292,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return Donation Mapped donation entity.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the row cannot be mapped.
+	 * @throws DonationRepositoryException Donation row mapping failure.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
@@ -388,7 +387,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return string Donation ID.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a valid UUIDv4.
+	 * @throws DonationRepositoryException Invalid donation ID.
 	 */
 	private function require_donation_id( EntityId $id ): string {
 
@@ -408,7 +407,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @return int Campaign ID.
 	 *
-	 * @throws DonationRepositoryExceptionInterface When the ID cannot be represented as a positive integer.
+	 * @throws DonationRepositoryException Invalid campaign ID.
 	 */
 	private function require_campaign_id( EntityId $id ): int {
 

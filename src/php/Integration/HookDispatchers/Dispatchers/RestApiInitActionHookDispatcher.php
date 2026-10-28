@@ -123,6 +123,8 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @return WP_REST_Server The validated REST server instance.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException Invalid REST server.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_server( mixed $server ): WP_REST_Server {

@@ -63,6 +63,8 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 	 * Registers all configured admin pages in WordPress.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @throws Throwable Admin page registration failure.
 	 */
 	private function register_admin_pages(): void {
 
@@ -86,6 +88,8 @@ final readonly class InitializeFundrikAdminBootUnit implements BootUnitInterface
 	 * Registers all configured admin settings in WordPress.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @throws Throwable Admin settings registration failure.
 	 */
 	private function register_admin_settings(): void {
 

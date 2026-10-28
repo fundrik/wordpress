@@ -20,7 +20,9 @@ final readonly class RestValidationFailure {
 	 *
 	 * @param string $error_code REST error code.
 	 * @param string|null $error_message REST error message, if present.
-	 * @param list<string> $invalid_params Invalid parameter names.
+	 * @param array<int, string> $invalid_params Invalid parameter names.
+	 * 
+	 * @phpstan-param list<string> $invalid_params
 	 */
 	public function __construct(
 		public string $error_code,

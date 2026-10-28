@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository;
 
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignNotFoundExceptionInterface;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryExceptionInterface;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRepository\CampaignRepositoryPort;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
@@ -57,7 +55,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return Campaign|null Campaign if found, null otherwise.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the lookup fails.
+	 * @throws CampaignRepositoryException Campaign lookup failure.
 	 */
 	#[Override]
 	public function find_by_id( EntityId $id ): ?Campaign {
@@ -89,7 +87,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return bool True if the campaign exists.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the existence check fails.
+	 * @throws CampaignRepositoryException Campaign existence check failure.
 	 */
 	#[Override]
 	public function exists_by_id( EntityId $id ): bool {
@@ -116,7 +114,8 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return Campaign Persisted campaign snapshot.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the insert fails.
+	 * @throws CampaignAlreadyExistsException Duplicate campaign ID.
+	 * @throws CampaignRepositoryException Campaign insert failure.
 	 */
 	#[Override]
 	public function insert( Campaign $campaign ): Campaign {
@@ -171,8 +170,8 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return Campaign Persisted campaign snapshot.
 	 *
-	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
-	 * @throws CampaignRepositoryExceptionInterface When the update fails for another reason.
+	 * @throws CampaignNotFoundException Campaign not found.
+	 * @throws CampaignRepositoryException Campaign update failure.
 	 */
 	#[Override]
 	public function update( Campaign $campaign ): Campaign {
@@ -235,8 +234,8 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @param EntityId $id Campaign ID.
 	 *
-	 * @throws CampaignNotFoundExceptionInterface When the campaign does not exist.
-	 * @throws CampaignRepositoryExceptionInterface When the delete fails for another reason.
+	 * @throws CampaignNotFoundException Campaign not found.
+	 * @throws CampaignRepositoryException Campaign deletion failure.
 	 */
 	#[Override]
 	public function delete( EntityId $id ): void {
@@ -264,7 +263,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return int Campaign ID.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the ID cannot be represented as a positive integer.
+	 * @throws CampaignRepositoryException Invalid campaign ID.
 	 */
 	private function require_campaign_id( EntityId $id ): int {
 
@@ -284,7 +283,7 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @return Campaign Mapped campaign entity.
 	 *
-	 * @throws CampaignRepositoryExceptionInterface When the row cannot be mapped.
+	 * @throws CampaignRepositoryException Campaign row mapping failure.
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */

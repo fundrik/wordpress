@@ -204,6 +204,8 @@ final readonly class MigrationRunner implements MigrationRunnerPort {
 	 * @since 1.0.0
 	 *
 	 * @return array<string, AbstractMigration> The [version => migration] map.
+	 *
+	 * @throws MigrationException Invalid or duplicate migration version.
 	 */
 	private function get_sorted_migrations(): array {
 

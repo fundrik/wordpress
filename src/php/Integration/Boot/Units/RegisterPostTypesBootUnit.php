@@ -65,6 +65,8 @@ final readonly class RegisterPostTypesBootUnit implements BootUnitInterface {
 	 * Registers all configured post types in WordPress.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @throws Throwable Post type registration failure.
 	 */
 	private function register_post_types(): void {
 

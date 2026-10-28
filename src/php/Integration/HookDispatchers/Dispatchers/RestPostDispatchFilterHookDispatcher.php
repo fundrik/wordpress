@@ -126,6 +126,8 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	 * @param WP_REST_Request $request The validated request.
 	 *
 	 * @return WP_REST_Response The value returned after listeners.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException Invalid listener response.
 	 */
 	private function dispatch_to_listeners(
 		WP_REST_Response $response,
@@ -154,6 +156,8 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	 *
 	 * @return WP_REST_Response The validated response.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException Invalid response.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_response( mixed $response ): WP_REST_Response {
@@ -174,6 +178,8 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	 *
 	 * @return WP_REST_Server The validated REST server.
 	 *
+	 * @throws InvalidHookDispatcherArgumentException Invalid REST server.
+	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
 	private function validate_server( mixed $server ): WP_REST_Server {
@@ -193,6 +199,8 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	 * @param mixed $request The incoming request object.
 	 *
 	 * @return WP_REST_Request The validated request.
+	 *
+	 * @throws InvalidHookDispatcherArgumentException Invalid request.
 	 *
 	 * @phpstan-return WP_REST_Request<array<string, mixed>>
 	 *

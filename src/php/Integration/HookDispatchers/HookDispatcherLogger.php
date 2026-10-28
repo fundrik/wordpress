@@ -102,6 +102,8 @@ final class HookDispatcherLogger extends Logger {
 	 * Ensures that context (hook and dispatcher class) is configured before logging.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @throws LogicException Unset hook or dispatcher context.
 	 */
 	#[Override]
 	protected function assert_context_is_set(): void {
