@@ -4,6 +4,7 @@
 - Tests under `tests/unit/Integration/` are isolated unit tests for classes in the `Fundrik\WordPress\Integration` namespace.
 - Real integration tests that use a real WordPress runtime and database belong in `tests/integration/`.
 - If `phpunit` fails because `mbstring` is missing, run PHPUnit with `php -c .tmp/php.ini vendor/bin/phpunit`.
+- If another PHP-based project command fails because a required extension is missing, use `.tmp/php.ini` for that command too. For Composer scripts, set `PHPRC` to the absolute `.tmp` directory and run `composer run <script>`.
 - Do not call private/protected methods via reflection in tests to force coverage.
 - If target lines cannot be reached through the public API, report this explicitly and align on refactoring or coverage exclusions instead of testing internals directly.
 - Test `do_action` with `Brain\Monkey\Actions\expectDone` and `apply_filters` with `Brain\Monkey\Filters\expectApplied` instead of aliasing hook functions manually.
