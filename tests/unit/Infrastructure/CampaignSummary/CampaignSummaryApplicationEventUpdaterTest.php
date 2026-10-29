@@ -8,57 +8,61 @@ use Fundrik\Core\Components\Donations\Application\Events\DonationCreatedEvent;
 use Fundrik\Core\Components\Donations\Application\Events\DonationRefundedEvent;
 use Fundrik\Core\Components\Donations\Application\Events\DonationSucceededEvent;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\DonationRepositoryPort;
-use Fundrik\Core\Components\Donations\Domain\DonationFactory;
+use Fundrik\Core\Components\Donations\Domain\DonationStatus;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryApplicationEventUpdater;
 use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
 use Fundrik\WordPress\Infrastructure\Stores\CampaignReadModelStore;
-use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
-use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseRowNotFoundException;
-use Fundrik\WordPress\Tests\Fixtures\FakeDonationAlreadyExistsException;
+use Fundrik\WordPress\Tests\Fixtures\CampaignSummaryDatabaseException;
+use Fundrik\WordPress\Tests\Fixtures\CampaignSummaryDatabaseRowNotFoundException;
+use Fundrik\WordPress\Tests\Fixtures\FakeDonationRepositoryException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
-use Mockery\Expectation;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 
 #[CoversClass( CampaignSummaryApplicationEventUpdater::class )]
-#[CoversClass( CampaignSummaryException::class )]
+#[UsesClass( CampaignId::class )]
+#[UsesClass( DonationId::class )]
+#[UsesClass( CampaignReadModelStore::class )]
 final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 
 	private const string DONATION_ID = '019b6bcb-2f32-4461-838f-67a1479fbdbe';
 
 	private DonationRepositoryPort&MockInterface $donations;
-	private DatabasePort&MockInterface $database;
-	private CampaignReadModelStore $store;
-	private LoggerInterface&MockInterface $logger;
-	private CampaignSummaryApplicationEventUpdater $consumer;
 
+	private DatabasePort&MockInterface $database;
+
+	private LoggerInterface&MockInterface $logger;
+
+	private CampaignSummaryApplicationEventUpdater $updater;
+
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
 		$this->donations = Mockery::mock( DonationRepositoryPort::class );
 		$this->database = Mockery::mock( DatabasePort::class );
-		$this->store = new CampaignReadModelStore( $this->database );
 		$this->logger = Mockery::mock( LoggerInterface::class );
-		$this->consumer = new CampaignSummaryApplicationEventUpdater( $this->donations, $this->store, $this->logger );
+		$this->updater = new CampaignSummaryApplicationEventUpdater(
+			$this->donations,
+			new CampaignReadModelStore( $this->database ),
+			$this->logger,
+		);
 	}
 
 	#[Test]
-	public function consume_updates_campaign_summary_for_succeeded_donation(): void {
+	public function consume_updates_summary_for_succeeded_donation(): void {
 
-		$this->logger->shouldNotReceive( 'warning' );
-		$this->logger->shouldNotReceive( 'error' );
-
-		$this->donations
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with( Mockery::on( static fn ( EntityId $id ): bool => $id->get_value() === self::DONATION_ID ) )
-			->andReturn( self::donation( self::DONATION_ID, 77, 500, 'succeeded' ) );
+		$this->expect_donation_lookup();
 
 		$this->database
 			->shouldReceive( 'apply_numeric_deltas' )
@@ -72,20 +76,13 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 				],
 			);
 
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_updates_campaign_summary_for_refunded_donation(): void {
+	public function consume_subtracts_summary_for_refunded_donation(): void {
 
-		$this->logger->shouldNotReceive( 'warning' );
-		$this->logger->shouldNotReceive( 'error' );
-
-		$this->donations
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with( Mockery::on( static fn ( EntityId $id ): bool => $id->get_value() === self::DONATION_ID ) )
-			->andReturn( self::donation( self::DONATION_ID, 77, 500, 'refunded' ) );
+		$this->expect_donation_lookup( status: DonationStatus::Refunded );
 
 		$this->database
 			->shouldReceive( 'apply_numeric_deltas' )
@@ -99,77 +96,59 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 				],
 			);
 
-		$this->consumer->consume( new DonationRefundedEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->updater->consume( new DonationRefundedEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
 	public function consume_ignores_unsupported_donation_event(): void {
 
-		$this->logger->shouldNotReceive( 'warning' );
-		$this->logger->shouldNotReceive( 'error' );
 		$this->donations->shouldNotReceive( 'find_by_id' );
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
 
-		$this->consumer->consume( new DonationCreatedEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->updater->consume( new DonationCreatedEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_throws_when_donation_id_cannot_be_resolved(): void {
+	public function consume_logs_warning_and_throws_for_invalid_donation_id(): void {
 
 		$this->donations->shouldNotReceive( 'find_by_id' );
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
-		$this->logger->shouldNotReceive( 'error' );
 
-		/** Warning expectation.
-		 *
-		 * @var Expectation $logger_warning_expectation
-		 */
-		$logger_warning_expectation = $this->logger->shouldReceive( 'warning' );
-
-		$logger_warning_expectation
+		$this->logger
+			->shouldReceive( 'warning' )
 			->once()
 			->with(
 				'Campaign summary update failed due to invalid donation ID.',
-				Mockery::subset(
-					[
-						'service_class' => CampaignSummaryApplicationEventUpdater::class,
-						'logger_class' => CampaignSummaryApplicationEventUpdater::class,
-						'component' => 'campaign_summary',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
-						'operation' => 'update',
-						'outcome' => 'invalid',
-						'event_class' => DonationSucceededEvent::class,
-						'reason' => 'donation_id_not_uuid',
-					],
+				Mockery::on(
+					static fn ( array $context ): bool => ( $context['outcome'] ?? null ) === 'invalid'
+						&& ( $context['event_class'] ?? null ) === DonationSucceededEvent::class
+						&& ( $context['reason'] ?? null ) === 'donation_id_not_uuid',
 				),
 			);
 
 		$this->expectException( CampaignSummaryException::class );
 		$this->expectExceptionMessage( 'Donation ID must be valid. Given: 11.' );
 
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( 11 ) ) );
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( 11 ) ) );
 	}
 
 	#[Test]
-	public function consume_logs_error_when_donation_lookup_fails(): void {
-
-		$this->logger->shouldReceive( 'error' )->once();
+	public function consume_logs_failure_when_donation_lookup_throws(): void {
 
 		$this->donations
 			->shouldReceive( 'find_by_id' )
 			->once()
-			->andThrow( new FakeDonationAlreadyExistsException( self::DONATION_ID ) );
+			->andThrow( new FakeDonationRepositoryException( 'Repository failed.' ) );
 
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
 
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->expect_logged_update_failure();
+
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_logs_error_when_donation_is_missing(): void {
-
-		$this->logger->shouldReceive( 'error' )->once();
+	public function consume_logs_failure_when_donation_is_missing(): void {
 
 		$this->donations
 			->shouldReceive( 'find_by_id' )
@@ -178,81 +157,117 @@ final class CampaignSummaryApplicationEventUpdaterTest extends MockeryTestCase {
 
 		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
 
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->expect_logged_update_failure();
+
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
 	#[Test]
-	public function consume_logs_error_when_campaign_row_is_missing(): void {
+	public function consume_logs_failure_when_campaign_id_is_invalid(): void {
 
-		$this->logger->shouldReceive( 'error' )->once();
+		$this->expect_donation_lookup( campaign_id: '123e4567-e89b-42d3-a456-426614174001' );
 
-		$this->donations
-			->shouldReceive( 'find_by_id' )
+		$this->database->shouldNotReceive( 'apply_numeric_deltas' );
+
+		$this->expect_logged_update_failure();
+
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+	}
+
+	#[Test]
+	public function consume_logs_failure_when_campaign_row_is_missing(): void {
+
+		$this->expect_donation_lookup();
+		$this->database
+			->shouldReceive( 'apply_numeric_deltas' )
 			->once()
-			->andReturn( self::donation( self::DONATION_ID, 77, 500, 'succeeded' ) );
+			->andThrow( new CampaignSummaryDatabaseRowNotFoundException( 'Campaign row not found.' ) );
+
+		$this->expect_logged_update_failure();
+
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+	}
+
+	#[Test]
+	public function consume_logs_failure_when_summary_update_fails(): void {
+
+		$this->expect_donation_lookup();
+		$this->database
+			->shouldReceive( 'apply_numeric_deltas' )
+			->once()
+			->andThrow( new CampaignSummaryDatabaseException( 'Database failed.' ) );
+
+		$this->expect_logged_update_failure();
+
+		$this->updater->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+	}
+
+	#[Test]
+	public function consume_logs_refunded_event_name_when_refund_summary_update_fails(): void {
+
+		$this->expect_donation_lookup( status: DonationStatus::Refunded );
 
 		$this->database
 			->shouldReceive( 'apply_numeric_deltas' )
 			->once()
-			->andThrow( new FakeDatabaseRowNotFoundException( 'Row not found.' ) );
+			->andThrow( new CampaignSummaryDatabaseException( 'Database failed.' ) );
 
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
+		$this->expect_logged_update_failure( event_class: DonationRefundedEvent::class, donation_event: 'refunded' );
+
+		$this->updater->consume( new DonationRefundedEvent( EntityId::create( self::DONATION_ID ) ) );
 	}
 
-	#[Test]
-	public function consume_logs_summary_update_failures(): void {
+	/**
+	 * Expects a donation lookup for the fixture donation.
+	 *
+	 * @param int|string $campaign_id Campaign ID fixture.
+	 * @param DonationStatus $status Donation status.
+	 */
+	private function expect_donation_lookup(
+		int|string $campaign_id = 77,
+		DonationStatus $status = DonationStatus::Succeeded,
+	): void {
 
-		$this->logger->shouldNotReceive( 'warning' );
+		$donation = $this->make_succeeded_donation( id: self::DONATION_ID, campaign_id: $campaign_id, amount: 500 );
+
+		if ( $status === DonationStatus::Refunded ) {
+			$donation = $donation->refund();
+		}
 
 		$this->donations
 			->shouldReceive( 'find_by_id' )
 			->once()
-			->with( Mockery::on( static fn ( EntityId $id ): bool => $id->get_value() === self::DONATION_ID ) )
-			->andReturn( self::donation( self::DONATION_ID, 77, 500, 'succeeded' ) );
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === self::DONATION_ID,
+				),
+			)
+			->andReturn( $donation );
+	}
 
-		$this->database
-			->shouldReceive( 'apply_numeric_deltas' )
-			->once()
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+	/**
+	 * Expects a logged campaign summary failure.
+	 *
+	 * @param string $event_class Donation event class.
+	 * @param string $donation_event Donation event name.
+	 */
+	private function expect_logged_update_failure(
+		string $event_class = DonationSucceededEvent::class,
+		string $donation_event = 'succeeded',
+	): void {
 
-		/** Error expectation.
-		 *
-		 * @var Expectation $logger_error_expectation
-		 */
-		$logger_error_expectation = $this->logger->shouldReceive( 'error' );
-
-		$logger_error_expectation
+		$this->logger
+			->shouldReceive( 'error' )
 			->once()
 			->with(
 				'Campaign summary update failed.',
 				Mockery::on(
-					static fn ( array $context ): bool => ( $context['service_class'] ?? null ) === CampaignSummaryApplicationEventUpdater::class
-						&& ( $context['logger_class'] ?? null ) === CampaignSummaryApplicationEventUpdater::class
-						&& ( $context['component'] ?? null ) === 'campaign_summary'
-						&& ( $context['layer'] ?? null ) === 'infrastructure'
-						// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- Structured system value is intentionally lowercase.
-						&& ( $context['system'] ?? null ) === 'wordpress'
-						&& ( $context['operation'] ?? null ) === 'update'
-						&& ( $context['outcome'] ?? null ) === 'failed'
-						&& ( $context['event_class'] ?? null ) === DonationSucceededEvent::class
-						&& ( $context['donation_event'] ?? null ) === 'succeeded'
+					static fn ( array $context ): bool => ( $context['outcome'] ?? null ) === 'failed'
+						&& ( $context['event_class'] ?? null ) === $event_class
+						&& ( $context['donation_event'] ?? null ) === $donation_event
 						&& ( $context['donation_id'] ?? null ) === self::DONATION_ID
 						&& ( $context['exception'] ?? null ) instanceof CampaignSummaryException,
 				),
 			);
-
-		$this->consumer->consume( new DonationSucceededEvent( EntityId::create( self::DONATION_ID ) ) );
-	}
-
-	private static function donation( string $id, int $campaign_id, int $amount, string $status ) {
-
-		return ( new DonationFactory() )->create_from_primitives(
-			id: $id,
-			version: 2,
-			campaign_id: $campaign_id,
-			amount: $amount,
-			currency_code: 'RUB',
-			status: $status,
-		);
 	}
 }

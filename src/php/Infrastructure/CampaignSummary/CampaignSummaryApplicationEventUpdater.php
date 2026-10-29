@@ -269,7 +269,6 @@ final readonly class CampaignSummaryApplicationEventUpdater implements Applicati
 		$donation_event_name = match ( true ) {
 			$event instanceof DonationSucceededEvent => 'succeeded',
 			$event instanceof DonationRefundedEvent => 'refunded',
-			default => 'unknown',
 		};
 
 		$this->logger->error(

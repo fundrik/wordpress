@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests;
 
+use Fundrik\Core\Components\Donations\Domain\Donation;
+use Fundrik\Core\Components\Donations\Domain\DonationStatus;
+use Fundrik\Core\Components\Donations\Domain\PaymentId;
+use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\EntityVersion;
+use Fundrik\Core\Components\Shared\Domain\Money;
 use InvalidArgumentException;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
@@ -12,6 +18,68 @@ use ReflectionClassConstant;
 use ReflectionProperty;
 
 abstract class FundrikTestCase extends PHPUnitTestCase {
+
+	/**
+	 * Returns a valid created donation for tests with optional field overrides.
+	 */
+	protected function make_created_donation(
+		int|string $id = 5_001,
+		int|string|EntityId $campaign_id = 901,
+		int $amount = 1_000,
+		string $currency = 'RUB',
+	): Donation {
+
+		return new Donation(
+			id: EntityId::create( $id ),
+			version: EntityVersion::initial(),
+			campaign_id: $campaign_id instanceof EntityId ? $campaign_id : EntityId::create( $campaign_id ),
+			money: Money::create( $amount, $currency ),
+			status: DonationStatus::Created,
+			payment_id: null,
+		);
+	}
+
+	/**
+	 * Returns a valid pending donation for tests with optional field overrides.
+	 */
+	protected function make_pending_donation(
+		int|string $id = 5_001,
+		int|string|EntityId $campaign_id = 901,
+		int $amount = 1_000,
+		string $currency = 'RUB',
+		string $payment_id = 'pay_5001',
+	): Donation {
+
+		return new Donation(
+			id: EntityId::create( $id ),
+			version: EntityVersion::initial(),
+			campaign_id: $campaign_id instanceof EntityId ? $campaign_id : EntityId::create( $campaign_id ),
+			money: Money::create( $amount, $currency ),
+			status: DonationStatus::Pending,
+			payment_id: PaymentId::create( $payment_id ),
+		);
+	}
+
+	/**
+	 * Returns a valid succeeded donation for tests with optional field overrides.
+	 */
+	protected function make_succeeded_donation(
+		int|string $id = 5_001,
+		int|string|EntityId $campaign_id = 901,
+		int $amount = 1_000,
+		string $currency = 'RUB',
+		string $payment_id = 'pay_5001',
+	): Donation {
+
+		return new Donation(
+			id: EntityId::create( $id ),
+			version: EntityVersion::initial(),
+			campaign_id: $campaign_id instanceof EntityId ? $campaign_id : EntityId::create( $campaign_id ),
+			money: Money::create( $amount, $currency ),
+			status: DonationStatus::Succeeded,
+			payment_id: PaymentId::create( $payment_id ),
+		);
+	}
 
 	protected function assert_has_attribute_instance_of(
 		string $class_name,

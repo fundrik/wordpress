@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass( DonationId::class )]
-#[CoversClass( InvalidDonationIdException::class )]
 final class DonationIdTest extends FundrikTestCase {
 
 	#[Test]
@@ -84,6 +83,14 @@ final class DonationIdTest extends FundrikTestCase {
 		);
 
 		DonationId::from_value( '123e4567-e89b-12d3-a456-426614174000' );
+	}
+
+	#[Test]
+	public function from_entity_id_value_returns_donation_id_for_uuidv4_string(): void {
+
+		$id = DonationId::from_entity_id_value( '123e4567-e89b-42d3-a456-426614174001' );
+
+		self::assertSame( '123e4567-e89b-42d3-a456-426614174001', $id->get_value() );
 	}
 
 	#[Test]
