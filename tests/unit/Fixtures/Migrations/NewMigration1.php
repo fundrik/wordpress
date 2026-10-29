@@ -4,22 +4,16 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Fixtures\Migrations;
 
-use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
-final readonly class NewMigration1 extends AbstractMigration {
+use Override;
 
-	/**
-	 * Returns the migration version.
-	 *
-	 * @return string The sortable migration version.
-	 */
+/**
+ * Represents the first pending migration in runner tests.
+ */
+final readonly class NewMigration1 extends AbstractTestMigration {
+
+	#[Override]
 	protected static function define_version(): string {
 
-		return '2400_01_12_00';
-	}
-
-	// phpcs:disable SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
-	public function apply( string $charset_collate ): void {
-
-		TestMigrationTrace::$calls[] = self::class;
+		return '2026_01_01_00';
 	}
 }

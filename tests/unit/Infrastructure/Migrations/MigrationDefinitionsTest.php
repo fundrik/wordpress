@@ -15,9 +15,9 @@ use PHPUnit\Framework\Attributes\Test;
 final class MigrationDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_migration_classes(): void {
+	public function classes_returns_migrations_in_expected_order(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			[
 				CreateFundrikCampaignsTable::class,
 				CreateFundrikDonationsTable::class,

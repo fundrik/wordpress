@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations\Files;
 
+use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
 use Fundrik\WordPress\Infrastructure\Migrations\Files\CreateFundrikDonationsTable;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -11,86 +12,112 @@ use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( CreateFundrikDonationsTable::class )]
+#[UsesClass( AbstractMigration::class )]
 final class CreateFundrikDonationsTableTest extends MockeryTestCase {
 
-	private CreateFundrikDonationsTable $migration;
-	private DatabasePort&MockInterface $db;
+	private const string TABLE_NAME = 'wp_fundrik_donations';
 
+	private DatabasePort&MockInterface $database;
+
+	private CreateFundrikDonationsTable $migration;
+
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->db = Mockery::mock( DatabasePort::class );
-		$this->migration = new CreateFundrikDonationsTable( $this->db );
+		$this->database = Mockery::mock( DatabasePort::class );
+		$this->migration = new CreateFundrikDonationsTable( $this->database );
 	}
 
 	#[Test]
-	public function apply_executes_expected_create_table_query(): void {
+	public function version_returns_expected_version(): void {
+
+		self::assertSame( '2026_03_21_02', CreateFundrikDonationsTable::version() );
+	}
+
+	#[Test]
+	public function apply_creates_donations_table_with_expected_schema(): void {
 
 		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
-		$table_name = 'wp_fundrik_donations';
 
-		$this->db
+		$this->database
 			->shouldReceive( 'qualify_table_name' )
 			->once()
 			->with( 'fundrik_donations' )
-			->andReturn( $table_name );
+			->andReturn( self::TABLE_NAME );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'query_with_args' )
 			->once()
 			->with(
 				Mockery::on(
-					static fn ( string $sql ): bool => str_contains(
-						$sql,
-						'CREATE TABLE IF NOT EXISTS %i',
-					)
-						&& str_contains( $sql, $charset_collate )
-						&& str_contains( $sql, '`id` CHAR(36) NOT NULL' )
-						&& str_contains( $sql, '`campaign_id` BIGINT UNSIGNED NOT NULL' )
-						&& str_contains( $sql, '`amount` INT UNSIGNED NOT NULL' )
-						&& str_contains( $sql, '`currency_code` CHAR(3) NOT NULL' )
-						&& str_contains( $sql, '`payment_id` VARCHAR(191) NULL' )
-						&& str_contains( $sql, '`created_at` DATETIME(6) NOT NULL' )
-						&& str_contains( $sql, '`updated_at` DATETIME(6) NULL' )
-						&& str_contains( $sql, 'KEY `campaign_id` (`campaign_id`)' )
-						&& str_contains( $sql, 'UNIQUE KEY `payment_id` (`payment_id`)' ),
+					static function ( string $sql ) use ( $charset_collate ): bool {
+
+						$schema_fragments = [
+							'CREATE TABLE IF NOT EXISTS %i',
+							'`id` CHAR(36) NOT NULL',
+							'`version` INT UNSIGNED NOT NULL',
+							'`campaign_id` BIGINT UNSIGNED NOT NULL',
+							'`amount` INT UNSIGNED NOT NULL',
+							'`currency_code` CHAR(3) NOT NULL',
+							'`status` VARCHAR(16) NOT NULL',
+							'`payment_id` VARCHAR(191) NULL',
+							'`created_at` DATETIME(6) NOT NULL',
+							'`updated_at` DATETIME(6) NULL',
+							'PRIMARY KEY (`id`)',
+							'KEY `campaign_id` (`campaign_id`)',
+							'UNIQUE KEY `payment_id` (`payment_id`)',
+							sprintf( 'ENGINE=InnoDB %s;', $charset_collate ),
+						];
+
+						foreach ( $schema_fragments as $fragment ) {
+
+							if ( ! str_contains( $sql, $fragment ) ) {
+								return false;
+							}
+						}
+
+						return true;
+					},
 				),
-				$table_name,
+				self::TABLE_NAME,
 			);
 
 		$this->migration->apply( $charset_collate );
 	}
 
 	#[Test]
-	public function apply_throws_when_query_throws_database_exception(): void {
+	public function apply_throws_migration_exception_when_table_creation_fails(): void {
 
-		$charset_collate = 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_520_ci';
-
-		$this->db
+		$this->database
 			->shouldReceive( 'qualify_table_name' )
 			->once()
 			->with( 'fundrik_donations' )
-			->andReturn( 'wp_fundrik_donations' );
+			->andReturn( self::TABLE_NAME );
 
-		$this->db
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
+
+		$this->database
 			->shouldReceive( 'query_with_args' )
 			->once()
-			->andThrow( new FakeDatabaseException( 'DB failed' ) );
+			->andThrow( $database_exception );
 
-		$this->expectException( MigrationException::class );
-		$this->expectExceptionMessage( 'Failed to create table "wp_fundrik_donations".' );
-
-		$this->migration->apply( $charset_collate );
-	}
-
-	#[Test]
-	public function it_exposes_the_expected_migration_version(): void {
-
-		$this->assertSame( '2026_03_21_02', CreateFundrikDonationsTable::version() );
+		try {
+			$this->migration->apply( 'DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci' );
+			self::fail( 'Expected the migration to throw.' );
+		} catch ( MigrationException $exception ) {
+			self::assertSame(
+				sprintf( 'Failed to create table "%s".', self::TABLE_NAME ),
+				$exception->getMessage(),
+			);
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 }

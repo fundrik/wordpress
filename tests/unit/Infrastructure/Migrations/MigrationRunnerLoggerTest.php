@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Migrations;
 
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationException;
 use Fundrik\WordPress\Infrastructure\Migrations\MigrationRunnerLogger;
 use Fundrik\WordPress\Kernel\Ports\MigrationRunnerPort;
@@ -11,16 +12,24 @@ use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 
 #[CoversClass( MigrationRunnerLogger::class )]
+#[UsesClass( Logger::class )]
 final class MigrationRunnerLoggerTest extends MockeryTestCase {
+
+	private const string MIGRATION_CLASS = 'Fundrik\Example\Migration';
+	private const string MIGRATION_VERSION = '2026_01_01_00';
 
 	private LoggerInterface&MockInterface $psr_logger;
 	private MigrationRunnerLogger $logger;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
@@ -30,166 +39,150 @@ final class MigrationRunnerLoggerTest extends MockeryTestCase {
 	}
 
 	#[Test]
-	public function it_logs_charset_collate_failed_as_error(): void {
+	public function log_charset_collate_failed_logs_error_with_exception(): void {
 
-		$e = new FakeDatabaseException( 'No charset' );
+		$exception = new FakeDatabaseException( 'Charset lookup failed.' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
 			->once()
 			->with(
 				'Fetching database charset/collation failed.',
-				Mockery::subset(
+				$this->expected_context(
 					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'get_charset_collate',
 						'outcome' => 'failed',
-						'exception' => $e,
+						'exception' => $exception,
 					],
 				),
 			);
 
-		$this->logger->log_charset_collate_failed( $e );
+		$this->logger->log_charset_collate_failed( $exception );
 	}
 
 	#[Test]
-	public function it_logs_migration_applied_as_debug_with_class_and_version(): void {
+	public function log_migration_applied_logs_debug_with_migration_details(): void {
 
 		$this->psr_logger
 			->shouldReceive( 'debug' )
 			->once()
 			->with(
 				'Applying migration succeeded.',
-				Mockery::subset(
+				$this->expected_context(
 					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'apply_migration',
 						'outcome' => 'applied',
-						'migration_class' => 'Fundrik\\Example\\Migration',
-						'migration_version' => '2025_08_04_01',
+						'migration_class' => self::MIGRATION_CLASS,
+						'migration_version' => self::MIGRATION_VERSION,
 					],
 				),
 			);
 
-		$this->logger->log_migration_applied( 'Fundrik\\Example\\Migration', '2025_08_04_01' );
+		$this->logger->log_migration_applied( self::MIGRATION_CLASS, self::MIGRATION_VERSION );
 	}
 
 	#[Test]
-	public function it_logs_db_version_update_failed_as_error_with_class_and_version(): void {
+	public function log_db_version_update_failed_logs_error_with_migration_details(): void {
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
 			->once()
 			->with(
 				'Updating stored DB version failed.',
-				Mockery::subset(
+				$this->expected_context(
 					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'update_db_version',
 						'outcome' => 'failed',
-						'migration_class' => 'Fundrik\\Example\\Migration',
-						'migration_version' => '2025_08_04_01',
+						'migration_class' => self::MIGRATION_CLASS,
+						'migration_version' => self::MIGRATION_VERSION,
 					],
 				),
 			);
 
-		$this->logger->log_db_version_update_failed( 'Fundrik\\Example\\Migration', '2025_08_04_01' );
+		$this->logger->log_db_version_update_failed( self::MIGRATION_CLASS, self::MIGRATION_VERSION );
 	}
 
 	#[Test]
-	public function it_logs_migration_failed_as_error_with_exception(): void {
+	public function log_migration_failed_logs_error_with_migration_details_and_exception(): void {
 
-		$e = new MigrationException( 'Boom' );
+		$exception = new MigrationException( 'Migration failed.' );
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
 			->once()
 			->with(
 				'Applying migration failed.',
-				Mockery::subset(
+				$this->expected_context(
 					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'apply_migration',
 						'outcome' => 'failed',
-						'migration_class' => 'Fundrik\\Example\\Migration',
-						'migration_version' => '2025_08_04_01',
-						'exception' => $e,
+						'migration_class' => self::MIGRATION_CLASS,
+						'migration_version' => self::MIGRATION_VERSION,
+						'exception' => $exception,
 					],
 				),
 			);
 
-		$this->logger->log_migration_failed( 'Fundrik\\Example\\Migration', '2025_08_04_01', $e );
+		$this->logger->log_migration_failed( self::MIGRATION_CLASS, self::MIGRATION_VERSION, $exception );
 	}
 
 	#[Test]
-	public function it_logs_migrations_completed_as_info_with_skipped_outcome_when_applied_is_zero(): void {
+	#[DataProvider( 'completion_cases' )]
+	public function log_migrations_completed_logs_info_with_completion_details(
+		int $applied,
+		string $from,
+		string $to,
+		string $target,
+		string $outcome,
+	): void {
 
 		$this->psr_logger
 			->shouldReceive( 'info' )
 			->once()
 			->with(
 				'Running migrations completed.',
-				Mockery::subset(
+				$this->expected_context(
 					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
 						'operation' => 'migrate',
-						'outcome' => 'skipped',
-						'applied' => 0,
-						'from_version' => '2400_01_12_01',
-						'to_version' => '2400_01_12_01',
-						'target_version' => '2400_01_12_01',
+						'outcome' => $outcome,
+						'applied' => $applied,
+						'from_version' => $from,
+						'to_version' => $to,
+						'target_version' => $target,
 					],
 				),
 			);
 
-		$this->logger->log_migrations_completed( 0, '2400_01_12_01', '2400_01_12_01', '2400_01_12_01' );
+		$this->logger->log_migrations_completed( $applied, $from, $to, $target );
 	}
 
-	#[Test]
-	public function it_logs_migrations_completed_as_info_with_applied_outcome_when_applied_is_positive(): void {
+	public static function completion_cases(): iterable {
 
-		$this->psr_logger
-			->shouldReceive( 'info' )
-			->once()
-			->with(
-				'Running migrations completed.',
-				Mockery::subset(
-					[
-						'service_class' => MigrationRunnerPort::class,
-						'logger_class' => MigrationRunnerLogger::class,
-						'component' => 'migrations',
-						'layer' => 'infrastructure',
-						'system' => 'wordpress',
-						'operation' => 'migrate',
-						'outcome' => 'applied',
-						'applied' => 2,
-						'from_version' => '2025_06_14_00',
-						'to_version' => '2400_01_12_01',
-						'target_version' => '2400_01_12_01',
-					],
-				),
-			);
+		yield 'no migrations applied' => [
+			0,
+			'2026_01_01_00',
+			'2026_01_01_00',
+			'2026_01_01_00',
+			'skipped',
+		];
 
-		$this->logger->log_migrations_completed( 2, '2025_06_14_00', '2400_01_12_01', '2400_01_12_01' );
+		yield 'migrations applied' => [
+			2,
+			'2025_01_01_00',
+			'2026_01_01_01',
+			'2026_01_01_01',
+			'applied',
+		];
+	}
+
+	private function expected_context( array $extra ): array {
+
+		return [
+			'service_class' => MigrationRunnerPort::class,
+			'logger_class' => MigrationRunnerLogger::class,
+			'component' => 'migrations',
+			'layer' => 'infrastructure',
+			'system' => 'wordpress',
+		] + $extra;
 	}
 }

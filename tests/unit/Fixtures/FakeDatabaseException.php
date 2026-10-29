@@ -8,6 +8,6 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use RuntimeException;
 
 /**
- * Test-only database exception implementing the DB port exception contract.
+ * Represents a database failure in tests.
  */
 final class FakeDatabaseException extends RuntimeException implements DatabaseExceptionInterface {}
