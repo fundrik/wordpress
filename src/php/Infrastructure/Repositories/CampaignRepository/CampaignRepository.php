@@ -10,11 +10,11 @@ use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
 use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
+use Fundrik\WordPress\Infrastructure\Clock\ClockInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -40,10 +40,12 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 *
 	 * @param DatabasePort $db Executes database queries.
 	 * @param CampaignFactory $campaign_factory Builds Campaign entities from persistence values.
+	 * @param ClockInterface $clock Provides current UTC time.
 	 */
 	public function __construct(
 		private DatabasePort $db,
 		private CampaignFactory $campaign_factory,
+		private ClockInterface $clock,
 	) {}
 
 	/**
@@ -370,6 +372,6 @@ final readonly class CampaignRepository implements CampaignRepositoryPort {
 	 */
 	private function current_utc_timestamp(): string {
 
-		return UtcDateTime::now()->format( self::DATETIME_DB_FORMAT );
+		return $this->clock->now()->format( self::DATETIME_DB_FORMAT );
 	}
 }

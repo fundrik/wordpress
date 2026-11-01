@@ -11,13 +11,13 @@ use Fundrik\Core\Components\Donations\Domain\Exceptions\DonationFactoryException
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\Toolbox\ArrayExtractionException;
 use Fundrik\Toolbox\ArrayExtractor;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
+use Fundrik\WordPress\Infrastructure\Clock\ClockInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseExceptionInterface;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
@@ -42,10 +42,12 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 *
 	 * @param DatabasePort $db Executes database queries.
 	 * @param DonationFactory $donation_factory Builds Donation entities from persistence values.
+	 * @param ClockInterface $clock Provides current UTC time.
 	 */
 	public function __construct(
 		private DatabasePort $db,
 		private DonationFactory $donation_factory,
+		private ClockInterface $clock,
 	) {}
 
 	/**
@@ -375,7 +377,7 @@ final readonly class DonationRepository implements DonationRepositoryPort {
 	 */
 	private function current_utc_timestamp(): string {
 
-		return UtcDateTime::now()->format( self::DATETIME_DB_FORMAT );
+		return $this->clock->now()->format( self::DATETIME_DB_FORMAT );
 	}
 
 	/**

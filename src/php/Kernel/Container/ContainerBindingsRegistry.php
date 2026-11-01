@@ -12,6 +12,8 @@ use Fundrik\Core\Components\Donations\Application\Ports\DonationRepository\Donat
 use Fundrik\Core\Components\Donations\Application\Ports\Gateway\DonationGatewayPort;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\WordPress\Infrastructure\CampaignSummary\CampaignSummaryApplicationEventUpdater;
+use Fundrik\WordPress\Infrastructure\Clock\ClockInterface;
+use Fundrik\WordPress\Infrastructure\Clock\SystemClock;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventBus;
 use Fundrik\WordPress\Infrastructure\EventBus\ApplicationEventConsumerInterface;
 use Fundrik\WordPress\Infrastructure\Migrations\AbstractMigration;
@@ -86,6 +88,7 @@ final readonly class ContainerBindingsRegistry {
 
 			MigrationRunnerPort::class => MigrationRunner::class,
 
+			ClockInterface::class => SystemClock::class,
 			DatabasePort::class => WpdbDatabase::class,
 			StoragePort::class => WordPressOptionsStorage::class,
 

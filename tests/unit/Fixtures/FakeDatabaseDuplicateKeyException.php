@@ -8,6 +8,6 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseDuplicateKeyExceptio
 use RuntimeException;
 
 /**
- * Test-only database exception for duplicate-key violations.
+ * Represents a duplicate database key failure in tests.
  */
 final class FakeDatabaseDuplicateKeyException extends RuntimeException implements DatabaseDuplicateKeyExceptionInterface {}

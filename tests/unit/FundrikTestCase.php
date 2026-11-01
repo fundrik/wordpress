@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests;
 
+use Fundrik\Core\Components\Campaigns\Domain\Campaign;
+use Fundrik\Core\Components\Campaigns\Domain\CampaignTarget;
+use Fundrik\Core\Components\Campaigns\Domain\CampaignTitle;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationStatus;
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
@@ -18,6 +21,59 @@ use ReflectionClassConstant;
 use ReflectionProperty;
 
 abstract class FundrikTestCase extends PHPUnitTestCase {
+
+	/**
+	 * Returns a valid campaign for tests with optional field overrides.
+	 */
+	protected function make_campaign(
+		int|string $id = 7,
+		int $version = 1,
+		string $title = 'Campaign title',
+		bool $accepts_donations = false,
+		string $currency_code = 'RUB',
+		?int $target_amount = 123,
+	): Campaign {
+
+		return new Campaign(
+			id: EntityId::create( $id ),
+			version: EntityVersion::create( $version ),
+			title: CampaignTitle::create( $title ),
+			accepts_donations: $accepts_donations,
+			target: CampaignTarget::create( $currency_code, $target_amount ),
+		);
+	}
+
+	/**
+	 * Returns a valid campaign persistence row for tests with optional field overrides.
+	 *
+	 * @return array<string,string|null> Campaign persistence row.
+	 */
+	protected function make_campaign_row(
+		int $id = 7,
+		?int $version = 1,
+		string $title = 'Campaign title',
+		bool $accepts_donations = false,
+		string $currency_code = 'RUB',
+		?int $target_amount = 123,
+		int $collected_amount = 0,
+		int $donations_count = 0,
+		string $created_at = '2026-03-21 10:00:00',
+		?string $updated_at = null,
+	): array {
+
+		return [
+			'id' => (string) $id,
+			'version' => $version === null ? null : (string) $version,
+			'title' => $title,
+			'accepts_donations' => $accepts_donations ? '1' : '0',
+			'currency_code' => $currency_code,
+			'target_amount' => $target_amount === null ? null : (string) $target_amount,
+			'collected_amount' => (string) $collected_amount,
+			'donations_count' => (string) $donations_count,
+			'created_at' => $created_at,
+			'updated_at' => $updated_at,
+		];
+	}
 
 	/**
 	 * Returns a valid created donation for tests with optional field overrides.
@@ -48,11 +104,12 @@ abstract class FundrikTestCase extends PHPUnitTestCase {
 		int $amount = 1_000,
 		string $currency = 'RUB',
 		string $payment_id = 'pay_5001',
+		int $version = 1,
 	): Donation {
 
 		return new Donation(
 			id: EntityId::create( $id ),
-			version: EntityVersion::initial(),
+			version: EntityVersion::create( $version ),
 			campaign_id: $campaign_id instanceof EntityId ? $campaign_id : EntityId::create( $campaign_id ),
 			money: Money::create( $amount, $currency ),
 			status: DonationStatus::Pending,
@@ -69,16 +126,47 @@ abstract class FundrikTestCase extends PHPUnitTestCase {
 		int $amount = 1_000,
 		string $currency = 'RUB',
 		string $payment_id = 'pay_5001',
+		int $version = 1,
 	): Donation {
 
 		return new Donation(
 			id: EntityId::create( $id ),
-			version: EntityVersion::initial(),
+			version: EntityVersion::create( $version ),
 			campaign_id: $campaign_id instanceof EntityId ? $campaign_id : EntityId::create( $campaign_id ),
 			money: Money::create( $amount, $currency ),
 			status: DonationStatus::Succeeded,
 			payment_id: PaymentId::create( $payment_id ),
 		);
+	}
+
+	/**
+	 * Returns a valid donation persistence row for tests with optional field overrides.
+	 *
+	 * @return array<string,string|null> Donation persistence row.
+	 */
+	protected function make_donation_row(
+		string $id = '123e4567-e89b-42d3-a456-426614174000',
+		?int $version = 1,
+		int $campaign_id = 77,
+		int $amount = 1_000,
+		string $currency_code = 'RUB',
+		string $status = 'succeeded',
+		?string $payment_id = 'payment-123',
+		string $created_at = '2026-01-01 10:00:00.123456',
+		?string $updated_at = '2026-01-01 11:00:00.654321',
+	): array {
+
+		return [
+			'id' => $id,
+			'version' => $version === null ? null : (string) $version,
+			'campaign_id' => (string) $campaign_id,
+			'amount' => (string) $amount,
+			'currency_code' => $currency_code,
+			'status' => $status,
+			'payment_id' => $payment_id,
+			'created_at' => $created_at,
+			'updated_at' => $updated_at,
+		];
 	}
 
 	protected function assert_has_attribute_instance_of(

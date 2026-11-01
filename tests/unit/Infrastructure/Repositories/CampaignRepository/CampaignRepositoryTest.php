@@ -4,314 +4,403 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Infrastructure\Repositories\CampaignRepository;
 
-use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignFactory;
+use Fundrik\Core\Components\Campaigns\Domain\Exceptions\CampaignFactoryException;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
+use Fundrik\Toolbox\ArrayExtractionException;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
 use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
+use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignAlreadyExistsException;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignNotFoundException;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepository;
 use Fundrik\WordPress\Infrastructure\Repositories\CampaignRepository\CampaignRepositoryException;
+use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseDuplicateKeyException;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseException;
 use Fundrik\WordPress\Tests\Fixtures\FakeDatabaseRowNotFoundException;
+use Fundrik\WordPress\Tests\Fixtures\FrozenClock;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( CampaignRepository::class )]
+#[CoversClass( CampaignAlreadyExistsException::class )]
 #[CoversClass( CampaignNotFoundException::class )]
+#[UsesClass( CampaignId::class )]
 final class CampaignRepositoryTest extends MockeryTestCase {
 
 	private const string TABLE_NAME = 'fundrik_campaigns';
+	private const string CURRENT_TIME = '2026-11-01 10:00:00';
 
-	private DatabasePort&MockInterface $db;
-	private CampaignFactory $campaign_factory;
+	private DatabasePort&MockInterface $database;
 	private CampaignRepository $repository;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->db = Mockery::mock( DatabasePort::class );
-		$this->campaign_factory = new CampaignFactory();
-		$this->repository = new CampaignRepository( $this->db, $this->campaign_factory );
+		$this->database = Mockery::mock( DatabasePort::class );
+		$this->repository = new CampaignRepository(
+			$this->database,
+			new CampaignFactory(),
+			new FrozenClock( UtcDateTime::create_from_format( self::CURRENT_TIME, 'Y-m-d H:i:s' ) ),
+		);
 	}
 
 	#[Test]
-	public function find_by_id_maps_row_to_campaign(): void {
+	public function find_by_id_returns_mapped_campaign(): void {
 
-		$id = EntityId::create( 7 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 3, accepts_donations: false, target_amount: 123 ) );
+			->andReturn(
+				$this->make_campaign_row(
+					id: 7,
+					version: 3,
+					title: 'Campaign title',
+					accepts_donations: true,
+					currency_code: 'USD',
+					target_amount: 12_300,
+				),
+			);
 
-		$result = $this->repository->find_by_id( $id );
+		$campaign = $this->repository->find_by_id( EntityId::create( 7 ) );
 
-		self::assertSame( 7, $result?->get_id()->get_value() );
-		self::assertSame( 3, $result?->get_version()->get_value() );
-		self::assertSame( 'Hello', $result?->get_title() );
-		self::assertFalse( $result?->accepts_donations() );
-		self::assertTrue( $result?->has_target() );
-		self::assertSame( 123, $result?->get_target()->get_amount()?->get_value() );
-		self::assertSame( 'RUB', $result?->get_target()->get_currency()->get_code() );
+		self::assertNotNull( $campaign );
+		self::assertSame( 7, $campaign->get_id()->get_value() );
+		self::assertSame( 3, $campaign->get_version()->get_value() );
+		self::assertSame( 'Campaign title', $campaign->get_title() );
+		self::assertTrue( $campaign->accepts_donations() );
+		self::assertSame( 'USD', $campaign->get_target()->get_currency()->get_code() );
+		self::assertSame( 12_300, $campaign->get_target()->get_amount()?->get_value() );
 	}
 
 	#[Test]
-	public function find_by_id_returns_campaign_without_target_when_persistence_row_has_no_target(): void {
+	public function find_by_id_maps_nullable_target_amount(): void {
 
-		$id = EntityId::create( 7 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 3, accepts_donations: true, target_amount: null ) );
+			->andReturn( $this->make_campaign_row( id: 7, target_amount: null ) );
 
-		$result = $this->repository->find_by_id( $id );
+		$campaign = $this->repository->find_by_id( EntityId::create( 7 ) );
 
-		self::assertTrue( $result?->accepts_donations() );
-		self::assertFalse( $result?->has_target() );
-		self::assertNull( $result?->get_target()->get_amount() );
-		self::assertSame( 'RUB', $result?->get_target()->get_currency()->get_code() );
+		self::assertNotNull( $campaign );
+		self::assertFalse( $campaign->has_target() );
+		self::assertNull( $campaign->get_target()->get_amount() );
 	}
 
 	#[Test]
-	public function find_by_id_returns_null_when_not_found(): void {
+	public function find_by_id_returns_null_when_campaign_is_not_found(): void {
 
-		$id = EntityId::create( 7 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
 			->andReturn( null );
 
-		self::assertNull( $this->repository->find_by_id( $id ) );
+		self::assertNull( $this->repository->find_by_id( EntityId::create( 7 ) ) );
 	}
 
 	#[Test]
-	public function find_by_id_throws_when_entity_id_is_not_int_compatible(): void {
+	public function find_by_id_throws_for_invalid_campaign_id(): void {
 
-		$id = EntityId::create( '019b6bcb-2f32-7461-838f-67a1479fbdbe' );
-
-		$this->db->shouldNotReceive( 'get_by_id' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage(
-			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
-		);
-
-		$this->repository->find_by_id( $id );
+		try {
+			$this->repository->find_by_id(
+				EntityId::create( '123e4567-e89b-12d3-a456-426614174000' ),
+			);
+			self::fail( 'Expected the campaign lookup to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidCampaignIdException::class, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function find_by_id_throws_when_database_query_fails(): void {
+	public function find_by_id_throws_when_database_lookup_fails(): void {
 
-		$id = EntityId::create( 7 );
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+			->andThrow( $database_exception );
 
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to fetch campaign "7".' );
-
-		$this->repository->find_by_id( $id );
+		try {
+			$this->repository->find_by_id( EntityId::create( 7 ) );
+			self::fail( 'Expected the campaign lookup to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to fetch campaign "7".', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function find_by_id_throws_when_row_cannot_be_mapped_to_campaign(): void {
+	#[DataProvider( 'required_row_field_cases' )]
+	public function find_by_id_throws_when_required_row_field_is_missing(
+		string $field,
+		string $row_id_in_message,
+	): void {
 
-		$id = EntityId::create( 7 );
-		$row = $this->campaign_row( id: 7, version: null );
-		unset( $row['version'] );
+		$row = $this->make_campaign_row( id: 7 );
+		unset( $row[ $field ] );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
 			->andReturn( $row );
 
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to map campaign row "7".' );
-
-		$this->repository->find_by_id( $id );
+		try {
+			$this->repository->find_by_id( EntityId::create( 7 ) );
+			self::fail( 'Expected campaign row mapping to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				sprintf( 'Failed to map campaign row "%s".', $row_id_in_message ),
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( ArrayExtractionException::class, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function exists_by_id_returns_true_when_row_exists(): void {
+	#[DataProvider( 'invalid_row_field_cases' )]
+	public function find_by_id_throws_when_row_field_has_invalid_type(
+		string $field,
+		?string $invalid_value,
+		string $row_id_in_message,
+	): void {
 
-		$id = EntityId::create( 7 );
+		$row = $this->make_campaign_row( id: 7 );
+		$row[ $field ] = $invalid_value;
 
-		$this->db
+		$this->database
+			->shouldReceive( 'get_by_id' )
+			->once()
+			->with( self::TABLE_NAME, 7 )
+			->andReturn( $row );
+
+		try {
+			$this->repository->find_by_id( EntityId::create( 7 ) );
+			self::fail( 'Expected campaign row mapping to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				sprintf( 'Failed to map campaign row "%s".', $row_id_in_message ),
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( ArrayExtractionException::class, $exception->getPrevious() );
+		}
+	}
+
+	#[Test]
+	public function find_by_id_throws_when_campaign_title_is_whitespace(): void {
+
+		$this->database
+			->shouldReceive( 'get_by_id' )
+			->once()
+			->with( self::TABLE_NAME, 7 )
+			->andReturn( $this->make_campaign_row( id: 7, title: ' ' ) );
+
+		try {
+			$this->repository->find_by_id( EntityId::create( 7 ) );
+			self::fail( 'Expected campaign row mapping to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to map campaign row "7".', $exception->getMessage() );
+			self::assertInstanceOf( CampaignFactoryException::class, $exception->getPrevious() );
+		}
+	}
+
+	#[Test]
+	#[DataProvider( 'campaign_existence_cases' )]
+	public function exists_by_id_returns_database_result( bool $exists ): void {
+
+		$this->database
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( true );
+			->andReturn( $exists );
 
-		self::assertTrue( $this->repository->exists_by_id( $id ) );
+		self::assertSame( $exists, $this->repository->exists_by_id( EntityId::create( 7 ) ) );
 	}
 
 	#[Test]
-	public function exists_by_id_returns_false_when_row_does_not_exist(): void {
+	public function exists_by_id_throws_for_invalid_campaign_id(): void {
 
-		$id = EntityId::create( 7 );
+		try {
+			$this->repository->exists_by_id(
+				EntityId::create( '123e4567-e89b-12d3-a456-426614174000' ),
+			);
+			self::fail( 'Expected the campaign existence check to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidCampaignIdException::class, $exception->getPrevious() );
+		}
+	}
 
-		$this->db
+	#[Test]
+	public function exists_by_id_throws_when_database_lookup_fails(): void {
+
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
+
+		$this->database
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( false );
+			->andThrow( $database_exception );
 
-		self::assertFalse( $this->repository->exists_by_id( $id ) );
+		try {
+			$this->repository->exists_by_id( EntityId::create( 7 ) );
+			self::fail( 'Expected the campaign existence check to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to check campaign "7" existence.', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function exists_by_id_throws_when_database_query_fails(): void {
+	public function insert_persists_campaign_and_returns_persisted_snapshot(): void {
 
-		$id = EntityId::create( 7 );
-
-		$this->db
-			->shouldReceive( 'exists_by_id' )
-			->once()
-			->with( self::TABLE_NAME, 7 )
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to check campaign "7" existence.' );
-
-		$this->repository->exists_by_id( $id );
-	}
-
-	#[Test]
-	public function insert_inserts_row_and_returns_persisted_campaign_snapshot(): void {
-
-		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
-
-		$this->db
+		$campaign = $this->make_campaign(
+			id: 7,
+			title: 'New campaign',
+			accepts_donations: true,
+			currency_code: 'USD',
+			target_amount: 12_300,
+		);
+		$this->database
 			->shouldReceive( 'insert' )
 			->once()
 			->with(
 				self::TABLE_NAME,
-				Mockery::on(
-					static fn ( array $row ): bool => self::matches_insert_row(
-						$row,
-						id: 7,
-						version: 1,
-						title: 'Hello',
-						accepts_donations: false,
-						currency_code: 'RUB',
-						target_amount: 123,
-					),
-				),
+				[
+					'id' => 7,
+					'version' => 1,
+					'title' => 'New campaign',
+					'accepts_donations' => true,
+					'currency_code' => 'USD',
+					'target_amount' => 12_300,
+					'collected_amount' => 0,
+					'donations_count' => 0,
+					'created_at' => self::CURRENT_TIME,
+					'updated_at' => null,
+				],
 			);
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 1, accepts_donations: false, target_amount: 123 ) );
+			->andReturn(
+				$this->make_campaign_row(
+					id: 7,
+					title: 'Persisted campaign',
+					accepts_donations: true,
+					currency_code: 'USD',
+					target_amount: 12_300,
+				),
+			);
 
-		$result = $this->repository->insert( $campaign );
+		$persisted = $this->repository->insert( $campaign );
 
-		self::assertSame( 7, $result->get_id()->get_value() );
-		self::assertSame( 1, $result->get_version()->get_value() );
-		self::assertFalse( $result->accepts_donations() );
-		self::assertSame( 123, $result->get_target()->get_amount()?->get_value() );
+		self::assertSame( 7, $persisted->get_id()->get_value() );
+		self::assertSame( 1, $persisted->get_version()->get_value() );
+		self::assertSame( 'Persisted campaign', $persisted->get_title() );
+		self::assertTrue( $persisted->accepts_donations() );
+		self::assertSame( 'USD', $persisted->get_target()->get_currency()->get_code() );
+		self::assertSame( 12_300, $persisted->get_target()->get_amount()?->get_value() );
 	}
 
 	#[Test]
-	public function insert_throws_when_campaign_entity_id_is_not_int_compatible(): void {
+	public function insert_throws_for_invalid_campaign_id(): void {
 
-		$campaign = $this->campaign( id: '019b6bcb-2f32-7461-838f-67a1479fbdbe' );
+		$campaign = $this->make_campaign( id: '123e4567-e89b-12d3-a456-426614174000' );
 
-		$this->db->shouldNotReceive( 'insert' );
-		$this->db->shouldNotReceive( 'get_by_id' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage(
-			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
-		);
-
-		$this->repository->insert( $campaign );
+		try {
+			$this->repository->insert( $campaign );
+			self::fail( 'Expected the campaign insert to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidCampaignIdException::class, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function insert_throws_when_version_is_not_initial(): void {
-
-		$campaign = $this->campaign( id: 7, version: 2, accepts_donations: false, target_amount: 123 );
-
-		$this->db->shouldNotReceive( 'insert' );
-		$this->db->shouldNotReceive( 'get_by_id' );
+	public function insert_throws_when_campaign_version_is_not_initial(): void {
 
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot insert campaign "7": version must be initial. Given: 2.' );
 
-		$this->repository->insert( $campaign );
+		$this->repository->insert( $this->make_campaign( id: 7, version: 2 ) );
+	}
+
+	#[Test]
+	public function insert_throws_specific_exception_for_duplicate_campaign_id(): void {
+
+		$database_exception = new FakeDatabaseDuplicateKeyException( 'Duplicate key.' );
+
+		$this->database
+			->shouldReceive( 'insert' )
+			->once()
+			->with( self::TABLE_NAME, Mockery::type( 'array' ) )
+			->andThrow( $database_exception );
+
+		try {
+			$this->repository->insert( $this->make_campaign( id: 7 ) );
+			self::fail( 'Expected the duplicate campaign insert to throw.' );
+		} catch ( CampaignAlreadyExistsException $exception ) {
+			self::assertSame( 'Cannot insert campaign "7": campaign already exists.', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
 	public function insert_throws_when_database_insert_fails(): void {
 
-		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'insert' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				Mockery::on(
-					static fn ( array $row ): bool => self::matches_insert_row(
-						$row,
-						id: 7,
-						version: 1,
-						title: 'Hello',
-						accepts_donations: false,
-						currency_code: 'RUB',
-						target_amount: 123,
-					),
-				),
-			)
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+			->with( self::TABLE_NAME, Mockery::type( 'array' ) )
+			->andThrow( $database_exception );
 
-		$this->db->shouldNotReceive( 'get_by_id' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to insert campaign "7".' );
-
-		$this->repository->insert( $campaign );
+		try {
+			$this->repository->insert( $this->make_campaign( id: 7 ) );
+			self::fail( 'Expected the campaign insert to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to insert campaign "7".', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function insert_throws_when_campaign_is_not_found_after_insert(): void {
+	public function insert_throws_when_persisted_snapshot_cannot_be_found(): void {
 
-		$campaign = $this->campaign( id: 7, version: 1, accepts_donations: false, target_amount: 123 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'insert' )
 			->once()
-			->with(
-				self::TABLE_NAME,
-				Mockery::on(
-					static fn ( array $row ): bool => self::matches_insert_row(
-						$row,
-						id: 7,
-						version: 1,
-						title: 'Hello',
-						accepts_donations: false,
-						currency_code: 'RUB',
-						target_amount: 123,
-					),
-				),
-			);
+			->with( self::TABLE_NAME, Mockery::type( 'array' ) );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
@@ -320,28 +409,31 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Campaign "7" was inserted, but fetching persisted snapshot failed.' );
 
-		$this->repository->insert( $campaign );
+		$this->repository->insert( $this->make_campaign( id: 7 ) );
 	}
 
 	#[Test]
-	public function update_updates_row_with_next_version_and_returns_persisted_campaign_snapshot(): void {
+	public function update_persists_next_version_and_returns_persisted_snapshot(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: true, target_amount: null );
-
-		$this->db
+		$campaign = $this->make_campaign(
+			id: 7,
+			version: 3,
+			title: 'Updated campaign',
+			accepts_donations: true,
+			target_amount: null,
+		);
+		$this->database
 			->shouldReceive( 'update' )
 			->once()
 			->with(
 				self::TABLE_NAME,
-				Mockery::on(
-					static fn ( array $row ): bool => self::matches_update_row(
-						$row,
-						title: 'Hello',
-						accepts_donations: true,
-						target_amount: null,
-						version: 4,
-					),
-				),
+				[
+					'title' => 'Updated campaign',
+					'accepts_donations' => true,
+					'target_amount' => null,
+					'updated_at' => self::CURRENT_TIME,
+					'version' => 4,
+				],
 				[
 					'id' => 7,
 					'version' => 3,
@@ -349,131 +441,121 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 			)
 			->andReturn( 1 );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andReturn( $this->campaign_row( id: 7, version: 4, accepts_donations: true, target_amount: null ) );
+			->andReturn(
+				$this->make_campaign_row(
+					id: 7,
+					version: 4,
+					title: 'Persisted update',
+					accepts_donations: true,
+					target_amount: null,
+				),
+			);
 
-		$result = $this->repository->update( $campaign );
+		$persisted = $this->repository->update( $campaign );
 
-		self::assertSame( 4, $result->get_version()->get_value() );
-		self::assertTrue( $result->accepts_donations() );
-		self::assertFalse( $result->has_target() );
-		self::assertNull( $result->get_target()->get_amount() );
+		self::assertSame( 4, $persisted->get_version()->get_value() );
+		self::assertSame( 'Persisted update', $persisted->get_title() );
+		self::assertTrue( $persisted->accepts_donations() );
+		self::assertFalse( $persisted->has_target() );
 	}
 
 	#[Test]
-	public function update_throws_when_campaign_entity_id_is_not_int_compatible(): void {
+	public function update_throws_for_invalid_campaign_id(): void {
 
-		$campaign = $this->campaign( id: '019b6bcb-2f32-7461-838f-67a1479fbdbe' );
+		$campaign = $this->make_campaign( id: '123e4567-e89b-12d3-a456-426614174000', version: 3 );
 
-		$this->db->shouldNotReceive( 'update' );
-		$this->db->shouldNotReceive( 'exists_by_id' );
-		$this->db->shouldNotReceive( 'get_by_id' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage(
-			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
-		);
-
-		$this->repository->update( $campaign );
+		try {
+			$this->repository->update( $campaign );
+			self::fail( 'Expected the campaign update to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidCampaignIdException::class, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
 	public function update_throws_when_database_update_fails(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: true, target_amount: null );
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'update' )
 			->once()
 			->with(
 				self::TABLE_NAME,
-				Mockery::on(
-					static fn ( array $row ): bool => self::matches_update_row(
-						$row,
-						title: 'Hello',
-						accepts_donations: true,
-						target_amount: null,
-						version: 4,
-					),
-				),
+				Mockery::type( 'array' ),
 				[
 					'id' => 7,
 					'version' => 3,
 				],
 			)
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+			->andThrow( $database_exception );
 
-		$this->db->shouldNotReceive( 'exists_by_id' );
-		$this->db->shouldNotReceive( 'get_by_id' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to update campaign "7".' );
-
-		$this->repository->update( $campaign );
+		try {
+			$this->repository->update( $this->make_campaign( id: 7, version: 3 ) );
+			self::fail( 'Expected the campaign update to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to update campaign "7".', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
-	public function update_throws_when_no_rows_affected_and_campaign_is_missing(): void {
+	public function update_throws_when_campaign_is_not_found(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'update' )
 			->once()
 			->andReturn( 0 );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
 			->andReturn( false );
 
-		$this->db->shouldNotReceive( 'get_by_id' );
-
 		$this->expectException( CampaignNotFoundException::class );
 		$this->expectExceptionMessage( 'Cannot update campaign "7": persisted record not found.' );
 
-		$this->repository->update( $campaign );
+		$this->repository->update( $this->make_campaign( id: 7, version: 3 ) );
 	}
 
 	#[Test]
-	public function update_throws_when_no_rows_affected_and_version_mismatch(): void {
+	public function update_throws_when_campaign_version_does_not_match(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'update' )
 			->once()
 			->andReturn( 0 );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'exists_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
 			->andReturn( true );
 
-		$this->db->shouldNotReceive( 'get_by_id' );
-
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Cannot update campaign "7": version mismatch.' );
 
-		$this->repository->update( $campaign );
+		$this->repository->update( $this->make_campaign( id: 7, version: 3 ) );
 	}
 
 	#[Test]
-	public function update_throws_when_campaign_is_not_found_after_update(): void {
+	public function update_throws_when_persisted_snapshot_cannot_be_found(): void {
 
-		$campaign = $this->campaign( id: 7, version: 3, accepts_donations: false, target_amount: 123 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'update' )
 			->once()
 			->andReturn( 1 );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'get_by_id' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
@@ -482,165 +564,100 @@ final class CampaignRepositoryTest extends MockeryTestCase {
 		$this->expectException( CampaignRepositoryException::class );
 		$this->expectExceptionMessage( 'Campaign "7" was updated, but fetching persisted snapshot failed.' );
 
-		$this->repository->update( $campaign );
+		$this->repository->update( $this->make_campaign( id: 7, version: 3 ) );
 	}
 
 	#[Test]
-	public function delete_deletes_row_by_int_id(): void {
+	public function delete_removes_campaign_by_id(): void {
 
-		$id = EntityId::create( 7 );
-
-		$this->db
+		$this->database
 			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 );
 
-		$this->repository->delete( $id );
-
-		$this->addToAssertionCount( 1 );
+		$this->repository->delete( EntityId::create( 7 ) );
 	}
 
 	#[Test]
-	public function delete_throws_when_campaign_does_not_exist(): void {
+	public function delete_throws_for_invalid_campaign_id(): void {
 
-		$id = EntityId::create( 7 );
+		try {
+			$this->repository->delete(
+				EntityId::create( '123e4567-e89b-12d3-a456-426614174000' ),
+			);
+			self::fail( 'Expected the campaign delete to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame(
+				'Campaign ID must be a positive integer. Given: 123e4567-e89b-12d3-a456-426614174000.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidCampaignIdException::class, $exception->getPrevious() );
+		}
+	}
 
-		$this->db
+	#[Test]
+	public function delete_throws_specific_exception_when_campaign_is_not_found(): void {
+
+		$database_exception = new FakeDatabaseRowNotFoundException( 'Row not found.' );
+
+		$this->database
 			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new FakeDatabaseRowNotFoundException( 'Row not found.' ) );
+			->andThrow( $database_exception );
 
-		$this->expectException( CampaignNotFoundException::class );
-		$this->expectExceptionMessage( 'Cannot delete campaign "7": persisted record not found.' );
-
-		$this->repository->delete( $id );
-	}
-
-	#[Test]
-	public function delete_throws_when_entity_id_is_not_int_compatible(): void {
-
-		$id = EntityId::create( '019b6bcb-2f32-7461-838f-67a1479fbdbe' );
-
-		$this->db->shouldNotReceive( 'delete' );
-
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage(
-			'Campaign ID must be a positive integer. Given: 019b6bcb-2f32-7461-838f-67a1479fbdbe.',
-		);
-
-		$this->repository->delete( $id );
+		try {
+			$this->repository->delete( EntityId::create( 7 ) );
+			self::fail( 'Expected the missing campaign delete to throw.' );
+		} catch ( CampaignNotFoundException $exception ) {
+			self::assertSame( 'Cannot delete campaign "7": persisted record not found.', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
 	#[Test]
 	public function delete_throws_when_database_delete_fails(): void {
 
-		$id = EntityId::create( 7 );
+		$database_exception = new FakeDatabaseException( 'Database failed.' );
 
-		$this->db
+		$this->database
 			->shouldReceive( 'delete' )
 			->once()
 			->with( self::TABLE_NAME, 7 )
-			->andThrow( new FakeDatabaseException( 'DB failed.' ) );
+			->andThrow( $database_exception );
 
-		$this->expectException( CampaignRepositoryException::class );
-		$this->expectExceptionMessage( 'Failed to delete campaign "7".' );
-
-		$this->repository->delete( $id );
+		try {
+			$this->repository->delete( EntityId::create( 7 ) );
+			self::fail( 'Expected the campaign delete to throw.' );
+		} catch ( CampaignRepositoryException $exception ) {
+			self::assertSame( 'Failed to delete campaign "7".', $exception->getMessage() );
+			self::assertSame( $database_exception, $exception->getPrevious() );
+		}
 	}
 
-	private function campaign(
-		int|string $id = 7,
-		int $version = 3,
-		string $title = 'Hello',
-		bool $accepts_donations = false,
-		string $currency_code = 'RUB',
-		?int $target_amount = 123,
-	): Campaign {
+	public static function required_row_field_cases(): iterable {
 
-		return $this->campaign_factory->create_from_primitives(
-			id: $id,
-			version: $version,
-			title: $title,
-			accepts_donations: $accepts_donations,
-			currency_code: $currency_code,
-			target_amount: $target_amount,
-		);
+		yield 'id' => [ 'id', '<unavailable>' ];
+		yield 'version' => [ 'version', '7' ];
+		yield 'title' => [ 'title', '7' ];
+		yield 'accepts donations' => [ 'accepts_donations', '7' ];
+		yield 'currency code' => [ 'currency_code', '7' ];
+		yield 'target amount' => [ 'target_amount', '7' ];
 	}
 
-	/**
-	 * Returns a campaign row.
-	 *
-	 * @return array<string, string> Campaign row.
-	 */
-	private function campaign_row(
-		int $id = 7,
-		?int $version = 3,
-		string $title = 'Hello',
-		bool $accepts_donations = false,
-		string $currency_code = 'RUB',
-		?int $target_amount = 123,
-	): array {
+	public static function invalid_row_field_cases(): iterable {
 
-		return [
-			'id' => (string) $id,
-			'version' => (string) $version,
-			'title' => $title,
-			'accepts_donations' => $accepts_donations ? '1' : '0',
-			'currency_code' => $currency_code,
-			'target_amount' => $target_amount === null ? null : (string) $target_amount,
-			'created_at' => '2026-03-21 10:00:00',
-			'updated_at' => null,
-		];
+		yield 'id' => [ 'id', null, '<unavailable>' ];
+		yield 'version' => [ 'version', null, '7' ];
+		yield 'title' => [ 'title', null, '7' ];
+		yield 'accepts donations' => [ 'accepts_donations', null, '7' ];
+		yield 'currency code' => [ 'currency_code', null, '7' ];
+		yield 'target amount' => [ 'target_amount', 'invalid', '7' ];
 	}
 
-	/**
-	 * Checks whether the row matches the expected insert payload.
-	 *
-	 * @param array<string, mixed> $row Insert row.
-	 */
-	private static function matches_insert_row(
-		array $row,
-		int $id,
-		int $version,
-		string $title,
-		bool $accepts_donations,
-		string $currency_code,
-		?int $target_amount,
-	): bool {
+	public static function campaign_existence_cases(): iterable {
 
-		return ( $row['id'] ?? null ) === $id
-			&& ( $row['version'] ?? null ) === $version
-			&& ( $row['title'] ?? null ) === $title
-			&& ( $row['accepts_donations'] ?? null ) === $accepts_donations
-			&& ( $row['currency_code'] ?? null ) === $currency_code
-			&& ( $row['target_amount'] ?? null ) === $target_amount
-			&& ( $row['collected_amount'] ?? null ) === 0
-			&& ( $row['donations_count'] ?? null ) === 0
-			&& is_string( $row['created_at'] ?? null )
-			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $row['created_at'] ) === 1
-			&& ( $row['updated_at'] ?? null ) === null;
-	}
-
-	/**
-	 * Checks whether the row matches the expected update payload.
-	 *
-	 * @param array<string, mixed> $row Update row.
-	 */
-	private static function matches_update_row(
-		array $row,
-		string $title,
-		bool $accepts_donations,
-		?int $target_amount,
-		int $version,
-	): bool {
-
-		return ( $row['title'] ?? null ) === $title
-			&& ( $row['accepts_donations'] ?? null ) === $accepts_donations
-			&& ( $row['target_amount'] ?? null ) === $target_amount
-			&& ( $row['version'] ?? null ) === $version
-			&& is_string( $row['updated_at'] ?? null )
-			&& preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $row['updated_at'] ) === 1
-			&& ! array_key_exists( 'currency_code', $row );
+		yield 'campaign exists' => [ true ];
+		yield 'campaign does not exist' => [ false ];
 	}
 }

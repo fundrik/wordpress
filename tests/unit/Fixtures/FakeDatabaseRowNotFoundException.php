@@ -8,6 +8,6 @@ use Fundrik\WordPress\Infrastructure\Ports\Database\DatabaseRowNotFoundException
 use RuntimeException;
 
 /**
- * Represents a fake database row-not-found exception for tests.
+ * Represents a missing database row in tests.
  */
 final class FakeDatabaseRowNotFoundException extends RuntimeException implements DatabaseRowNotFoundExceptionInterface {}
