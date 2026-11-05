@@ -8,34 +8,45 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Tests\MockeryTestCase;
 use Mockery;
+use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
 #[CoversClass( AdminPageRegistrar::class )]
 final class AdminPageRegistrarTest extends MockeryTestCase {
 
-	#[Test]
-	public function it_registers_all_admin_pages(): void {
+	private AdminPageInterface&MockInterface $first_page;
+	private AdminPageInterface&MockInterface $second_page;
+	private AdminPageRegistrar $registrar;
 
-		$first_page = Mockery::mock( AdminPageInterface::class );
-		$first_page->shouldReceive( 'register' )->once();
+	#[Override]
+	protected function setUp(): void {
 
-		$second_page = Mockery::mock( AdminPageInterface::class );
-		$second_page->shouldReceive( 'register' )->once();
+		parent::setUp();
 
-		$registrar = new AdminPageRegistrar( $first_page, $second_page );
-
-		$registrar->register_all();
+		$this->first_page = Mockery::mock( AdminPageInterface::class );
+		$this->second_page = Mockery::mock( AdminPageInterface::class );
+		$this->registrar = new AdminPageRegistrar( $this->first_page, $this->second_page );
 	}
 
 	#[Test]
-	public function it_returns_the_count_of_configured_admin_pages(): void {
+	public function register_all_registers_every_configured_admin_page(): void {
 
-		$registrar = new AdminPageRegistrar(
-			Mockery::mock( AdminPageInterface::class ),
-			Mockery::mock( AdminPageInterface::class ),
-		);
+		$this->first_page
+			->shouldReceive( 'register' )
+			->once();
 
-		$this->assertSame( 2, $registrar->count() );
+		$this->second_page
+			->shouldReceive( 'register' )
+			->once();
+
+		$this->registrar->register_all();
+	}
+
+	#[Test]
+	public function count_returns_number_of_configured_admin_pages(): void {
+
+		self::assertSame( 2, $this->registrar->count() );
 	}
 }

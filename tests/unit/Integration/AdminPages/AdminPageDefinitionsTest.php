@@ -16,9 +16,19 @@ use PHPUnit\Framework\Attributes\Test;
 final class AdminPageDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_admin_page_classes(): void {
+	public function constants_define_expected_admin_page_configuration(): void {
 
-		$this->assertSame(
+		self::assertSame( 'fundrik', AdminPageDefinitions::ROOT_MENU_SLUG );
+		self::assertSame( 'fundrik_donations', AdminPageDefinitions::DONATIONS_PAGE_ID );
+		self::assertSame( 'fundrik_settings', AdminPageDefinitions::SETTINGS_PAGE_ID );
+		self::assertSame( 'edit_posts', AdminPageDefinitions::CONTENT_CAPABILITY );
+		self::assertSame( 'manage_options', AdminPageDefinitions::SETTINGS_CAPABILITY );
+	}
+
+	#[Test]
+	public function classes_returns_configured_admin_page_classes(): void {
+
+		self::assertSame(
 			[
 				RootAdminPage::class,
 				DonationsAdminPage::class,

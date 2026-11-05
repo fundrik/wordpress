@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminPages\Pages;
 
-use ArrayObject;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\RootAdminPage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -20,6 +20,7 @@ final class RootAdminPageTest extends WordPressTestCase {
 
 	private RootAdminPage $admin_page;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
@@ -28,13 +29,9 @@ final class RootAdminPageTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function register_registers_root_menu_and_render_callback(): void {
+	public function register_registers_root_menu_with_render_callback(): void {
 
-		$page_state = new ArrayObject(
-			[
-				'callback' => null,
-			],
-		);
+		$render = null;
 
 		Functions\expect( 'add_menu_page' )
 			->once()
@@ -43,27 +40,21 @@ final class RootAdminPageTest extends WordPressTestCase {
 				__( 'Fundrik', 'fundrik' ),
 				AdminPageDefinitions::CONTENT_CAPABILITY,
 				AdminPageDefinitions::ROOT_MENU_SLUG,
-				Mockery::on(
-					static function ( callable $callback ) use ( $page_state ): bool {
-
-						$page_state['callback'] = $callback;
-
-						return true;
-					},
-				),
+				Mockery::capture( $render ),
 				'dashicons-heart',
-			)
-			->andReturn( 'toplevel_page_fundrik' );
+			);
 
 		$this->admin_page->register();
 
-		self::assertIsCallable( $page_state['callback'] );
+		self::assertIsCallable( $render );
 
 		ob_start();
-		( $page_state['callback'] )();
-		$output = (string) ob_get_clean();
+		$render();
+		$output = preg_replace( '/>\s+</', '><', trim( (string) ob_get_clean() ) );
 
-		self::assertStringContainsString( '<h1>Fundrik</h1>', $output );
-		self::assertStringContainsString( 'Use the submenu to open campaigns, donations, or settings.', $output );
+		self::assertSame(
+			'<div class="wrap"><h1>Fundrik</h1><p>Use the submenu to open campaigns, donations, or settings.</p></div>',
+			$output,
+		);
 	}
 }

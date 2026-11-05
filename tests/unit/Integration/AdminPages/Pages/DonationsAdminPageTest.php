@@ -4,21 +4,24 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminPages\Pages;
 
-use ArrayObject;
 use Brain\Monkey\Functions;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
 use Fundrik\Core\Components\Donations\Application\Ports\DonationRead\DonationReadPort;
+use Fundrik\Core\Components\Donations\Application\ReadModels\PaginatedDonations;
 use Fundrik\Core\Components\Donations\Application\Services\DonationQueryService;
 use Fundrik\Core\Components\Donations\Application\UseCases\ReadDonationById\ReadDonationByIdHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\ReadPaginatedDonations\ReadPaginatedDonationsHandler;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\DonationsAdminPage;
-use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
+use Fundrik\WordPress\Integration\AdminPages\Tables\DonationsListTable;
+use Fundrik\WordPress\Integration\ReadModels\PaginatedDonationsAdminList;
 use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
 use Fundrik\WordPress\Presentation\Formatters\DateTimeFormatter;
 use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -26,32 +29,43 @@ use Psr\Log\LoggerInterface;
 
 #[CoversClass( DonationsAdminPage::class )]
 #[UsesClass( AdminPageDefinitions::class )]
+#[UsesClass( DonationsListTable::class )]
+#[UsesClass( PaginatedDonationsAdminList::class )]
+#[UsesClass( DonationsAdminListService::class )]
 final class DonationsAdminPageTest extends WordPressTestCase {
 
+	private CampaignReadPort&MockInterface $campaign_read;
+	private DonationReadPort&MockInterface $donation_read;
 	private DonationsAdminPage $admin_page;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->admin_page = new DonationsAdminPage( $this->create_donations_list_service() );
-	}
+		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
+		$this->donation_read = Mockery::mock( DonationReadPort::class );
 
-	protected function tearDown(): void {
+		$donation_query = new DonationQueryService(
+			new ReadDonationByIdHandler( $this->donation_read ),
+			new ReadPaginatedDonationsHandler( $this->donation_read ),
+		);
 
-		unset( $GLOBALS['fundrik_test_donations_callback'] );
-
-		parent::tearDown();
+		$this->admin_page = new DonationsAdminPage(
+			new DonationsAdminListService(
+				$donation_query,
+				$this->campaign_read,
+				Mockery::mock( LoggerInterface::class ),
+				new DateTimeFormatter(),
+				new MoneyFormatter(),
+			),
+		);
 	}
 
 	#[Test]
-	public function register_registers_donations_submenu_and_render_callback(): void {
+	public function register_registers_donations_submenu_with_render_callback(): void {
 
-		$page_state = new ArrayObject(
-			[
-				'callback' => null,
-			],
-		);
+		$render = null;
 
 		Functions\expect( 'add_submenu_page' )
 			->once()
@@ -61,41 +75,32 @@ final class DonationsAdminPageTest extends WordPressTestCase {
 				__( 'Donations', 'fundrik' ),
 				AdminPageDefinitions::CONTENT_CAPABILITY,
 				AdminPageDefinitions::DONATIONS_PAGE_ID,
-				Mockery::on(
-					static function ( callable $callback ) use ( $page_state ): bool {
+				Mockery::capture( $render ),
+			);
 
-						$page_state['callback'] = $callback;
-						$GLOBALS['fundrik_test_donations_callback'] = $callback;
+		$this->donation_read
+			->shouldReceive( 'paginate' )
+			->once()
+			->with( 1, 20 )
+			->andReturn( new PaginatedDonations( [], 1, 20, 0 ) );
 
-						return true;
-					},
-				),
-			)
-			->andReturn( 'fundrik_page_fundrik_donations' );
+		$this->campaign_read
+			->shouldReceive( 'find_by_ids' )
+			->once()
+			->with( [] )
+			->andReturn( [] );
 
 		$this->admin_page->register();
 
-		self::assertIsCallable( $page_state['callback'] );
-	}
+		self::assertIsCallable( $render );
 
-	private function create_donations_list_service(): DonationsAdminListService {
+		ob_start();
+		$render();
+		$output = preg_replace( '/>\s+</', '><', trim( (string) ob_get_clean() ) );
 
-		$donation_read = Mockery::mock( DonationReadPort::class );
-		$donation_query = new DonationQueryService(
-			new ReadDonationByIdHandler( $donation_read ),
-			new ReadPaginatedDonationsHandler( $donation_read ),
-		);
-
-		$database = Mockery::mock( DatabasePort::class );
-		$campaign_read = new CampaignReadRepository( $database );
-		$logger = Mockery::mock( LoggerInterface::class );
-
-		return new DonationsAdminListService(
-			$donation_query,
-			$campaign_read,
-			$logger,
-			new DateTimeFormatter(),
-			new MoneyFormatter(),
+		self::assertSame(
+			'<div class="wrap"><h1>Fundrik Donations</h1><form method="get"><table></table></form></div>',
+			$output,
 		);
 	}
 }

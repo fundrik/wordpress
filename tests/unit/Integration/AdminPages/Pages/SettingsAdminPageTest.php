@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminPages\Pages;
 
-use ArrayObject;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminPages\Pages\SettingsAdminPage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -20,6 +20,7 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 
 	private SettingsAdminPage $admin_page;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
@@ -28,15 +29,11 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function register_registers_settings_submenu_and_render_callback(): void {
+	public function register_registers_settings_submenu_with_render_callback(): void {
 
-		$page_state = new ArrayObject(
-			[
-				'callback' => null,
-			],
-		);
+		$render = null;
 
-			Functions\expect( 'add_submenu_page' )
+		Functions\expect( 'add_submenu_page' )
 			->once()
 			->with(
 				AdminPageDefinitions::ROOT_MENU_SLUG,
@@ -44,65 +41,36 @@ final class SettingsAdminPageTest extends WordPressTestCase {
 				__( 'Settings', 'fundrik' ),
 				AdminPageDefinitions::SETTINGS_CAPABILITY,
 				AdminPageDefinitions::SETTINGS_PAGE_ID,
-				Mockery::on(
-					static function ( callable $callback ) use ( $page_state ): bool {
-
-						$page_state['callback'] = $callback;
-
-						return true;
-					},
-				),
-			)
-			->andReturn( 'fundrik_page_fundrik_settings' );
+				Mockery::capture( $render ),
+			);
 
 		Functions\expect( 'settings_errors' )
 			->once()
-			->withNoArgs()
-			->andReturnUsing(
-				static function (): void {
-					echo '<div class="notice"></div>';
-				},
-			);
+			->withNoArgs();
 
 		Functions\expect( 'settings_fields' )
 			->once()
-			->with( AdminPageDefinitions::SETTINGS_PAGE_ID )
-			->andReturnUsing(
-				static function ( string $option_group ): void {
-					echo '<input type="hidden" name="option_page" value="' . esc_attr( $option_group ) . '" />';
-				},
-			);
+			->with( AdminPageDefinitions::SETTINGS_PAGE_ID );
 
 		Functions\expect( 'do_settings_sections' )
 			->once()
-			->with( AdminPageDefinitions::ROOT_MENU_SLUG )
-			->andReturnUsing(
-				static function ( string $page ): void {
-					echo '<div data-page="' . esc_attr( $page ) . '"></div>';
-				},
-			);
+			->with( AdminPageDefinitions::ROOT_MENU_SLUG );
 
 		Functions\expect( 'submit_button' )
 			->once()
-			->withNoArgs()
-			->andReturnUsing(
-				static function (): void {
-					echo '<button type="submit">Save Changes</button>';
-				},
-			);
+			->withNoArgs();
 
 		$this->admin_page->register();
 
-		self::assertIsCallable( $page_state['callback'] );
+		self::assertIsCallable( $render );
 
 		ob_start();
-		( $page_state['callback'] )();
-		$output = (string) ob_get_clean();
+		$render();
+		$output = preg_replace( '/>\s+</', '><', trim( (string) ob_get_clean() ) );
 
-		self::assertStringContainsString( '<h1>Fundrik Settings</h1>', $output );
-		self::assertStringContainsString( '<form action="options.php" method="post">', $output );
-		self::assertStringContainsString( 'name="option_page" value="fundrik_settings"', $output );
-		self::assertStringContainsString( 'data-page="fundrik"', $output );
-		self::assertStringContainsString( 'Save Changes', $output );
+		self::assertSame(
+			'<div class="wrap"><h1>Fundrik Settings</h1><form action="options.php" method="post"></form></div>',
+			$output,
+		);
 	}
 }
