@@ -5,27 +5,37 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings;
 
 use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
+use Fundrik\WordPress\Integration\AdminSettings\AdminSettingRegistration;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use Fundrik\WordPress\Integration\WpSchemaType;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorageNotFoundException;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use InvalidArgumentException;
+use LogicException;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( AdminSettingsGroupRegistrar::class )]
 #[UsesClass( AdminPageDefinitions::class )]
-#[UsesClass( AdminSettingInterface::class )]
+#[UsesClass( AdminSettingRegistration::class )]
+#[UsesClass( OptionReader::class )]
+#[UsesClass( SettingOptionName::class )]
 final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 
 	private StoragePort&MockInterface $storage;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
@@ -34,172 +44,307 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function it_registers_all_admin_settings_groups(): void {
+	public function register_all_registers_section_field_and_string_option(): void {
 
-		$first_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$first_settings_group->shouldReceive( 'get_id' )->twice()->andReturn( 'general' );
-		$first_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
-
-		$currency_setting = Mockery::mock( AdminSettingInterface::class );
-		$currency_setting->shouldReceive( 'get_id' )->andReturn( 'currency' );
-		$currency_setting->shouldReceive( 'get_default_value' )->andReturn( 'RUB' );
-		$currency_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::String );
-		$currency_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Currency' );
-		$currency_setting->shouldReceive( 'sanitize_value' )->never();
-		$first_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [ $currency_setting ] );
-
-		$second_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$second_settings_group->shouldReceive( 'get_id' )->times( 3 )->andReturn( 'donation_form' );
-		$second_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Donation Form' );
-
-		$amount_setting = Mockery::mock( AdminSettingInterface::class );
-		$amount_setting->shouldReceive( 'get_id' )->andReturn( 'default_amount' );
-		$amount_setting->shouldReceive( 'get_default_value' )->andReturn( 10 );
-		$amount_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::Integer );
-		$amount_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default donation amount' );
-		$amount_setting->shouldReceive( 'sanitize_value' )->never();
-
-		$amount_label_setting = Mockery::mock( AdminSettingInterface::class );
-		$amount_label_setting->shouldReceive( 'get_id' )->andReturn( 'default_amount_label' );
-		$amount_label_setting->shouldReceive( 'get_default_value' )->andReturn( 'Amount' );
-		$amount_label_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::String );
-		$amount_label_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default amount label' );
-		$amount_label_setting->shouldReceive( 'sanitize_value' )->never();
-
-		$second_settings_group->shouldReceive( 'get_settings' )->once()->andReturn(
-			[
-				$amount_setting,
-				$amount_label_setting,
-			],
-		);
-
-		$third_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$third_settings_group->shouldReceive( 'get_id' )->times( 3 )->andReturn( 'campaign' );
-		$third_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Campaign' );
-
-		$accepts_donations_setting = Mockery::mock( AdminSettingInterface::class );
-		$accepts_donations_setting->shouldReceive( 'get_id' )->andReturn( 'default_accepts_donations' );
-		$accepts_donations_setting->shouldReceive( 'get_default_value' )->andReturn( true );
-		$accepts_donations_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::Boolean );
-		$accepts_donations_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default accepts donations' );
-		$accepts_donations_setting->shouldReceive( 'sanitize_value' )->never();
-
-		$has_target_setting = Mockery::mock( AdminSettingInterface::class );
-		$has_target_setting->shouldReceive( 'get_id' )->andReturn( 'default_has_target' );
-		$has_target_setting->shouldReceive( 'get_default_value' )->andReturn( false );
-		$has_target_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::Boolean );
-		$has_target_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Default has target' );
-		$has_target_setting->shouldReceive( 'sanitize_value' )->never();
-
-		$third_settings_group->shouldReceive( 'get_settings' )->once()->andReturn(
-			[
-				$accepts_donations_setting,
-				$has_target_setting,
-			],
-		);
+		$setting = $this->make_setting( 'currency', 'Currency', WpSchemaType::String, 'RUB' );
+		$group = $this->make_group( 'general', 'General', $setting );
+		$option_name = 'fundrik_general_currency_setting';
+		$field_args = [
+			'field_name' => $option_name,
+			'input_id' => $option_name,
+			'value' => 'USD',
+			'label_for' => $option_name,
+		];
+		$section_callback = null;
+		$render_callback = null;
+		$registration_args = null;
 
 		$this->storage
 			->shouldReceive( 'get' )
 			->once()
-			->with( 'fundrik_general_currency_setting' )
+			->with( $option_name )
 			->andReturn( 'USD' );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_donation_form_default_amount_setting' )
-			->andReturn( 10 );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_donation_form_default_amount_label_setting' )
-			->andReturn( 'Amount' );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_campaign_default_accepts_donations_setting' )
-			->andReturn( true );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_campaign_default_has_target_setting' )
-			->andReturn( false );
-		Functions\expect( 'register_setting' )->times( 5 )->andReturnTrue();
-		Functions\expect( 'add_settings_section' )->times( 3 )->andReturnTrue();
-		Functions\expect( 'add_settings_field' )->times( 5 )->andReturnTrue();
 
-		$registrar = new AdminSettingsGroupRegistrar(
-			new OptionReader( $this->storage ),
-			$first_settings_group,
-			$second_settings_group,
-			$third_settings_group,
-		);
+		$group->shouldReceive( 'render_section_description' )->once();
+		$setting->shouldReceive( 'render' )->once()->with( $field_args );
+		$setting->shouldReceive( 'sanitize_value' )->once()->with( ' eur ' )->andReturn( 'EUR' );
 
-		$registrar->register_all();
-	}
-
-	#[Test]
-	public function it_keeps_the_current_setting_value_when_sanitization_fails(): void {
-
-		$settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$settings_group->shouldReceive( 'get_id' )->twice()->andReturn( 'general' );
-		$settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
-
-		$currency_setting = Mockery::mock( AdminSettingInterface::class );
-		$currency_setting->shouldReceive( 'get_id' )->andReturn( 'currency' );
-		$currency_setting->shouldReceive( 'get_default_value' )->andReturn( 'RUB' );
-		$currency_setting->shouldReceive( 'get_value_type' )->andReturn( WpSchemaType::String );
-		$currency_setting->shouldReceive( 'get_label' )->once()->andReturn( 'Currency' );
-		$currency_setting->shouldReceive( 'sanitize_value' )->once()->andThrow(
-			new \InvalidArgumentException( 'Currency must be a 3-letter ISO 4217 code. Given: bool.' ),
-		);
-		$settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [ $currency_setting ] );
-
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_general_currency_setting' )
-			->andReturn( 'USD' );
-		Functions\expect( 'register_setting' )
-			->once()
-			->andReturnUsing(
-				static function ( string $page, string $option_name, array $args ): bool {
-
-					self::assertSame( WpSchemaType::String->value, $args['type'] );
-
-					$result = $args['sanitize_callback']( false );
-
-					self::assertSame( 'USD', $result );
-
-					return true;
-				}
-			);
-		Functions\expect( 'add_settings_section' )->once()->andReturnTrue();
-		Functions\expect( 'add_settings_field' )->once()->andReturnTrue();
-		Functions\expect( 'add_settings_error' )
+		Functions\expect( 'add_settings_section' )
 			->once()
 			->with(
-				'fundrik_general_currency_setting',
-				'fundrik_general_currency_setting_invalid',
-				'Currency must be a 3-letter ISO 4217 code. Given: bool.',
+				'general',
+				'General',
+				Mockery::capture( $section_callback ),
+				AdminPageDefinitions::ROOT_MENU_SLUG,
 			);
 
-		$registrar = new AdminSettingsGroupRegistrar(
-			new OptionReader( $this->storage ),
-			$settings_group,
-		);
+		Functions\expect( 'add_settings_field' )
+			->once()
+			->with(
+				$option_name,
+				'Currency',
+				Mockery::capture( $render_callback ),
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				'general',
+				$field_args,
+			);
 
-		$registrar->register_all();
+		Functions\expect( 'register_setting' )
+			->once()
+			->with(
+				AdminPageDefinitions::SETTINGS_PAGE_ID,
+				$option_name,
+				Mockery::capture( $registration_args ),
+			);
+
+		$this->make_registrar( $group )->register_all();
+
+		self::assertIsCallable( $section_callback );
+		self::assertIsCallable( $render_callback );
+		self::assertIsArray( $registration_args );
+		self::assertSame( WpSchemaType::String->value, $registration_args['type'] );
+		self::assertSame( 'RUB', $registration_args['default'] );
+		self::assertIsCallable( $registration_args['sanitize_callback'] );
+
+		$section_callback();
+		$render_callback( $field_args );
+		self::assertSame( 'EUR', $registration_args['sanitize_callback']( ' eur ' ) );
 	}
 
 	#[Test]
-	public function it_returns_the_count_of_configured_admin_settings_groups(): void {
+	#[DataProvider( 'typed_current_value_cases' )]
+	public function register_all_uses_typed_current_value(
+		WpSchemaType $type,
+		bool|int $default_value,
+		string $stored_value,
+		bool|int $expected_value,
+	): void {
 
-		$registrar = new AdminSettingsGroupRegistrar(
-			new OptionReader( $this->storage ),
-			Mockery::mock( AdminSettingsGroupInterface::class ),
-			Mockery::mock( AdminSettingsGroupInterface::class ),
-		);
+		$setting = $this->make_setting( 'typed_setting', 'Typed setting', $type, $default_value );
+		$group = $this->make_group( 'test_group', 'Test group', $setting );
+		$option_name = 'fundrik_test_group_typed_setting_setting';
+		$field_args = null;
+		$registration_args = null;
 
-		$this->assertSame( 2, $registrar->count() );
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( $option_name )
+			->andReturn( $stored_value );
+
+		Functions\expect( 'add_settings_section' )->once();
+		Functions\expect( 'add_settings_field' )
+			->once()
+			->with(
+				$option_name,
+				'Typed setting',
+				Mockery::type( 'callable' ),
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				'test_group',
+				Mockery::capture( $field_args ),
+			);
+		Functions\expect( 'register_setting' )
+			->once()
+			->with(
+				AdminPageDefinitions::SETTINGS_PAGE_ID,
+				$option_name,
+				Mockery::capture( $registration_args ),
+			);
+
+		$this->make_registrar( $group )->register_all();
+
+		self::assertIsArray( $field_args );
+		self::assertSame( $expected_value, $field_args['value'] );
+		self::assertIsArray( $registration_args );
+		self::assertSame( $type->value, $registration_args['type'] );
+	}
+
+	#[Test]
+	public function register_all_uses_default_when_option_is_missing(): void {
+
+		$setting = $this->make_setting( 'currency', 'Currency', WpSchemaType::String, 'RUB' );
+		$group = $this->make_group( 'general', 'General', $setting );
+		$option_name = 'fundrik_general_currency_setting';
+		$field_args = null;
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( $option_name )
+			->andThrow( new FakeStorageNotFoundException( 'Missing.' ) );
+
+		Functions\expect( 'add_settings_section' )->once();
+		Functions\expect( 'add_settings_field' )
+			->once()
+			->with(
+				$option_name,
+				'Currency',
+				Mockery::type( 'callable' ),
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				'general',
+				Mockery::capture( $field_args ),
+			);
+		Functions\expect( 'register_setting' )->once();
+
+		$this->make_registrar( $group )->register_all();
+
+		self::assertIsArray( $field_args );
+		self::assertSame( 'RUB', $field_args['value'] );
+	}
+
+	#[Test]
+	public function register_all_uses_default_when_stored_option_has_invalid_type(): void {
+
+		$setting = $this->make_setting( 'currency', 'Currency', WpSchemaType::String, 'RUB' );
+		$group = $this->make_group( 'general', 'General', $setting );
+		$option_name = 'fundrik_general_currency_setting';
+		$field_args = null;
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( $option_name )
+			->andReturn( false );
+
+		Functions\expect( 'add_settings_section' )->once();
+		Functions\expect( 'add_settings_field' )
+			->once()
+			->with(
+				$option_name,
+				'Currency',
+				Mockery::type( 'callable' ),
+				AdminPageDefinitions::ROOT_MENU_SLUG,
+				'general',
+				Mockery::capture( $field_args ),
+			);
+		Functions\expect( 'register_setting' )->once();
+
+		$this->make_registrar( $group )->register_all();
+
+		self::assertIsArray( $field_args );
+		self::assertSame( 'RUB', $field_args['value'] );
+	}
+
+	#[Test]
+	#[DataProvider( 'unsupported_schema_type_cases' )]
+	public function register_all_throws_for_unsupported_schema_type( WpSchemaType $type ): void {
+
+		$setting = $this->make_setting( 'unsupported', 'Unsupported', $type, '' );
+		$group = $this->make_group( 'test_group', 'Test group', $setting );
+
+		Functions\expect( 'add_settings_section' )->once();
+
+		$this->expectException( LogicException::class );
+		$this->expectExceptionMessage( 'Admin settings do not support the configured schema type.' );
+
+		$this->make_registrar( $group )->register_all();
+	}
+
+	#[Test]
+	public function register_all_preserves_current_value_when_sanitization_fails(): void {
+
+		$setting = $this->make_setting( 'currency', 'Currency', WpSchemaType::String, 'RUB' );
+		$group = $this->make_group( 'general', 'General', $setting );
+		$option_name = 'fundrik_general_currency_setting';
+		$registration_args = null;
+		$exception_message = 'Currency must be a 3-letter ISO 4217 code. Given: BOOL.';
+
+		$this->storage
+			->shouldReceive( 'get' )
+			->once()
+			->with( $option_name )
+			->andReturn( 'USD' );
+
+		$setting
+			->shouldReceive( 'sanitize_value' )
+			->once()
+			->with( false )
+			->andThrow( new InvalidArgumentException( $exception_message ) );
+
+		Functions\expect( 'add_settings_section' )->once();
+		Functions\expect( 'add_settings_field' )->once();
+		Functions\expect( 'register_setting' )
+			->once()
+			->with(
+				AdminPageDefinitions::SETTINGS_PAGE_ID,
+				$option_name,
+				Mockery::capture( $registration_args ),
+			);
+		Functions\expect( 'add_settings_error' )
+			->once()
+			->with( $option_name, $option_name . '_invalid', $exception_message );
+
+		$this->make_registrar( $group )->register_all();
+
+		self::assertIsArray( $registration_args );
+		self::assertIsCallable( $registration_args['sanitize_callback'] );
+		self::assertSame( 'USD', $registration_args['sanitize_callback']( false ) );
+	}
+
+	#[Test]
+	public function count_returns_number_of_configured_groups(): void {
+
+		$first_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$second_group = Mockery::mock( AdminSettingsGroupInterface::class );
+
+		self::assertSame( 2, $this->make_registrar( $first_group, $second_group )->count() );
+	}
+
+	/**
+	 * Returns supported typed current value cases.
+	 *
+	 * @return iterable<string, array{WpSchemaType, bool|int, string, bool|int}> Typed current value cases.
+	 */
+	public static function typed_current_value_cases(): iterable {
+
+		yield 'boolean' => [ WpSchemaType::Boolean, true, '0', false ];
+		yield 'integer' => [ WpSchemaType::Integer, 10, '25', 25 ];
+	}
+
+	/**
+	 * Returns unsupported schema type cases.
+	 *
+	 * @return iterable<string, array{WpSchemaType}> Unsupported schema type cases.
+	 */
+	public static function unsupported_schema_type_cases(): iterable {
+
+		yield 'number' => [ WpSchemaType::Number ];
+		yield 'array' => [ WpSchemaType::Array ];
+		yield 'object' => [ WpSchemaType::Object ];
+	}
+
+	private function make_group(
+		string $id,
+		string $title,
+		AdminSettingInterface $setting,
+	): AdminSettingsGroupInterface&MockInterface {
+
+		$group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$group->shouldReceive( 'get_id' )->andReturn( $id );
+		$group->shouldReceive( 'get_section_title' )->andReturn( $title );
+		$group->shouldReceive( 'get_settings' )->andReturn( [ $setting ] );
+
+		return $group;
+	}
+
+	private function make_registrar( AdminSettingsGroupInterface ...$groups ): AdminSettingsGroupRegistrar {
+
+		return new AdminSettingsGroupRegistrar( new OptionReader( $this->storage ), ...$groups );
+	}
+
+	private function make_setting(
+		string $id,
+		string $label,
+		WpSchemaType $type,
+		bool|int|string $default_value,
+	): AdminSettingInterface&MockInterface {
+
+		$setting = Mockery::mock( AdminSettingInterface::class );
+		$setting->shouldReceive( 'get_id' )->andReturn( $id );
+		$setting->shouldReceive( 'get_label' )->andReturn( $label );
+		$setting->shouldReceive( 'get_value_type' )->andReturn( $type );
+		$setting->shouldReceive( 'get_default_value' )->andReturn( $default_value );
+
+		return $setting;
 	}
 }

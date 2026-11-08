@@ -4,74 +4,74 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\CheckoutSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutCancelUrlSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutSuccessUrlSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\General\ActiveGatewaySetting;
-use Fundrik\WordPress\Integration\Gateways\GatewayInterface;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\SelectedGatewaySetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
-use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( CheckoutSettingsGroup::class )]
-#[UsesClass( ActiveGatewaySetting::class )]
-#[UsesClass( CheckoutSuccessUrlSetting::class )]
 #[UsesClass( CheckoutCancelUrlSetting::class )]
+#[UsesClass( CheckoutSuccessUrlSetting::class )]
+#[UsesClass( SelectedGatewaySetting::class )]
 final class CheckoutSettingsGroupTest extends WordPressTestCase {
 
-	private CheckoutSettingsGroup $settings;
+	private CheckoutCancelUrlSetting $cancel_url_setting;
+	private CheckoutSettingsGroup $group;
+	private SelectedGatewaySetting $selected_gateway_setting;
+	private CheckoutSuccessUrlSetting $success_url_setting;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->settings = new CheckoutSettingsGroup(
-			new ActiveGatewaySetting(
-				new AdminSettingsFieldRenderer(),
-				$this->gateway( 'yookassa', 'YooKassa' ),
-				$this->gateway( 'astrabank', 'AstraBank' ),
-			),
-			new CheckoutSuccessUrlSetting( new AdminSettingsFieldRenderer() ),
-			new CheckoutCancelUrlSetting( new AdminSettingsFieldRenderer() ),
+		$this->selected_gateway_setting = new SelectedGatewaySetting();
+		$this->success_url_setting = new CheckoutSuccessUrlSetting();
+		$this->cancel_url_setting = new CheckoutCancelUrlSetting();
+		$this->group = new CheckoutSettingsGroup(
+			$this->selected_gateway_setting,
+			$this->success_url_setting,
+			$this->cancel_url_setting,
 		);
 	}
 
 	#[Test]
-	public function it_returns_the_expected_checkout_settings(): void {
+	public function get_id_returns_checkout(): void {
 
-		$settings = $this->settings->get_settings();
-
-		self::assertCount( 3, $settings );
-		self::assertInstanceOf( ActiveGatewaySetting::class, $settings[0] );
-		self::assertSame( 'active_gateway', $settings[0]->get_id() );
-		self::assertSame( 'yookassa', $settings[0]->get_default_value() );
-		self::assertInstanceOf( CheckoutSuccessUrlSetting::class, $settings[1] );
-		self::assertSame( 'success_url', $settings[1]->get_id() );
-		self::assertSame( '', $settings[1]->get_default_value() );
-		self::assertInstanceOf( CheckoutCancelUrlSetting::class, $settings[2] );
-		self::assertSame( 'cancel_url', $settings[2]->get_id() );
-		self::assertSame( '', $settings[2]->get_default_value() );
+		self::assertSame( 'checkout', $this->group->get_id() );
 	}
 
 	#[Test]
-	public function it_renders_the_section_description(): void {
+	public function get_section_title_returns_checkout(): void {
 
-		ob_start();
-		$this->settings->render_section_description();
-		$output = (string) ob_get_clean();
-
-		self::assertStringContainsString( 'Configure checkout flow settings.', $output );
+		self::assertSame( 'Checkout', $this->group->get_section_title() );
 	}
 
-	private function gateway( string $gateway_id, string $gateway_label ): GatewayInterface {
+	#[Test]
+	public function render_section_description_outputs_checkout_description(): void {
 
-		$gateway = Mockery::mock( GatewayInterface::class );
-		$gateway->shouldReceive( 'get_id' )->andReturn( $gateway_id );
-		$gateway->shouldReceive( 'get_label' )->andReturn( $gateway_label );
+		ob_start();
+		$this->group->render_section_description();
+		$output = ob_get_clean();
 
-		return $gateway;
+		self::assertSame( '<p>Configure checkout settings.</p>', $output );
+	}
+
+	#[Test]
+	public function get_settings_returns_checkout_settings_in_registration_order(): void {
+
+		self::assertSame(
+			[
+				$this->selected_gateway_setting,
+				$this->success_url_setting,
+				$this->cancel_url_setting,
+			],
+			$this->group->get_settings(),
+		);
 	}
 }

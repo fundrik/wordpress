@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -16,48 +16,43 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( CurrencySetting::class )]
 final class GeneralSettingsGroupTest extends WordPressTestCase {
 
-	private GeneralSettingsGroup $settings;
+	private CurrencySetting $currency_setting;
+	private GeneralSettingsGroup $group;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->settings = new GeneralSettingsGroup(
-			new CurrencySetting( new AdminSettingsFieldRenderer() ),
-		);
+		$this->currency_setting = new CurrencySetting();
+		$this->group = new GeneralSettingsGroup( $this->currency_setting );
 	}
 
 	#[Test]
-	public function it_returns_the_expected_general_settings(): void {
+	public function get_id_returns_general(): void {
 
-		$settings = $this->settings->get_settings();
-
-		self::assertCount( 1, $settings );
-		self::assertInstanceOf( CurrencySetting::class, $settings[0] );
-		self::assertSame( 'currency', $settings[0]->get_id() );
-		self::assertSame( 'Currency', $settings[0]->get_label() );
-		self::assertSame( 'RUB', $settings[0]->get_default_value() );
-
-		ob_start();
-		$settings[0]->render(
-			[
-				'field_name' => 'fundrik_general_currency_setting',
-				'input_id' => 'fundrik_general_currency_setting',
-				'value' => 'RUB',
-			]
-		);
-		$output = (string) ob_get_clean();
-
-		self::assertStringContainsString( 'Use a 3-letter ISO 4217 currency code such as RUB or USD.', $output );
+		self::assertSame( 'general', $this->group->get_id() );
 	}
 
 	#[Test]
-	public function it_renders_the_section_description(): void {
+	public function get_section_title_returns_general(): void {
+
+		self::assertSame( 'General', $this->group->get_section_title() );
+	}
+
+	#[Test]
+	public function render_section_description_outputs_general_description(): void {
 
 		ob_start();
-		$this->settings->render_section_description();
-		$output = (string) ob_get_clean();
+		$this->group->render_section_description();
+		$output = ob_get_clean();
 
-		self::assertStringContainsString( 'Configure global Fundrik settings.', $output );
+		self::assertSame( '<p>Configure global Fundrik settings.</p>', $output );
+	}
+
+	#[Test]
+	public function get_settings_returns_currency_setting(): void {
+
+		self::assertSame( [ $this->currency_setting ], $this->group->get_settings() );
 	}
 }

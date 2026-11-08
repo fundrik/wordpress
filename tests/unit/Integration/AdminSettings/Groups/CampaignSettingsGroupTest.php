@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -18,44 +18,54 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( CampaignDefaultHasTargetSetting::class )]
 final class CampaignSettingsGroupTest extends WordPressTestCase {
 
-	private CampaignSettingsGroup $settings;
+	private CampaignDefaultAcceptsDonationsSetting $default_accepts_donations_setting;
+	private CampaignDefaultHasTargetSetting $default_has_target_setting;
+	private CampaignSettingsGroup $group;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->settings = new CampaignSettingsGroup(
-			new CampaignDefaultAcceptsDonationsSetting( new AdminSettingsFieldRenderer() ),
-			new CampaignDefaultHasTargetSetting( new AdminSettingsFieldRenderer() ),
+		$this->default_accepts_donations_setting = new CampaignDefaultAcceptsDonationsSetting();
+		$this->default_has_target_setting = new CampaignDefaultHasTargetSetting();
+		$this->group = new CampaignSettingsGroup(
+			$this->default_accepts_donations_setting,
+			$this->default_has_target_setting,
 		);
 	}
 
 	#[Test]
-	public function it_returns_the_expected_settings(): void {
+	public function get_id_returns_campaign(): void {
 
-		$settings = $this->settings->get_settings();
-
-		self::assertCount( 2, $settings );
-		self::assertInstanceOf( CampaignDefaultAcceptsDonationsSetting::class, $settings[0] );
-		self::assertSame( 'default_accepts_donations', $settings[0]->get_id() );
-		self::assertSame( 'Default accepts donations', $settings[0]->get_label() );
-		self::assertTrue( $settings[0]->get_default_value() );
-		self::assertInstanceOf( CampaignDefaultHasTargetSetting::class, $settings[1] );
-		self::assertSame( 'default_has_target', $settings[1]->get_id() );
-		self::assertSame( 'Default has target', $settings[1]->get_label() );
-		self::assertFalse( $settings[1]->get_default_value() );
+		self::assertSame( 'campaign', $this->group->get_id() );
 	}
 
 	#[Test]
-	public function it_renders_the_section_description(): void {
+	public function get_section_title_returns_campaign(): void {
+
+		self::assertSame( 'Campaign', $this->group->get_section_title() );
+	}
+
+	#[Test]
+	public function render_section_description_outputs_campaign_description(): void {
 
 		ob_start();
-		$this->settings->render_section_description();
-		$output = (string) ob_get_clean();
+		$this->group->render_section_description();
+		$output = ob_get_clean();
 
-		self::assertStringContainsString(
-			'Configure the defaults used for new campaigns.',
-			$output,
+		self::assertSame( '<p>Configure the defaults used for new campaigns.</p>', $output );
+	}
+
+	#[Test]
+	public function get_settings_returns_campaign_settings_in_registration_order(): void {
+
+		self::assertSame(
+			[
+				$this->default_accepts_donations_setting,
+				$this->default_has_target_setting,
+			],
+			$this->group->get_settings(),
 		);
 	}
 }

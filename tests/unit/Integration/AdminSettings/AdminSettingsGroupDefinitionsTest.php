@@ -17,9 +17,9 @@ use PHPUnit\Framework\Attributes\Test;
 final class AdminSettingsGroupDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_admin_settings_group_classes(): void {
+	public function classes_returns_settings_groups_in_registration_order(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			[
 				GeneralSettingsGroup::class,
 				CheckoutSettingsGroup::class,

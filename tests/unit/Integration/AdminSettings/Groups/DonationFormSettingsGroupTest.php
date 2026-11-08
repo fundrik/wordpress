@@ -4,58 +4,68 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings\Groups;
 
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( DonationFormSettingsGroup::class )]
-#[UsesClass( DonationFormDefaultAmountSetting::class )]
 #[UsesClass( DonationFormDefaultAmountLabelSetting::class )]
+#[UsesClass( DonationFormDefaultAmountSetting::class )]
 final class DonationFormSettingsGroupTest extends WordPressTestCase {
 
-	private DonationFormSettingsGroup $settings;
+	private DonationFormDefaultAmountSetting $default_amount_setting;
+	private DonationFormDefaultAmountLabelSetting $default_amount_label_setting;
+	private DonationFormSettingsGroup $group;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->settings = new DonationFormSettingsGroup(
-			new DonationFormDefaultAmountSetting( new AdminSettingsFieldRenderer() ),
-			new DonationFormDefaultAmountLabelSetting( new AdminSettingsFieldRenderer() ),
+		$this->default_amount_setting = new DonationFormDefaultAmountSetting();
+		$this->default_amount_label_setting = new DonationFormDefaultAmountLabelSetting();
+		$this->group = new DonationFormSettingsGroup(
+			$this->default_amount_setting,
+			$this->default_amount_label_setting,
 		);
 	}
 
 	#[Test]
-	public function it_returns_the_expected_settings(): void {
+	public function get_id_returns_donation_form(): void {
 
-		$settings = $this->settings->get_settings();
-
-		self::assertCount( 2, $settings );
-		self::assertInstanceOf( DonationFormDefaultAmountSetting::class, $settings[0] );
-		self::assertSame( 'default_amount', $settings[0]->get_id() );
-		self::assertSame( 'Default donation amount', $settings[0]->get_label() );
-		self::assertSame( 10, $settings[0]->get_default_value() );
-		self::assertInstanceOf( DonationFormDefaultAmountLabelSetting::class, $settings[1] );
-		self::assertSame( 'default_amount_label', $settings[1]->get_id() );
-		self::assertSame( 'Default amount label', $settings[1]->get_label() );
-		self::assertSame( 'Amount', $settings[1]->get_default_value() );
+		self::assertSame( 'donation_form', $this->group->get_id() );
 	}
 
 	#[Test]
-	public function it_renders_the_section_description(): void {
+	public function get_section_title_returns_donation_form(): void {
+
+		self::assertSame( 'Donation Form', $this->group->get_section_title() );
+	}
+
+	#[Test]
+	public function render_section_description_outputs_donation_form_description(): void {
 
 		ob_start();
-		$this->settings->render_section_description();
-		$output = (string) ob_get_clean();
+		$this->group->render_section_description();
+		$output = ob_get_clean();
 
-		self::assertStringContainsString(
-			'Configure the defaults used by donation form blocks.',
-			$output,
+		self::assertSame( '<p>Configure the defaults used by donation form blocks.</p>', $output );
+	}
+
+	#[Test]
+	public function get_settings_returns_donation_form_settings_in_registration_order(): void {
+
+		self::assertSame(
+			[
+				$this->default_amount_setting,
+				$this->default_amount_label_setting,
+			],
+			$this->group->get_settings(),
 		);
 	}
 }
