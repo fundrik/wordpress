@@ -4,146 +4,120 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
-use Closure;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUnit;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
-use Fundrik\WordPress\Integration\PostTypes\PostTypeConfigInterface;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\TestPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpBlockEditorContext;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpPost;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 use stdClass;
-use WP_Block_Editor_Context;
 
 #[CoversClass( FilterAllowedBlocksByPostTypeBootUnit::class )]
+#[UsesClass( AllowedBlockTypesAllFilterHookDispatcher::class )]
 #[UsesClass( BootUnitLogger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
-#[UsesClass( AllowedBlockTypesAllFilterHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
+	private const string POST_TYPE = 'campaign';
+	private const string RESTRICTED_BLOCK = 'fundrik/restricted';
 
-	private const string HOOK_NAME = 'allowed_block_types_all';
-
-	private AllowedBlockTypesAllFilterHookDispatcher $allowed_block_types_hook;
-	private Closure $allowed_block_types_callback;
-
+	private FilterAllowedBlocksByPostTypeBootUnit $boot_unit;
+	private AllowedBlockTypesAllFilterHookDispatcher $hook_dispatcher;
+	private LoggerInterface&MockInterface $psr_logger;
 	private WordPressRuntimeInterface&MockInterface $wp_runtime;
 
-	private LoggerInterface&MockInterface $psr_logger;
-	private BootUnitLogger $logger;
-
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
 		$this->psr_logger = Mockery::mock( LoggerInterface::class );
-
-		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
-		$this->allowed_block_types_hook = new AllowedBlockTypesAllFilterHookDispatcher( $hook_logger );
-		$this->allowed_block_types_callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$this->allowed_block_types_hook->register( ... ),
-		);
-
 		$this->wp_runtime = Mockery::mock( WordPressRuntimeInterface::class );
-
-		$this->logger = new BootUnitLogger( $this->psr_logger );
+		$this->hook_dispatcher = new AllowedBlockTypesAllFilterHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
+		);
+		$this->boot_unit = new FilterAllowedBlocksByPostTypeBootUnit(
+			$this->hook_dispatcher,
+			$this->wp_runtime,
+			new BootUnitLogger( $this->psr_logger ),
+			new TestPostTypeConfig( self::POST_TYPE, [ self::RESTRICTED_BLOCK ] ),
+		);
 	}
 
 	#[Test]
-	public function boot_attaches_filter_callback(): void {
+	public function boot_returns_original_allowed_blocks_when_editor_context_has_no_post(): void {
 
-		$boot_unit = $this->create_boot_unit();
+		$allowed = [ self::RESTRICTED_BLOCK ];
 
-		$boot_unit->boot();
+		$this->boot_unit->boot();
 
-		$post = new stdClass();
-		$post->post_type = 'post';
-
-		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
-		$editor_context->post = $post;
-
-		$this->wp_runtime
-			->shouldReceive( 'get_registered_block_types' )
-			->once()
-			->andReturn(
-				[
-					'core/paragraph' => new stdClass(),
-					'fundrik/free' => new stdClass(),
-					'gamma/block' => new stdClass(), // restricted to post type 'gamma' (GammaPostTypeConfig)
-				],
-			);
-
-		$returned = ( $this->allowed_block_types_callback )( true, $editor_context );
-
-		self::assertSame( [ 'core/paragraph', 'fundrik/free' ], $returned );
+		self::assertSame(
+			$allowed,
+			$this->hook_dispatcher->dispatch( $allowed, new WpBlockEditorContext() ),
+		);
 	}
 
 	#[Test]
-	public function filter_returns_original_when_post_type_is_missing(): void {
-
-		$boot_unit = $this->create_boot_unit();
-
-		$boot_unit->boot();
-
-		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
-		$editor_context->post = null;
-
-		$allowed = [ 'core/paragraph' ];
-
-		$returned = ( $this->allowed_block_types_callback )( $allowed, $editor_context );
-
-		self::assertSame( $allowed, $returned );
-	}
-
-	#[Test]
-	public function filter_returns_false_and_logs_debug_when_upstream_disallows_all(): void {
+	public function boot_returns_false_and_logs_when_upstream_disallows_all_blocks(): void {
 
 		$this->psr_logger
 			->shouldReceive( 'debug' )
 			->once()
 			->with(
 				'All blocks are disallowed by upstream filter.',
-				Mockery::subset(
-					[
-						'service_class' => FilterAllowedBlocksByPostTypeBootUnit::class,
-						'logger_class' => BootUnitLogger::class,
-						'component' => 'boot_units',
-						'layer' => 'integration',
-						'system' => 'wordpress',
-						'post_type' => 'gamma',
-					],
-				),
+				[
+					'service_class' => FilterAllowedBlocksByPostTypeBootUnit::class,
+					'logger_class' => BootUnitLogger::class,
+					'component' => 'boot_units',
+					'layer' => 'integration',
+					'system' => 'wordpress',
+					'post_type' => self::POST_TYPE,
+				],
 			);
 
-		$boot_unit = $this->create_boot_unit();
+		$this->boot_unit->boot();
 
-		$boot_unit->boot();
-
-		$post = new stdClass();
-		$post->post_type = 'gamma';
-
-		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
-		$editor_context->post = $post;
-
-		$returned = ( $this->allowed_block_types_callback )( false, $editor_context );
-
-		self::assertFalse( $returned );
+		self::assertFalse(
+			$this->hook_dispatcher->dispatch(
+				false,
+				new WpBlockEditorContext( new WpPost( self::POST_TYPE ) ),
+			),
+		);
 	}
 
 	#[Test]
-	public function filter_expands_true_and_filters_restricted_blocks(): void {
+	#[DataProvider( 'explicit_allowed_blocks_cases' )]
+	public function boot_filters_explicit_allowed_blocks_for_current_post_type(
+		string $post_type,
+		array $expected,
+	): void {
+
+		$this->boot_unit->boot();
+
+		self::assertSame(
+			$expected,
+			$this->hook_dispatcher->dispatch(
+				[ self::RESTRICTED_BLOCK, 'core/paragraph' ],
+				new WpBlockEditorContext( new WpPost( $post_type ) ),
+			),
+		);
+	}
+
+	#[Test]
+	public function boot_expands_true_to_registered_blocks_before_filtering(): void {
 
 		$this->wp_runtime
 			->shouldReceive( 'get_registered_block_types' )
@@ -151,46 +125,36 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 			->andReturn(
 				[
 					'core/paragraph' => new stdClass(),
-					'gamma/block' => new stdClass(), // restricted to 'gamma'
-					'fundrik/free' => new stdClass(), // unrestricted
+					self::RESTRICTED_BLOCK => new stdClass(),
+					'fundrik/unrestricted' => new stdClass(),
 				],
 			);
 
-		$boot_unit = $this->create_boot_unit();
+		$this->boot_unit->boot();
 
-		$boot_unit->boot();
-
-		$post = new stdClass();
-		$post->post_type = 'post';
-
-		$editor_context = Mockery::mock( WP_Block_Editor_Context::class );
-		$editor_context->post = $post;
-
-		$returned = ( $this->allowed_block_types_callback )( true, $editor_context );
-
-		self::assertSame( [ 'core/paragraph', 'fundrik/free' ], $returned );
+		self::assertSame(
+			[ 'core/paragraph', 'fundrik/unrestricted' ],
+			$this->hook_dispatcher->dispatch(
+				true,
+				new WpBlockEditorContext( new WpPost() ),
+			),
+		);
 	}
 
 	/**
-	 * Creates the boot unit with the provided post type configs.
+	 * Returns explicit allowed block filtering cases.
 	 *
-	 * @param PostTypeConfigInterface ...$post_type_configs The post type configs used to build the block map.
+	 * @return iterable<string, array{string, list<string>}> Allowed block filtering cases.
 	 */
-	private function create_boot_unit( PostTypeConfigInterface ...$post_type_configs ): FilterAllowedBlocksByPostTypeBootUnit {
+	public static function explicit_allowed_blocks_cases(): iterable {
 
-		if ( $post_type_configs === [] ) {
-			$post_type_configs = [
-				new AlphaPostTypeConfig(),
-				new BetaPostTypeConfig(),
-				new GammaPostTypeConfig(),
-			];
-		}
-
-		return new FilterAllowedBlocksByPostTypeBootUnit(
-			$this->allowed_block_types_hook,
-			$this->wp_runtime,
-			$this->logger,
-			...$post_type_configs,
-		);
+		yield 'configured post type' => [
+			self::POST_TYPE,
+			[ self::RESTRICTED_BLOCK, 'core/paragraph' ],
+		];
+		yield 'other post type' => [
+			'post',
+			[ 'core/paragraph' ],
+		];
 	}
 }

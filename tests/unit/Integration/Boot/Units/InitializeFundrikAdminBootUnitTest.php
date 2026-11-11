@@ -5,22 +5,24 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
-use Closure;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageInterface;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageRegistrar;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupRegistrar;
-use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\InitializeFundrikAdminBootUnit;
+use Fundrik\WordPress\Integration\Gateways\GatewayInterface;
+use Fundrik\WordPress\Integration\Gateways\GatewaySettingsRegistrar;
+use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
-use Fundrik\WordPress\Integration\Storage\WordPressOptionsStorage;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -28,213 +30,183 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass( InitializeFundrikAdminBootUnit::class )]
-#[UsesClass( AdminInitActionHookDispatcher::class )]
-#[UsesClass( AdminMenuActionHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( AdminPageRegistrar::class )]
 #[UsesClass( AdminSettingsGroupRegistrar::class )]
+#[UsesClass( GatewaySettingsRegistrar::class )]
+#[UsesClass( OptionReader::class )]
 #[UsesClass( BootUnitLogger::class )]
+#[UsesClass( AdminInitActionHookDispatcher::class )]
+#[UsesClass( AdminMenuActionHookDispatcher::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 final class InitializeFundrikAdminBootUnitTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
-	private const string ADMIN_INIT_HOOK_NAME = 'admin_init';
-	private const string ADMIN_MENU_HOOK_NAME = 'admin_menu';
-
-	private AdminMenuActionHookDispatcher $admin_menu_hook;
-	private AdminInitActionHookDispatcher $admin_init_hook;
-	private Closure $admin_menu_callback;
-	private Closure $admin_init_callback;
-
 	private LoggerInterface&MockInterface $psr_logger;
-	private BootUnitLogger $logger;
 
+	private AdminInitActionHookDispatcher $admin_init_hook;
+	private AdminMenuActionHookDispatcher $admin_menu_hook;
+	private OptionReader $option_reader;
+
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
 		$this->psr_logger = Mockery::mock( LoggerInterface::class );
 
-		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
-
-		$this->admin_menu_hook = new AdminMenuActionHookDispatcher( $hook_logger );
-		$this->admin_menu_callback = $this->register_and_capture_action_callback(
-			self::ADMIN_MENU_HOOK_NAME,
-			$this->admin_menu_hook->register( ... ),
+		$this->admin_init_hook = new AdminInitActionHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
 		);
-
-		$this->admin_init_hook = new AdminInitActionHookDispatcher( $hook_logger );
-		$this->admin_init_callback = $this->register_and_capture_action_callback(
-			self::ADMIN_INIT_HOOK_NAME,
-			$this->admin_init_hook->register( ... ),
+		$this->admin_menu_hook = new AdminMenuActionHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
 		);
-
-		$this->logger = new BootUnitLogger( $this->psr_logger );
+		$this->option_reader = new OptionReader( new FakeStorage() );
 	}
 
 	#[Test]
-	public function boot_attaches_callbacks_that_register_admin_pages_and_settings(): void {
+	public function boot_registers_admin_pages_and_settings_on_their_hooks(): void {
 
-		$this->expect_failure_message_never();
+		$admin_page = Mockery::mock( AdminPageInterface::class );
+		$settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
 
-		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
-		Functions\expect( 'add_settings_field' )->never();
-		Functions\expect( 'register_setting' )->never();
-
-		$first_page = Mockery::mock( AdminPageInterface::class );
-		$first_page->shouldReceive( 'register' )->once()->ordered();
-
-		$second_page = Mockery::mock( AdminPageInterface::class );
-		$second_page->shouldReceive( 'register' )->once()->ordered();
-
-		$first_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$first_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'general' );
-		$first_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
-		$first_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
-
-		$second_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$second_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'donation_form' );
-		$second_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Donation Form' );
-		$second_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
-
-		$boot_unit = new InitializeFundrikAdminBootUnit(
-			$this->admin_menu_hook,
-			$this->admin_init_hook,
-			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsGroupRegistrar(
-				new OptionReader( new WordPressOptionsStorage() ),
-				$first_settings_group,
-				$second_settings_group,
-			),
-			$this->logger,
-		);
-
-		$boot_unit->boot();
-
-		( $this->admin_menu_callback )();
-		( $this->admin_init_callback )();
-	}
-
-	#[Test]
-	public function boot_logs_error_and_sets_failure_message_when_admin_page_registration_fails(): void {
-
-		$this->expect_failure_message_once();
-
-		$first_page = Mockery::mock( AdminPageInterface::class );
-		$first_page->shouldReceive( 'register' )->once()->ordered();
-
-		$second_page = Mockery::mock( AdminPageInterface::class );
-		$second_page
+		$admin_page
 			->shouldReceive( 'register' )
+			->once();
+
+		$settings_group
+			->shouldReceive( 'get_id' )
 			->once()
-			->ordered()
-			->andThrow( new RuntimeException( 'Boom' ) );
-
-		$this->psr_logger
-			->shouldReceive( 'error' )
+			->andReturn( 'test_group' );
+		$settings_group
+			->shouldReceive( 'get_section_title' )
 			->once()
-			->with(
-				'Admin page registration failed.',
-				Mockery::on(
-					static function ( array $context ): bool {
-
-						if ( ( $context['service_class'] ?? null ) !== InitializeFundrikAdminBootUnit::class ) {
-							return false;
-						}
-
-						if ( ( $context['component'] ?? null ) !== 'boot_units' ) {
-							return false;
-						}
-
-						if ( ( $context['total_count'] ?? null ) !== 2 ) {
-							return false;
-						}
-
-						$e = $context['exception'] ?? null;
-
-						return $e instanceof RuntimeException
-							&& $e->getMessage() === 'Boom';
-					},
-				),
-			);
-
-		$boot_unit = new InitializeFundrikAdminBootUnit(
-			$this->admin_menu_hook,
-			$this->admin_init_hook,
-			new AdminPageRegistrar( $first_page, $second_page ),
-			new AdminSettingsGroupRegistrar( new OptionReader( new WordPressOptionsStorage() ) ),
-			$this->logger,
-		);
-
-		$boot_unit->boot();
-
-		( $this->admin_menu_callback )();
-	}
-
-	#[Test]
-	public function boot_logs_error_and_sets_failure_message_when_admin_settings_registration_fails(): void {
-
-		$this->expect_failure_message_once();
-
-		Functions\expect( 'add_settings_section' )->twice()->andReturnTrue();
-		Functions\expect( 'add_settings_field' )->never();
-		Functions\expect( 'register_setting' )->never();
-
-		$first_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$first_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'general' );
-		$first_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'General' );
-		$first_settings_group->shouldReceive( 'get_settings' )->once()->andReturn( [] );
-
-		$second_settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
-		$second_settings_group->shouldReceive( 'get_id' )->once()->andReturn( 'donation_form' );
-		$second_settings_group->shouldReceive( 'get_section_title' )->once()->andReturn( 'Donation Form' );
-		$second_settings_group
+			->andReturn( 'Test group' );
+		$settings_group
 			->shouldReceive( 'get_settings' )
 			->once()
-			->andThrow( new RuntimeException( 'Boom' ) );
+			->andReturn( [] );
+
+		Functions\expect( 'add_settings_section' )
+			->once();
+
+		$boot_unit = $this->make_boot_unit(
+			new AdminPageRegistrar( $admin_page ),
+			new AdminSettingsGroupRegistrar( $this->option_reader, $settings_group ),
+			new GatewaySettingsRegistrar( $this->option_reader ),
+		);
+
+		$boot_unit->boot();
+
+		$this->admin_menu_hook->dispatch();
+		$this->admin_init_hook->dispatch();
+	}
+
+	#[Test]
+	public function boot_reports_admin_page_registration_failure(): void {
+
+		$exception = new RuntimeException( 'Page registration failed.' );
+		$admin_page = Mockery::mock( AdminPageInterface::class );
+		$admin_page
+			->shouldReceive( 'register' )
+			->once()
+			->andThrow( $exception );
+
+		$this->expect_registration_failure( 'Admin page registration failed.', 1, $exception );
+
+		$boot_unit = $this->make_boot_unit(
+			new AdminPageRegistrar( $admin_page ),
+			new AdminSettingsGroupRegistrar( $this->option_reader ),
+			new GatewaySettingsRegistrar( $this->option_reader ),
+		);
+
+		$boot_unit->boot();
+		$this->admin_menu_hook->dispatch();
+	}
+
+	#[Test]
+	public function boot_reports_admin_settings_registration_failure(): void {
+
+		$exception = new RuntimeException( 'Settings registration failed.' );
+		$settings_group = Mockery::mock( AdminSettingsGroupInterface::class );
+		$settings_group
+			->shouldReceive( 'get_id' )
+			->once()
+			->andThrow( $exception );
+
+		$this->expect_registration_failure( 'Admin settings registration failed.', 1, $exception );
+
+		$boot_unit = $this->make_boot_unit(
+			new AdminPageRegistrar(),
+			new AdminSettingsGroupRegistrar( $this->option_reader, $settings_group ),
+			new GatewaySettingsRegistrar( $this->option_reader ),
+		);
+
+		$boot_unit->boot();
+		$this->admin_init_hook->dispatch();
+	}
+
+	#[Test]
+	public function boot_reports_gateway_settings_registration_failure(): void {
+
+		$exception = new RuntimeException( 'Gateway settings registration failed.' );
+		$gateway = Mockery::mock( GatewayInterface::class );
+		$gateway
+			->shouldReceive( 'get_id' )
+			->once()
+			->andThrow( $exception );
+
+		$this->expect_registration_failure( 'Admin settings registration failed.', 0, $exception );
+
+		$boot_unit = $this->make_boot_unit(
+			new AdminPageRegistrar(),
+			new AdminSettingsGroupRegistrar( $this->option_reader ),
+			new GatewaySettingsRegistrar( $this->option_reader, $gateway ),
+		);
+
+		$boot_unit->boot();
+		$this->admin_init_hook->dispatch();
+	}
+
+	private function make_boot_unit(
+		AdminPageRegistrar $admin_page_registrar,
+		AdminSettingsGroupRegistrar $admin_settings_registrar,
+		GatewaySettingsRegistrar $gateway_settings_registrar,
+	): InitializeFundrikAdminBootUnit {
+
+		return new InitializeFundrikAdminBootUnit(
+			$this->admin_menu_hook,
+			$this->admin_init_hook,
+			$admin_page_registrar,
+			$admin_settings_registrar,
+			$gateway_settings_registrar,
+			new BootUnitLogger( $this->psr_logger ),
+		);
+	}
+
+	private function expect_registration_failure(
+		string $message,
+		int $total_count,
+		RuntimeException $exception,
+	): void {
 
 		$this->psr_logger
 			->shouldReceive( 'error' )
 			->once()
 			->with(
-				'Admin settings registration failed.',
-				Mockery::on(
-					static function ( array $context ): bool {
-
-						if ( ( $context['service_class'] ?? null ) !== InitializeFundrikAdminBootUnit::class ) {
-							return false;
-						}
-
-						if ( ( $context['component'] ?? null ) !== 'boot_units' ) {
-							return false;
-						}
-
-						if ( ( $context['total_count'] ?? null ) !== 2 ) {
-							return false;
-						}
-
-						$e = $context['exception'] ?? null;
-
-						return $e instanceof RuntimeException
-							&& $e->getMessage() === 'Boom';
-					},
-				),
+				$message,
+				[
+					'service_class' => InitializeFundrikAdminBootUnit::class,
+					'logger_class' => BootUnitLogger::class,
+					'component' => 'boot_units',
+					'layer' => 'integration',
+					'system' => 'wordpress',
+					'total_count' => $total_count,
+					'exception' => $exception,
+				],
 			);
 
-		$boot_unit = new InitializeFundrikAdminBootUnit(
-			$this->admin_menu_hook,
-			$this->admin_init_hook,
-			new AdminPageRegistrar(),
-			new AdminSettingsGroupRegistrar(
-				new OptionReader( new WordPressOptionsStorage() ),
-				$first_settings_group,
-				$second_settings_group,
-			),
-			$this->logger,
-		);
-
-		$boot_unit->boot();
-
-		( $this->admin_init_callback )();
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( $exception->getMessage() );
 	}
 }

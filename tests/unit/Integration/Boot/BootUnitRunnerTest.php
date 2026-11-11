@@ -15,17 +15,13 @@ use PHPUnit\Framework\Attributes\Test;
 final class BootUnitRunnerTest extends MockeryTestCase {
 
 	#[Test]
-	public function it_boots_all_units(): void {
+	public function boot_all_boots_each_unit_in_configured_order(): void {
 
 		$first_boot_unit = Mockery::mock( BootUnitInterface::class );
-		$first_boot_unit
-			->shouldReceive( 'boot' )
-			->once();
+		$first_boot_unit->shouldReceive( 'boot' )->once()->ordered();
 
 		$second_boot_unit = Mockery::mock( BootUnitInterface::class );
-		$second_boot_unit
-			->shouldReceive( 'boot' )
-			->once();
+		$second_boot_unit->shouldReceive( 'boot' )->once()->ordered();
 
 		$runner = new BootUnitRunner( $first_boot_unit, $second_boot_unit );
 

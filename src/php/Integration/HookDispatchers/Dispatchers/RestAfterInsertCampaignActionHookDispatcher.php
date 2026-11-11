@@ -76,11 +76,11 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	#[Override]
 	public function register(): void {
 
-		add_action( $this->hook_name, $this->handle( ... ), 10, 3 );
+		add_action( $this->hook_name, $this->dispatch( ... ), 10, 3 );
 	}
 
 	/**
-	 * Handles the WordPress action and dispatches it to listeners.
+	 * Dispatches the WordPress action to attached listeners.
 	 *
 	 * @since 1.0.0
 	 *
@@ -90,7 +90,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function handle( mixed $post, mixed $request, mixed $creating ): void {
+	public function dispatch( mixed $post, mixed $request, mixed $creating ): void {
 
 		try {
 

@@ -74,11 +74,11 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	#[Override]
 	public function register(): void {
 
-		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 3 );
+		add_filter( self::HOOK_NAME, $this->dispatch( ... ), 10, 3 );
 	}
 
 	/**
-	 * Handles the WordPress filter and dispatches it to listeners.
+	 * Dispatches the WordPress filter to attached listeners.
 	 *
 	 * @since 1.0.0
 	 *
@@ -90,7 +90,7 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function handle( mixed $response, mixed $server, mixed $request ): mixed {
+	public function dispatch( mixed $response, mixed $server, mixed $request ): mixed {
 
 		try {
 

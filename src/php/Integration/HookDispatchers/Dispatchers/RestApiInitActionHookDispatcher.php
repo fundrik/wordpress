@@ -67,11 +67,11 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	#[Override]
 	public function register(): void {
 
-		add_action( self::HOOK_NAME, $this->handle( ... ), 10, 1 );
+		add_action( self::HOOK_NAME, $this->dispatch( ... ), 10, 1 );
 	}
 
 	/**
-	 * Handles the WordPress action and dispatches it to listeners.
+	 * Dispatches the WordPress action to attached listeners.
 	 *
 	 * @since 1.0.0
 	 *
@@ -79,7 +79,7 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function handle( mixed $server ): void {
+	public function dispatch( mixed $server ): void {
 
 		try {
 

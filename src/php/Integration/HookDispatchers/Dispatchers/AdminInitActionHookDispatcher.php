@@ -63,15 +63,15 @@ final class AdminInitActionHookDispatcher implements HookDispatcherInterface {
 	#[Override]
 	public function register(): void {
 
-		add_action( self::HOOK_NAME, $this->handle( ... ) );
+		add_action( self::HOOK_NAME, $this->dispatch( ... ) );
 	}
 
 	/**
-	 * Handles the WordPress action and dispatches it to listeners.
+	 * Dispatches the WordPress action to attached listeners.
 	 *
 	 * @since 1.0.0
 	 */
-	private function handle(): void {
+	public function dispatch(): void {
 
 		try {
 

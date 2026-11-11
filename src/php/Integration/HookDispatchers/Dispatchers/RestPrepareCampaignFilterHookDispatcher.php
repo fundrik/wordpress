@@ -77,11 +77,11 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 	#[Override]
 	public function register(): void {
 
-		add_filter( $this->hook_name, $this->handle( ... ), 10, 3 );
+		add_filter( $this->hook_name, $this->dispatch( ... ), 10, 3 );
 	}
 
 	/**
-	 * Handles the WordPress filter and dispatches it to listeners.
+	 * Dispatches the WordPress filter to attached listeners.
 	 *
 	 * @since 1.0.0
 	 *
@@ -93,7 +93,7 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function handle( mixed $response, mixed $post, mixed $request ): mixed {
+	public function dispatch( mixed $response, mixed $post, mixed $request ): mixed {
 
 		try {
 

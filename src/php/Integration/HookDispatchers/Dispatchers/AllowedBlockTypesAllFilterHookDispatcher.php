@@ -67,11 +67,11 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	#[Override]
 	public function register(): void {
 
-		add_filter( self::HOOK_NAME, $this->handle( ... ), 10, 2 );
+		add_filter( self::HOOK_NAME, $this->dispatch( ... ), 10, 2 );
 	}
 
 	/**
-	 * Handles the WordPress filter and dispatches it to listeners.
+	 * Dispatches the WordPress filter to attached listeners.
 	 *
 	 * @since 1.0.0
 	 *
@@ -82,7 +82,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	 *
 	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
 	 */
-	private function handle( mixed $allowed, mixed $editor_context ): mixed {
+	public function dispatch( mixed $allowed, mixed $editor_context ): mixed {
 
 		try {
 

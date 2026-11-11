@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
-use Closure;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\LogCreateDonationRestRequestFailuresBootUnit;
 use Fundrik\WordPress\Integration\Boot\Units\RestValidationFailure;
@@ -12,175 +12,256 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFi
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpRestRequest;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpRestResponse;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpRestServer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
-use WP_REST_Request;
-use WP_REST_Response;
-use WP_REST_Server;
 
 #[CoversClass( LogCreateDonationRestRequestFailuresBootUnit::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( BootUnitLogger::class )]
-#[UsesClass( HookDispatcherLogger::class )]
-#[UsesClass( RestPostDispatchFilterHookDispatcher::class )]
 #[UsesClass( RestValidationFailure::class )]
+#[UsesClass( RestPostDispatchFilterHookDispatcher::class )]
+#[UsesClass( HookDispatcherLogger::class )]
+#[UsesClass( RestRouteDefinitions::class )]
+#[UsesClass( DonationCheckoutRestRoute::class )]
 final class LogCreateDonationRestRequestFailuresBootUnitTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
-	private const string HOOK_NAME = 'rest_post_dispatch';
+	private const string CHECKOUT_ROUTE = '/fundrik/v1/checkout';
 
 	private LogCreateDonationRestRequestFailuresBootUnit $boot_unit;
-	private Closure $filter_callback;
-	private LoggerInterface&MockInterface $boot_logger;
-	private WP_REST_Server&MockInterface $server;
+	private RestPostDispatchFilterHookDispatcher $hook_dispatcher;
+	private LoggerInterface&MockInterface $psr_logger;
+	private WpRestServer $server;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$dispatcher_logger = Mockery::mock( LoggerInterface::class );
-		$dispatcher_logger->shouldIgnoreMissing();
-
-		$rest_post_dispatch_hook = new RestPostDispatchFilterHookDispatcher(
-			new HookDispatcherLogger( $dispatcher_logger ),
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
+		$this->hook_dispatcher = new RestPostDispatchFilterHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
 		);
-
-		$this->filter_callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$rest_post_dispatch_hook->register( ... ),
-		);
-
-		$this->boot_logger = Mockery::mock( LoggerInterface::class );
-		$this->server = Mockery::mock( WP_REST_Server::class );
-
 		$this->boot_unit = new LogCreateDonationRestRequestFailuresBootUnit(
-			$rest_post_dispatch_hook,
-			new BootUnitLogger( $this->boot_logger ),
+			$this->hook_dispatcher,
+			new BootUnitLogger( $this->psr_logger ),
 		);
+		$this->server = new WpRestServer();
 	}
 
 	#[Test]
-	public function boot_logs_invalid_donation_request_validation_failures(): void {
+	#[DataProvider( 'validation_failure_cases' )]
+	public function boot_logs_create_donation_validation_failure(
+		array $response_data,
+		string $error_code,
+		?string $error_message,
+		array $invalid_params,
+	): void {
 
-		$this->expect_failure_message_never();
+		$response = new WpRestResponse( $response_data, 400 );
 
-		$this->boot_logger
+		$this->psr_logger
 			->shouldReceive( 'warning' )
 			->once()
 			->with(
 				'Create-donation REST request validation failed.',
-				Mockery::on(
-					static function ( array $context ): bool {
-
-						return ( $context['service_class'] ?? null ) === LogCreateDonationRestRequestFailuresBootUnit::class
-							&& ( $context['component'] ?? null ) === 'boot_units'
-							&& ( $context['layer'] ?? null ) === 'integration'
-							&& ( $context['system'] ?? null ) === 'wordpress'
-							&& ( $context['route'] ?? null ) === RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class )
-							&& ( $context['method'] ?? null ) === 'POST'
-							&& ( $context['status'] ?? null ) === 400
-							&& ( $context['error_code'] ?? null ) === 'rest_invalid_param'
-							&& ( $context['error_message'] ?? null ) === 'Invalid parameter(s): amount'
-							&& ( $context['invalid_params'] ?? null ) === [ 'amount' ];
-					},
-				),
+				[
+					'service_class' => LogCreateDonationRestRequestFailuresBootUnit::class,
+					'logger_class' => BootUnitLogger::class,
+					'component' => 'boot_units',
+					'layer' => 'integration',
+					'system' => 'wordpress',
+					'route' => self::CHECKOUT_ROUTE,
+					'method' => 'POST',
+					'status' => 400,
+					'error_code' => $error_code,
+					'error_message' => $error_message,
+					'invalid_params' => $invalid_params,
+				],
 			);
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
-		$response = new WP_REST_Response(
-			[
-				'code' => 'rest_invalid_param',
-				'message' => 'Invalid parameter(s): amount',
-				'data' => [
-					'status' => 400,
-					'params' => [
-						'amount' => 'Amount must be at least 1.',
-					],
-				],
-			],
-			400,
+		self::assertSame(
+			$response,
+			$this->hook_dispatcher->dispatch(
+				$response,
+				$this->server,
+				new WpRestRequest( 'POST', self::CHECKOUT_ROUTE ),
+			),
 		);
-
-		$returned = ( $this->filter_callback )( $response, $this->server, $request );
-
-		self::assertSame( $response, $returned );
 	}
 
 	#[Test]
-	public function boot_does_not_log_non_validation_create_donation_bad_requests(): void {
+	public function boot_ignores_non_validation_create_donation_bad_request(): void {
 
-		$this->expect_failure_message_never();
-
-		$this->boot_logger->shouldNotReceive( 'warning' );
+		$response = new WpRestResponse(
+			[
+				'code' => 'fundrik_invalid_donation_request',
+				'message' => 'Donation request is invalid.',
+			],
+			400,
+		);
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
-		$response = new WP_REST_Response(
-			[
-				'code' => 'fundrik_invalid_donation_request',
-				'message' => 'Cannot create donation "abc": request is invalid.',
-				'data' => [
-					'status' => 400,
-				],
-			],
-			400,
+		self::assertSame(
+			$response,
+			$this->hook_dispatcher->dispatch(
+				$response,
+				$this->server,
+				new WpRestRequest( 'POST', self::CHECKOUT_ROUTE ),
+			),
 		);
-
-		$returned = ( $this->filter_callback )( $response, $this->server, $request );
-
-		self::assertSame( $response, $returned );
 	}
 
 	#[Test]
-	public function boot_logs_malformed_create_donation_bad_requests(): void {
+	#[DataProvider( 'malformed_response_data_cases' )]
+	public function boot_logs_create_donation_bad_request_with_malformed_response_data(
+		mixed $response_data,
+		array $expected_context,
+	): void {
 
-		$this->expect_failure_message_never();
+		$response = new WpRestResponse( $response_data, 400 );
 
-		$this->boot_logger
+		$this->psr_logger
 			->shouldReceive( 'warning' )
 			->once()
 			->with(
 				'Create-donation REST failure response data could not be extracted.',
-				Mockery::on(
-					static function ( array $context ): bool {
-
-						return ( $context['service_class'] ?? null ) === LogCreateDonationRestRequestFailuresBootUnit::class
-							&& ( $context['component'] ?? null ) === 'boot_units'
-							&& ( $context['layer'] ?? null ) === 'integration'
-							&& ( $context['system'] ?? null ) === 'wordpress'
-							&& ( $context['route'] ?? null ) === RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class )
-							&& ( $context['method'] ?? null ) === 'POST'
-							&& ( $context['status'] ?? null ) === 400
-							&& ( $context['response_data_type'] ?? null ) === 'array'
-							&& ( $context['response_data_keys'] ?? null ) === [ 'message', 'data' ];
-					},
-				),
+				[
+					'service_class' => LogCreateDonationRestRequestFailuresBootUnit::class,
+					'logger_class' => BootUnitLogger::class,
+					'component' => 'boot_units',
+					'layer' => 'integration',
+					'system' => 'wordpress',
+					'route' => self::CHECKOUT_ROUTE,
+					'method' => 'POST',
+					'status' => 400,
+					...$expected_context,
+				],
 			);
 
 		$this->boot_unit->boot();
 
-		$request = new WP_REST_Request( 'POST', RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ) );
-		$response = new WP_REST_Response(
+		self::assertSame(
+			$response,
+			$this->hook_dispatcher->dispatch(
+				$response,
+				$this->server,
+				new WpRestRequest( 'POST', self::CHECKOUT_ROUTE ),
+			),
+		);
+	}
+
+	#[Test]
+	#[DataProvider( 'unrelated_response_cases' )]
+	public function boot_ignores_unrelated_response( string $method, string $route, int $status, ): void {
+
+		$response = new WpRestResponse( [], $status );
+
+		$this->boot_unit->boot();
+
+		self::assertSame(
+			$response,
+			$this->hook_dispatcher->dispatch(
+				$response,
+				$this->server,
+				new WpRestRequest( $method, $route ),
+			),
+		);
+	}
+
+	/**
+	 * Returns REST validation failure cases.
+	 *
+	 * @return iterable<string, array{array<mixed>, string, string|null, list<string>}> Validation failure cases.
+	 */
+	public static function validation_failure_cases(): iterable {
+
+		yield 'invalid parameters' => [
 			[
-				'message' => 'Bad request.',
+				'code' => 'rest_invalid_param',
+				'message' => 'Invalid parameters.',
 				'data' => [
-					'status' => 400,
+					'params' => [
+						'amount' => 'Amount is invalid.',
+						0 => 'Ignored numeric key.',
+						'currency' => 'Currency is invalid.',
+					],
 				],
 			],
-			400,
-		);
+			'rest_invalid_param',
+			'Invalid parameters.',
+			[ 'amount', 'currency' ],
+		];
 
-		$returned = ( $this->filter_callback )( $response, $this->server, $request );
+		yield 'missing parameters without optional details' => [
+			[
+				'code' => 'rest_missing_callback_param',
+			],
+			'rest_missing_callback_param',
+			null,
+			[],
+		];
 
-		self::assertSame( $response, $returned );
+		yield 'malformed optional details' => [
+			[
+				'code' => 'rest_invalid_param',
+				'message' => 42,
+				'data' => [ 'params' => 'invalid' ],
+			],
+			'rest_invalid_param',
+			null,
+			[],
+		];
+	}
+
+	/**
+	 * Returns malformed response data cases.
+	 *
+	 * @return iterable<string, array{mixed, array<string, mixed>}> Malformed response data cases.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	public static function malformed_response_data_cases(): iterable {
+
+		yield 'non-array data' => [
+			'malformed',
+			[ 'response_data_type' => 'string' ],
+		];
+
+		yield 'missing error code' => [
+			[
+				'message' => 'Bad request.',
+				0 => 'Ignored numeric key.',
+				'data' => [],
+			],
+			[
+				'response_data_type' => 'array',
+				'response_data_keys' => [ 'message', 'data' ],
+			],
+		];
+	}
+
+	/**
+	 * Returns responses unrelated to create-donation validation failures.
+	 *
+	 * @return iterable<string, array{string, string, int}> Unrelated response cases.
+	 */
+	public static function unrelated_response_cases(): iterable {
+
+		yield 'different method' => [ 'GET', self::CHECKOUT_ROUTE, 400 ];
+		yield 'different route' => [ 'POST', '/fundrik/v1/other', 400 ];
+		yield 'different status' => [ 'POST', self::CHECKOUT_ROUTE, 500 ];
 	}
 }

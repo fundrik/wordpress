@@ -21,9 +21,9 @@ use PHPUnit\Framework\Attributes\Test;
 final class BootUnitDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_boot_unit_classes(): void {
+	public function classes_returns_boot_units_in_registration_order(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			[
 				ExposeCampaignEditorSettingsBootUnit::class,
 				FilterAllowedBlocksByPostTypeBootUnit::class,

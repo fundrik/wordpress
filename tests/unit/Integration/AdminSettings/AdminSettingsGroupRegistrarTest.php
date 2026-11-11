@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\AdminSettings;
 
 use Brain\Monkey\Functions;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
 use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingRegistration;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsGroupInterface;
@@ -14,7 +13,7 @@ use Fundrik\WordPress\Integration\AdminSettings\Settings\AdminSettingInterface;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
 use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use Fundrik\WordPress\Integration\WpSchemaType;
-use Fundrik\WordPress\Tests\Fixtures\FakeStorageNotFoundException;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use InvalidArgumentException;
 use LogicException;
@@ -33,14 +32,14 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( SettingOptionName::class )]
 final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 
-	private StoragePort&MockInterface $storage;
+	private FakeStorage $storage;
 
 	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->storage = Mockery::mock( StoragePort::class );
+		$this->storage = new FakeStorage();
 	}
 
 	#[Test]
@@ -59,11 +58,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		$render_callback = null;
 		$registration_args = null;
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( $option_name )
-			->andReturn( 'USD' );
+		$this->storage->set( $option_name, 'USD' );
 
 		$group->shouldReceive( 'render_section_description' )->once();
 		$setting->shouldReceive( 'render' )->once()->with( $field_args );
@@ -126,11 +121,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		$field_args = null;
 		$registration_args = null;
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( $option_name )
-			->andReturn( $stored_value );
+		$this->storage->set( $option_name, $stored_value );
 
 		Functions\expect( 'add_settings_section' )->once();
 		Functions\expect( 'add_settings_field' )
@@ -167,12 +158,6 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		$option_name = 'fundrik_general_currency_setting';
 		$field_args = null;
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( $option_name )
-			->andThrow( new FakeStorageNotFoundException( 'Missing.' ) );
-
 		Functions\expect( 'add_settings_section' )->once();
 		Functions\expect( 'add_settings_field' )
 			->once()
@@ -200,11 +185,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		$option_name = 'fundrik_general_currency_setting';
 		$field_args = null;
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( $option_name )
-			->andReturn( false );
+		$this->storage->set( $option_name, false );
 
 		Functions\expect( 'add_settings_section' )->once();
 		Functions\expect( 'add_settings_field' )
@@ -249,11 +230,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 		$registration_args = null;
 		$exception_message = 'Currency must be a 3-letter ISO 4217 code. Given: BOOL.';
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( $option_name )
-			->andReturn( 'USD' );
+		$this->storage->set( $option_name, 'USD' );
 
 		$setting
 			->shouldReceive( 'sanitize_value' )

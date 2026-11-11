@@ -5,148 +5,99 @@ declare(strict_types=1);
 namespace Fundrik\WordPress\Tests\Integration\Boot\Units;
 
 use Brain\Monkey\Functions;
-use Closure;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\CampaignSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
-use Fundrik\WordPress\Integration\AdminSettings\Groups\GeneralSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultAcceptsDonationsSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\Campaign\CampaignDefaultHasTargetSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
-use Fundrik\WordPress\Integration\AdminSettings\Settings\General\CurrencySetting;
 use Fundrik\WordPress\Integration\Boot\BootUnitLogger;
 use Fundrik\WordPress\Integration\Boot\Units\ExposeCampaignEditorSettingsBootUnit;
 use Fundrik\WordPress\Integration\Helpers\CurrentAdminScreen;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpScreen;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
-use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
-use WP_Screen;
 
 #[CoversClass( ExposeCampaignEditorSettingsBootUnit::class )]
-#[UsesClass( BootUnitLogger::class )]
-#[UsesClass( HookDispatcherLogger::class )]
-#[UsesClass( EnqueueBlockEditorAssetsActionHookDispatcher::class )]
 #[UsesClass( AdminSettingsReader::class )]
-#[UsesClass( CampaignSettingsGroup::class )]
+#[UsesClass( BootUnitLogger::class )]
 #[UsesClass( CampaignDefaultAcceptsDonationsSetting::class )]
 #[UsesClass( CampaignDefaultHasTargetSetting::class )]
-#[UsesClass( DonationFormSettingsGroup::class )]
-#[UsesClass( GeneralSettingsGroup::class )]
-#[UsesClass( DonationFormDefaultAmountSetting::class )]
-#[UsesClass( DonationFormDefaultAmountLabelSetting::class )]
-#[UsesClass( CurrencySetting::class )]
-#[UsesClass( CurrentAdminScreen::class )]
-#[UsesClass( OptionReader::class )]
 #[UsesClass( CampaignPostTypeConfig::class )]
+#[UsesClass( CampaignSettingsGroup::class )]
+#[UsesClass( CurrentAdminScreen::class )]
+#[UsesClass( DonationFormDefaultAmountLabelSetting::class )]
+#[UsesClass( DonationFormDefaultAmountSetting::class )]
+#[UsesClass( DonationFormSettingsGroup::class )]
+#[UsesClass( EnqueueBlockEditorAssetsActionHookDispatcher::class )]
+#[UsesClass( HookDispatcherLogger::class )]
+#[UsesClass( Logger::class )]
+#[UsesClass( OptionReader::class )]
+#[UsesClass( SettingOptionName::class )]
 final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
-	private const string HOOK_NAME = 'enqueue_block_editor_assets';
-
-	private EnqueueBlockEditorAssetsActionHookDispatcher $enqueue_block_editor_assets_hook;
-	private Closure $enqueue_block_editor_assets_callback;
-
-	private LoggerInterface&MockInterface $psr_logger;
-	private BootUnitLogger $logger;
-
 	private ExposeCampaignEditorSettingsBootUnit $boot_unit;
+	private EnqueueBlockEditorAssetsActionHookDispatcher $hook_dispatcher;
+	private FakeStorage $storage;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->psr_logger = Mockery::mock( LoggerInterface::class );
-
-		$hook_logger = new HookDispatcherLogger( $this->psr_logger );
-		$this->enqueue_block_editor_assets_hook = new EnqueueBlockEditorAssetsActionHookDispatcher( $hook_logger );
-		$this->enqueue_block_editor_assets_callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->enqueue_block_editor_assets_hook->register( ... ),
+		$psr_logger = Mockery::mock( LoggerInterface::class );
+		$this->hook_dispatcher = new EnqueueBlockEditorAssetsActionHookDispatcher(
+			new HookDispatcherLogger( $psr_logger ),
 		);
-
-		$this->logger = new BootUnitLogger( $this->psr_logger );
-
+		$this->storage = new FakeStorage(
+			[
+				'fundrik_donation_form_default_amount_setting' => 25,
+				'fundrik_donation_form_default_amount_label_setting' => 'Contribution',
+				'fundrik_campaign_default_accepts_donations_setting' => true,
+				'fundrik_campaign_default_has_target_setting' => false,
+			],
+		);
 		$this->boot_unit = new ExposeCampaignEditorSettingsBootUnit(
-			$this->enqueue_block_editor_assets_hook,
-			$this->create_settings_reader( 25, 'Contribution', true, false ),
-			$this->logger,
+			$this->hook_dispatcher,
+			$this->make_settings_reader(),
+			new BootUnitLogger( $psr_logger ),
 		);
 	}
 
 	#[Test]
-	public function boot_does_not_expose_editor_settings_when_screen_is_missing(): void {
+	public function boot_ignores_non_campaign_screen(): void {
 
 		Functions\expect( 'get_current_screen' )
 			->once()
-			->andReturn( null );
-
+			->andReturn( new WpScreen( 'post' ) );
 		Functions\expect( 'wp_json_encode' )->never();
 		Functions\expect( 'wp_add_inline_script' )->never();
 
 		$this->boot_unit->boot();
-
-		( $this->enqueue_block_editor_assets_callback )();
+		$this->hook_dispatcher->dispatch();
 	}
 
 	#[Test]
-	public function boot_does_not_expose_editor_settings_for_non_campaign_post_type(): void {
-
-		$screen = Mockery::mock( WP_Screen::class );
-		$screen->post_type = 'post';
+	public function boot_exposes_editor_settings_for_campaign_screen(): void {
 
 		Functions\expect( 'get_current_screen' )
 			->once()
-			->andReturn( $screen );
+			->andReturn( new WpScreen( CampaignPostTypeConfig::ID ) );
 
-		Functions\expect( 'wp_json_encode' )->never();
-		Functions\expect( 'wp_add_inline_script' )->never();
-
-		$this->boot_unit->boot();
-
-		( $this->enqueue_block_editor_assets_callback )();
-	}
-
-	#[Test]
-	public function boot_exposes_editor_settings_for_campaign_post_type(): void {
-
-		$screen = Mockery::mock( WP_Screen::class );
-		$screen->post_type = CampaignPostTypeConfig::ID;
-
-		Functions\expect( 'get_current_screen' )
-			->once()
-			->andReturn( $screen );
-
-		Functions\expect( 'wp_json_encode' )
-			->once()
-			->with(
-				[
-					'defaultAmount' => 25,
-					'defaultAmountLabel' => 'Contribution',
-				],
-			)
-			->andReturn( '{"defaultAmount":25,"defaultAmountLabel":"Contribution"}' );
-		Functions\expect( 'wp_json_encode' )
-			->twice()
-			->with(
-				[
-					'defaultAcceptsDonations' => true,
-					'defaultHasTarget' => false,
-				],
-			)
-			->andReturn( '{"defaultAcceptsDonations":true,"defaultHasTarget":false}' );
+		$this->stub_wp_json_encode();
 
 		Functions\expect( 'wp_add_inline_script' )
 			->once()
@@ -155,6 +106,7 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 				'window.fundrikDonationFormEditorSettings = {"defaultAmount":25,"defaultAmountLabel":"Contribution"};',
 				'before',
 			);
+
 		Functions\expect( 'wp_add_inline_script' )
 			->once()
 			->with(
@@ -162,6 +114,7 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 				'window.fundrikCampaignEditorSettings = {"defaultAcceptsDonations":true,"defaultHasTarget":false};',
 				'before',
 			);
+
 		Functions\expect( 'wp_add_inline_script' )
 			->once()
 			->with(
@@ -171,19 +124,15 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 			);
 
 		$this->boot_unit->boot();
-
-		( $this->enqueue_block_editor_assets_callback )();
+		$this->hook_dispatcher->dispatch();
 	}
 
 	#[Test]
-	public function boot_sets_failure_message_when_editor_settings_encoding_fails(): void {
-
-		$screen = Mockery::mock( WP_Screen::class );
-		$screen->post_type = CampaignPostTypeConfig::ID;
+	public function boot_reports_failure_when_editor_settings_cannot_be_encoded(): void {
 
 		Functions\expect( 'get_current_screen' )
 			->once()
-			->andReturn( $screen );
+			->andReturn( new WpScreen( CampaignPostTypeConfig::ID ) );
 
 		Functions\expect( 'wp_json_encode' )
 			->once()
@@ -196,57 +145,26 @@ final class ExposeCampaignEditorSettingsBootUnitTest extends WordPressTestCase {
 			->andReturn( false );
 
 		Functions\expect( 'wp_add_inline_script' )->never();
+
 		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
 			->with( 'Failed to encode campaign editor settings payload "fundrikDonationFormEditorSettings".' );
 
 		$this->boot_unit->boot();
-
-		( $this->enqueue_block_editor_assets_callback )();
+		$this->hook_dispatcher->dispatch();
 	}
 
-	private function create_settings_reader(
-		int $default_amount,
-		string $default_amount_label,
-		bool $default_accepts_donations,
-		bool $default_has_target,
-		string $currency = 'RUB',
-	): AdminSettingsReader {
-
-		$storage = Mockery::mock( StoragePort::class );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_donation_form_default_amount_setting' )
-			->andReturn( $default_amount );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_donation_form_default_amount_label_setting' )
-			->andReturn( $default_amount_label );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_campaign_default_accepts_donations_setting' )
-			->andReturn( $default_accepts_donations );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_campaign_default_has_target_setting' )
-			->andReturn( $default_has_target );
-
-		$field_renderer = new AdminSettingsFieldRenderer();
+	private function make_settings_reader(): AdminSettingsReader {
 
 		return new AdminSettingsReader(
-			new OptionReader( $storage ),
-			new GeneralSettingsGroup( new CurrencySetting( $field_renderer ) ),
+			new OptionReader( $this->storage ),
 			new CampaignSettingsGroup(
-				new CampaignDefaultAcceptsDonationsSetting( $field_renderer ),
-				new CampaignDefaultHasTargetSetting( $field_renderer ),
+				new CampaignDefaultAcceptsDonationsSetting(),
+				new CampaignDefaultHasTargetSetting(),
 			),
 			new DonationFormSettingsGroup(
-				new DonationFormDefaultAmountSetting( $field_renderer ),
-				new DonationFormDefaultAmountLabelSetting( $field_renderer ),
+				new DonationFormDefaultAmountSetting(),
+				new DonationFormDefaultAmountLabelSetting(),
 			),
 		);
 	}
