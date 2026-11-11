@@ -4,36 +4,26 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Functions;
 
-use Brain\Monkey\Filters;
-use Brain\Monkey\Functions;
-use DateTimeImmutable;
-use DateTimeZone;
-use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
-use Fundrik\Core\Components\Campaigns\Application\Services\CampaignQueryService;
-use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\ReadCampaignByIdHandler;
-use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
-use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
-use Fundrik\WordPress\Integration\PostTypes\Configs\CampaignPostTypeConfig;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
-use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
 use Fundrik\WordPress\Kernel\Container\RuntimeContainer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\Container as LaravelContainerInterface;
 use LogicException;
 use Mockery;
 use Mockery\MockInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\Attributes\Test;
-use Psr\Log\NullLogger;
-use WP_Post;
+use PHPUnit\Framework\Attributes\UsesClass;
+use RuntimeException;
 
 #[CoversFunction( 'fundrik_get_campaign' )]
+#[UsesClass( Campaign::class )]
+#[UsesClass( RuntimeContainer::class )]
 final class CampaignFunctionsTest extends WordPressTestCase {
 
-	private CampaignReadPort&MockInterface $campaign_read;
+	private LaravelContainerInterface&MockInterface $container;
 
 	#[Override]
 	protected function setUp(): void {
@@ -42,22 +32,8 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 
 		require_once dirname( __DIR__, 4 ) . '/src/php/Integration/Functions/CampaignFunctions.php';
 
-		Functions\when( 'get_post_field' )->alias(
-			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
-				$field === 'post_name' ? 'campaign-' . $post_id : null,
-		);
-		Functions\when( 'get_permalink' )->alias(
-			static fn ( int $post_id ): string => 'https://example.test/campaign-' . $post_id . '/',
-		);
-		Functions\when( 'get_post_thumbnail_id' )->alias(
-			static fn ( int $post_id ): int => $post_id === 42 ? 99 : 0,
-		);
-		Functions\when( 'wp_get_attachment_image_url' )->alias(
-			static fn ( int $attachment_id, string $size = 'full' ): string => 'https://example.test/media/' . $attachment_id . '.jpg',
-		);
-
 		RuntimeContainer::reset();
-		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
+		$this->container = Mockery::mock( LaravelContainerInterface::class );
 	}
 
 	#[Override]
@@ -72,194 +48,69 @@ final class CampaignFunctionsTest extends WordPressTestCase {
 	public function fundrik_get_campaign_throws_when_runtime_container_is_unavailable(): void {
 
 		$this->expectException( LogicException::class );
+		$this->expectExceptionMessage( 'Fundrik runtime container is not available.' );
 
 		fundrik_get_campaign( 42 );
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_returns_campaign_from_the_runtime_container(): void {
+	public function fundrik_get_campaign_does_not_catch_service_resolution_failure(): void {
 
-		$campaign = $this->make_campaign( 42 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
+		$exception = new RuntimeException( 'Campaign lookup service is unavailable.' );
+
+		$this->container
+			->shouldReceive( 'make' )
 			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign'
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $campaign ) );
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( $campaign );
+			->with( CampaignLookupService::class )
+			->andThrow( $exception );
 
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
+		RuntimeContainer::set( $this->container );
 
-		RuntimeContainer::set( $container );
+		$this->expectExceptionObject( $exception );
 
-		$result = fundrik_get_campaign( 42 );
-
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 42, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
+		fundrik_get_campaign( 42 );
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_returns_the_filtered_campaign(): void {
+	public function fundrik_get_campaign_returns_campaign_from_lookup_service_for_given_id(): void {
 
-		$campaign = $this->make_campaign( 42 );
-		$filtered_campaign = $this->make_campaign( 77 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
+		$campaign = $this->make_campaign_read_model();
+		$service = Mockery::mock();
+		$service
+			->shouldReceive( 'get' )
 			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign',
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $filtered_campaign ) );
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
+			->with( 42 )
 			->andReturn( $campaign );
 
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
+		$this->container
+			->shouldReceive( 'make' )
+			->once()
+			->with( CampaignLookupService::class )
+			->andReturn( $service );
 
-		RuntimeContainer::set( $container );
+		RuntimeContainer::set( $this->container );
 
-		$result = fundrik_get_campaign( 42 );
-
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 77, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
+		self::assertSame( $campaign, fundrik_get_campaign( 42 ) );
 	}
 
 	#[Test]
-	public function fundrik_get_campaign_returns_current_campaign_when_id_is_omitted(): void {
+	public function fundrik_get_campaign_passes_null_when_id_is_omitted(): void {
 
-		$campaign = $this->make_campaign( 42 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
+		$service = Mockery::mock();
+		$service
+			->shouldReceive( 'get' )
 			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign',
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $campaign ) );
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
+			->with( null )
+			->andReturn( null );
+
+		$this->container
+			->shouldReceive( 'make' )
 			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( $campaign );
+			->with( CampaignLookupService::class )
+			->andReturn( $service );
 
-		Functions\expect( 'get_post' )
-			->once()
-			->andReturn( $this->make_post( 42, CampaignPostTypeConfig::ID ) );
-
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
-		RuntimeContainer::set( $container );
-
-		$result = fundrik_get_campaign();
-
-		self::assertInstanceOf( WpCampaign::class, $result );
-		self::assertSame( 42, $result->get_id() );
-		self::assertSame( 'Campaign', $result->get_title() );
-	}
-
-	#[Test]
-	public function fundrik_get_campaign_returns_null_when_current_campaign_context_is_missing(): void {
-
-		Functions\expect( 'get_post' )->once()->andReturn( null );
-		Filters\expectApplied( 'fundrik_get_campaign' )->never();
-
-		$this->campaign_read->shouldNotReceive( 'find_by_id' );
-
-		$container = new Container();
-		$container->instance( CampaignLookupService::class, $this->create_campaign_lookup_service() );
-
-		RuntimeContainer::set( $container );
+		RuntimeContainer::set( $this->container );
 
 		self::assertNull( fundrik_get_campaign() );
-	}
-
-	private function create_campaign_lookup_service(): CampaignLookupService {
-
-		return new CampaignLookupService(
-			new CampaignQueryService(
-				new ReadCampaignByIdHandler(
-					$this->campaign_read,
-				),
-			),
-			new WordPressRuntime(),
-			new NullLogger(),
-		);
-	}
-
-	private function make_campaign( int $id ): Campaign {
-
-		return new Campaign(
-			id: $id,
-			title: 'Campaign',
-			accepts_donations: true,
-			currency_code: 'RUB',
-			target_amount: 1_000,
-			collected_amount: 0,
-			donations_count: 0,
-			created_at: UtcDateTime::create(
-				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
-			),
-			updated_at: null,
-		);
-	}
-
-	private function make_campaign_view( Campaign $campaign ): WpCampaign {
-
-		return new WpCampaign(
-			id: $campaign->get_id(),
-			title: $campaign->get_title(),
-			accepts_donations: $campaign->accepts_donations(),
-			currency_code: $campaign->get_currency_code(),
-			target_amount: $campaign->get_target_amount(),
-			collected_amount: $campaign->get_collected_amount(),
-			donations_count: $campaign->get_donations_count(),
-			created_at: $campaign->get_created_at(),
-			updated_at: $campaign->get_updated_at(),
-			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
-			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
-		);
-	}
-
-	private function make_post( int $id, string $post_type ): WP_Post {
-
-		$post = Mockery::mock( WP_Post::class );
-		$post->ID = $id;
-		$post->post_type = $post_type;
-
-		return $post;
 	}
 }
