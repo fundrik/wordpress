@@ -178,9 +178,11 @@ final readonly class YooKassaGateway implements GatewayInterface {
 		// The SDK declares a broad build() return type despite this concrete builder creating a payment request.
 		if ( ! $payment_request instanceof CreatePaymentRequestInterface ) {
 
+			// @codeCoverageIgnoreStart
 			throw new UnexpectedValueException(
 				'YooKassa payment request builder returned an unsupported request type.',
 			);
+			// @codeCoverageIgnoreEnd
 		}
 
 		return $payment_request;

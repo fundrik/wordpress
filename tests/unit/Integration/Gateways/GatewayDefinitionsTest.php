@@ -14,22 +14,13 @@ use PHPUnit\Framework\Attributes\Test;
 final class GatewayDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_the_default_gateway_classes(): void {
+	public function classes_returns_configured_gateway_classes(): void {
 
 		self::assertSame(
 			[
 				YooKassaGateway::class,
 			],
 			GatewayDefinitions::classes(),
-		);
-	}
-
-	#[Test]
-	public function it_returns_gateway_specific_settings(): void {
-
-		self::assertSame(
-			[],
-			GatewayDefinitions::get_admin_settings_group_classes(),
 		);
 	}
 }

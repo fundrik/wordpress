@@ -8,198 +8,241 @@ use Fundrik\Core\Components\Donations\Application\Ports\Gateway\DonationGatewayC
 use Fundrik\Core\Components\Shared\Application\Url;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\Money;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
-use Fundrik\WordPress\Integration\Gateways\SettingFields\GatewaySettingCheckboxField;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
+use Fundrik\WordPress\Integration\Gateways\SettingFields\GatewaySettingFieldInterface;
 use Fundrik\WordPress\Integration\Gateways\SettingFields\GatewaySettingTextField;
 use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaGateway;
 use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaGatewayException;
-use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaGatewaySettings;
 use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaSettingsReader;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
-use Fundrik\WordPress\Tests\MockeryTestCase;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
+use Fundrik\WordPress\Integration\WpSchemaType;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
+use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use RuntimeException;
 use YooKassa\Client;
 use YooKassa\Model\Payment\Confirmation\ConfirmationRedirect;
-use YooKassa\Request\Payments\CreatePaymentRequest;
 use YooKassa\Request\Payments\CreatePaymentRequestInterface;
 use YooKassa\Request\Payments\CreatePaymentResponse;
 
 #[CoversClass( YooKassaGateway::class )]
-#[UsesClass( DonationGatewayCheckoutRequest::class )]
-#[UsesClass( CreatePaymentRequest::class )]
-#[UsesClass( CreatePaymentResponse::class )]
-#[UsesClass( ConfirmationRedirect::class )]
-#[UsesClass( GatewaySettingCheckboxField::class )]
+#[CoversClass( YooKassaGatewayException::class )]
+#[UsesClass( DonationId::class )]
 #[UsesClass( GatewaySettingTextField::class )]
-final class YooKassaGatewayTest extends MockeryTestCase {
-
-	private StoragePort&MockInterface $storage;
+#[UsesClass( OptionReader::class )]
+#[UsesClass( SettingOptionName::class )]
+#[UsesClass( YooKassaSettingsReader::class )]
+final class YooKassaGatewayTest extends WordPressTestCase {
 
 	private Client&MockInterface $client;
+	private YooKassaGateway $gateway;
 
-	private YooKassaSettingsReader $settings_reader;
-
-	private YooKassaGatewaySettings $gateway_settings;
-
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->storage = Mockery::mock( StoragePort::class );
 		$this->client = Mockery::mock( Client::class );
-		$this->settings_reader = new YooKassaSettingsReader( new OptionReader( $this->storage ) );
-		$this->gateway_settings = new YooKassaGatewaySettings( $this->settings_reader );
+		$this->gateway = new YooKassaGateway(
+			$this->client,
+			new YooKassaSettingsReader(
+				new OptionReader(
+					new FakeStorage(
+						[
+							'fundrik_yookassa_shop_id_setting' => 'shop-id',
+							'fundrik_yookassa_secret_key_setting' => 'secret-key',
+						],
+					),
+				),
+			),
+		);
 	}
 
 	#[Test]
-	public function it_creates_checkout_sessions_via_the_sdk_client(): void {
+	public function get_id_returns_yookassa(): void {
 
-		$donation_id = '123e4567-e89b-42d3-a456-426614174001';
-		$campaign_id = '123e4567-e89b-42d3-a456-426614174002';
+		self::assertSame( 'yookassa', $this->gateway->get_id() );
+	}
 
-		$request = new DonationGatewayCheckoutRequest(
-			EntityId::create( $donation_id ),
-			EntityId::create( $campaign_id ),
-			Money::create( 1_250, 'RUB' ),
-			'Donation for campaign "Name"',
-			Url::create( 'https://example.com/success' ),
-			Url::create( 'https://example.com/cancel' ),
+	#[Test]
+	public function get_label_returns_yookassa(): void {
+
+		self::assertSame( 'YooKassa', $this->gateway->get_label() );
+	}
+
+	#[Test]
+	public function render_settings_description_outputs_yookassa_description(): void {
+
+		ob_start();
+		$this->gateway->render_settings_description();
+		$output = ob_get_clean();
+
+		self::assertSame( '<p>Configure YooKassa payment gateway settings.</p>', $output );
+	}
+
+	#[Test]
+	public function get_settings_fields_returns_yookassa_text_fields(): void {
+
+		$fields = $this->gateway->get_settings_fields();
+
+		self::assertSame(
+			[
+				[
+					'class' => GatewaySettingTextField::class,
+					'id' => 'shop_id',
+					'label' => 'YooKassa shop ID',
+					'default' => '',
+					'type' => WpSchemaType::String,
+				],
+				[
+					'class' => GatewaySettingTextField::class,
+					'id' => 'secret_key',
+					'label' => 'YooKassa secret key',
+					'default' => '',
+					'type' => WpSchemaType::String,
+				],
+			],
+			array_map(
+				static fn ( GatewaySettingFieldInterface $field ): array => [
+					'class' => $field::class,
+					'id' => $field->get_id(),
+					'label' => $field->get_label(),
+					'default' => $field->get_default_value(),
+					'type' => $field->get_value_type(),
+				],
+				$fields,
+			),
 		);
+	}
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_shop_id_setting' )
-			->andReturn( 'shop-id' );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_secret_key_setting' )
-			->andReturn( 'secret-key' );
+	#[Test]
+	public function create_checkout_creates_yookassa_payment_and_returns_checkout_result(): void {
 
+		$request = $this->make_checkout_request();
+		$payment_request = null;
 		$confirmation = new ConfirmationRedirect(
 			[
 				'confirmation_url' => 'https://yookassa.example/redirect',
 			],
 		);
-
 		$payment = Mockery::mock( CreatePaymentResponse::class );
-		$payment
-			->shouldReceive( 'getConfirmation' )
-			->once()
-			->andReturn( $confirmation );
+		$payment->shouldReceive( 'getId' )->once()->andReturn( 'payment-123' );
+		$payment->shouldReceive( 'getConfirmation' )->once()->andReturn( $confirmation );
 
 		$this->client
 			->shouldReceive( 'setAuth' )
 			->once()
-			->with( 'shop-id', 'secret-key' );
+			->with( 'shop-id', 'secret-key' )
+			->andReturnSelf();
 		$this->client
 			->shouldReceive( 'createPayment' )
 			->once()
-			->with(
-				Mockery::on(
-					static function ( object $payment_data ) use ( $donation_id, $campaign_id ): bool {
-
-						if ( ! $payment_data instanceof CreatePaymentRequestInterface ) {
-							return false;
-						}
-
-						$amount = $payment_data->getAmount();
-						$confirmation = $payment_data->getConfirmation();
-						$metadata = $payment_data->getMetadata();
-
-						return $amount !== null
-							&& $amount->getValue() === '12.50'
-							&& $amount->getCurrency() === 'RUB'
-							&& $payment_data->getCapture() === true
-							&& $payment_data->getDescription() === 'Donation for campaign "Name"'
-							&& $confirmation !== null
-							&& $confirmation->getType() === 'redirect'
-							&& $confirmation->getReturnUrl() === 'https://example.com/success'
-							&& $metadata !== null
-							&& $metadata->toArray()['donation_id'] === $donation_id
-							&& $metadata->toArray()['campaign_id'] === $campaign_id
-							&& $metadata->toArray()['success_url'] === 'https://example.com/success'
-							&& $metadata->toArray()['cancel_url'] === 'https://example.com/cancel';
-					},
-				),
-				$donation_id,
-			)
+			->with( Mockery::capture( $payment_request ), '123e4567-e89b-42d3-a456-426614174001' )
 			->andReturn( $payment );
 
-		$gateway = new YooKassaGateway( $this->client, $this->gateway_settings );
-		$result = $gateway->create_checkout( $request );
+		$result = $this->gateway->create_checkout( $request );
 
+		self::assertInstanceOf( CreatePaymentRequestInterface::class, $payment_request );
+		self::assertTrue( $payment_request->getCapture() );
+		self::assertSame( 'Donation for campaign "Campaign"', $payment_request->getDescription() );
+
+		$amount = $payment_request->getAmount();
+		self::assertSame( '12.50', $amount?->getValue() );
+		self::assertSame( 'RUB', $amount?->getCurrency() );
+
+		$request_confirmation = $payment_request->getConfirmation();
+		self::assertSame( 'redirect', $request_confirmation?->getType() );
+		self::assertSame( 'https://example.test/success', $request_confirmation?->getReturnUrl() );
+
+		$metadata = $payment_request->getMetadata();
+		self::assertSame(
+			[
+				'donation_id' => '123e4567-e89b-42d3-a456-426614174001',
+				'campaign_id' => 901,
+				'success_url' => 'https://example.test/success',
+				'cancel_url' => 'https://example.test/cancel',
+			],
+			$metadata?->toArray(),
+		);
+		self::assertSame( 'payment-123', $result->get_payment_id()->get_value() );
 		self::assertSame( 'https://yookassa.example/redirect', $result->get_redirect_url()->get_value() );
 	}
 
 	#[Test]
-	public function it_rejects_checkout_creation_when_credentials_are_missing(): void {
+	public function create_checkout_wraps_sdk_failure(): void {
 
-		$donation_id = '123e4567-e89b-42d3-a456-426614174001';
-		$campaign_id = '123e4567-e89b-42d3-a456-426614174002';
+		$request = $this->make_checkout_request();
+		$previous = new RuntimeException( 'YooKassa is unavailable.' );
 
-		$request = new DonationGatewayCheckoutRequest(
-			EntityId::create( $donation_id ),
-			EntityId::create( $campaign_id ),
-			Money::create( 1_250, 'RUB' ),
-			'Donation for campaign "Name"',
-			Url::create( 'https://example.com/success' ),
-			Url::create( 'https://example.com/cancel' ),
-		);
-
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_shop_id_setting' )
-			->andReturn( '' );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_secret_key_setting' )
-			->andReturn( 'secret-key' );
 		$this->client
 			->shouldReceive( 'setAuth' )
 			->once()
-			->with( '', 'secret-key' );
+			->with( 'shop-id', 'secret-key' )
+			->andReturnSelf();
 		$this->client
 			->shouldReceive( 'createPayment' )
 			->once()
-			->andThrow( new \RuntimeException( 'Authorization headers not set' ) );
+			->with(
+				Mockery::type( CreatePaymentRequestInterface::class ),
+				'123e4567-e89b-42d3-a456-426614174001',
+			)
+			->andThrow( $previous );
 
-		$this->expectException( YooKassaGatewayException::class );
-		$this->expectExceptionMessage( sprintf( 'Failed to create checkout for donation "%s".', $donation_id ) );
+		try {
+			$this->gateway->create_checkout( $request );
+		} catch ( YooKassaGatewayException $exception ) {
+			self::assertSame(
+				'Failed to create checkout for donation "123e4567-e89b-42d3-a456-426614174001".',
+				$exception->getMessage(),
+			);
+			self::assertSame( $previous, $exception->getPrevious() );
 
-		$gateway = new YooKassaGateway( $this->client, $this->gateway_settings );
-		$gateway->create_checkout( $request );
+			return;
+		}
+
+		self::fail( 'Expected YooKassaGatewayException was not thrown.' );
 	}
 
 	#[Test]
-	public function it_exposes_the_admin_settings_group_configuration(): void {
+	public function create_checkout_wraps_missing_payment_response(): void {
 
-		$gateway = new YooKassaGateway( $this->client, $this->gateway_settings );
-		$fields = $gateway->get_settings_fields();
+		$this->client
+			->shouldReceive( 'setAuth' )
+			->once()
+			->with( 'shop-id', 'secret-key' )
+			->andReturnSelf();
+		$this->client
+			->shouldReceive( 'createPayment' )
+			->once()
+			->with(
+				Mockery::type( CreatePaymentRequestInterface::class ),
+				'123e4567-e89b-42d3-a456-426614174001',
+			)
+			->andReturnNull();
 
-		self::assertCount( 4, $fields );
-		self::assertInstanceOf( GatewaySettingCheckboxField::class, $fields[0] );
-		self::assertSame( 'enabled', $fields[0]->get_id() );
-		self::assertSame( 'Enable YooKassa', $fields[0]->get_label() );
-		self::assertFalse( $fields[0]->get_default_value() );
-		self::assertInstanceOf( GatewaySettingCheckboxField::class, $fields[1] );
-		self::assertSame( 'test_mode', $fields[1]->get_id() );
-		self::assertSame( 'YooKassa test mode', $fields[1]->get_label() );
-		self::assertTrue( $fields[1]->get_default_value() );
-		self::assertInstanceOf( GatewaySettingTextField::class, $fields[2] );
-		self::assertSame( 'shop_id', $fields[2]->get_id() );
-		self::assertSame( 'YooKassa shop ID', $fields[2]->get_label() );
-		self::assertSame( '', $fields[2]->get_default_value() );
-		self::assertInstanceOf( GatewaySettingTextField::class, $fields[3] );
-		self::assertSame( 'secret_key', $fields[3]->get_id() );
-		self::assertSame( 'YooKassa secret key', $fields[3]->get_label() );
-		self::assertSame( '', $fields[3]->get_default_value() );
+		$this->expectException( YooKassaGatewayException::class );
+		$this->expectExceptionMessage(
+			'Failed to create checkout for donation "123e4567-e89b-42d3-a456-426614174001".',
+		);
+
+		$this->gateway->create_checkout( $this->make_checkout_request() );
+	}
+
+	private function make_checkout_request(): DonationGatewayCheckoutRequest {
+
+		return new DonationGatewayCheckoutRequest(
+			EntityId::create( '123e4567-e89b-42d3-a456-426614174001' ),
+			EntityId::create( 901 ),
+			Money::create( 1_250, 'RUB' ),
+			'Donation for campaign "Campaign"',
+			Url::create( 'https://example.test/success' ),
+			Url::create( 'https://example.test/cancel' ),
+		);
 	}
 }

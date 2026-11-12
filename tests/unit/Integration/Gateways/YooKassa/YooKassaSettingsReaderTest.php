@@ -4,55 +4,80 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Gateways\YooKassa;
 
+use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaSettingsReader;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
+use Fundrik\WordPress\Integration\RestApi\Routes\YooKassaNotifyRestRoute;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
-use Mockery;
-use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass( YooKassaSettingsReader::class )]
+#[UsesClass( OptionReader::class )]
+#[UsesClass( RestRouteDefinitions::class )]
+#[UsesClass( SettingOptionName::class )]
+#[UsesClass( YooKassaNotifyRestRoute::class )]
 final class YooKassaSettingsReaderTest extends WordPressTestCase {
 
-	private StoragePort&MockInterface $storage;
+	private YooKassaSettingsReader $reader;
+	private FakeStorage $storage;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->storage = Mockery::mock( StoragePort::class );
+		$this->storage = new FakeStorage();
+		$this->reader = new YooKassaSettingsReader( new OptionReader( $this->storage ) );
 	}
 
 	#[Test]
-	public function it_returns_the_configured_values(): void {
+	public function get_shop_id_returns_configured_value(): void {
 
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_enabled_setting' )
-			->andReturn( true );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_test_mode_setting' )
-			->andReturn( true );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_shop_id_setting' )
-			->andReturn( '123456' );
-		$this->storage
-			->shouldReceive( 'get' )
-			->once()
-			->with( 'fundrik_yookassa_secret_key_setting' )
-			->andReturn( 'secret' );
-		$reader = new YooKassaSettingsReader( new OptionReader( $this->storage ) );
+		$this->storage->set( 'fundrik_yookassa_shop_id_setting', 'shop-123' );
 
-		self::assertTrue( $reader->get_enabled() );
-		self::assertTrue( $reader->get_test_mode() );
-		self::assertSame( '123456', $reader->get_shop_id() );
-		self::assertSame( 'secret', $reader->get_secret_key() );
+		self::assertSame( 'shop-123', $this->reader->get_shop_id() );
+	}
+
+	#[Test]
+	public function get_shop_id_returns_empty_string_when_option_is_missing(): void {
+
+		self::assertSame( '', $this->reader->get_shop_id() );
+	}
+
+	#[Test]
+	public function get_shop_id_returns_empty_string_when_option_has_invalid_type(): void {
+
+		$this->storage->set( 'fundrik_yookassa_shop_id_setting', false );
+
+		self::assertSame( '', $this->reader->get_shop_id() );
+	}
+
+	#[Test]
+	public function get_secret_key_returns_configured_value(): void {
+
+		$this->storage->set( 'fundrik_yookassa_shop_id_setting', 'shop-123' );
+		$this->storage->set( 'fundrik_yookassa_secret_key_setting', 'secret-key' );
+
+		self::assertSame( 'secret-key', $this->reader->get_secret_key() );
+	}
+
+	#[Test]
+	public function get_webhook_url_returns_yookassa_notification_route_url(): void {
+
+		Functions\expect( 'rest_url' )
+			->once()
+			->with( 'fundrik/v1/gateways/yookassa/notify' )
+			->andReturn( 'https://example.test/wp-json/fundrik/v1/gateways/yookassa/notify' );
+
+		self::assertSame(
+			'https://example.test/wp-json/fundrik/v1/gateways/yookassa/notify',
+			$this->reader->get_webhook_url(),
+		);
 	}
 }
