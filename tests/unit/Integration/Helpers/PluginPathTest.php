@@ -13,20 +13,18 @@ use PHPUnit\Framework\Attributes\Test;
 final class PluginPathTest extends FundrikTestCase {
 
 	#[Test]
-	public function blocks_path_resolves_relative_to_plugin_root(): void {
+	public function cases_define_expected_plugin_resource_paths(): void {
 
-		$this->assertSame(
-			FUNDRIK_PATH . 'assets/js/blocks/',
-			PluginPath::Blocks->get_full_path(),
-		);
+		self::assertSame( 'assets/js/blocks/', PluginPath::Blocks->value );
+		self::assertSame( 'assets/js/blocks/blocks-manifest.php', PluginPath::BlocksManifest->value );
 	}
 
 	#[Test]
-	public function blocks_manifest_path_resolves_relative_to_plugin_root(): void {
+	public function get_full_path_resolves_resource_relative_to_plugin_root(): void {
 
-		$this->assertSame(
-			FUNDRIK_PATH . 'assets/js/blocks/blocks-manifest.php',
-			PluginPath::BlocksManifest->get_full_path(),
+		self::assertSame(
+			FUNDRIK_PATH . 'assets/js/blocks/',
+			PluginPath::Blocks->get_full_path(),
 		);
 	}
 }

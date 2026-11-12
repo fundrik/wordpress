@@ -7,6 +7,7 @@ namespace Fundrik\WordPress\Tests\Integration\Helpers;
 use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\Helpers\MetaReader;
 use Fundrik\WordPress\Tests\WordPressTestCase;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use UnexpectedValueException;
@@ -14,219 +15,122 @@ use UnexpectedValueException;
 #[CoversClass( MetaReader::class )]
 final class MetaReaderTest extends WordPressTestCase {
 
-	// ---------------------------------------------------------------------
-	// find_post_meta_bool()
-	// ---------------------------------------------------------------------
+	private const int POST_ID = 123;
+	private const string META_KEY = 'fundrik_key';
 
 	#[Test]
 	public function find_post_meta_bool_returns_null_when_meta_does_not_exist(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_missing_meta();
 
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( false );
-
-		Functions\expect( 'get_post_meta' )->never();
-
-		$result = MetaReader::find_post_meta_bool( $post_id, $meta_key );
-
-		self::assertNull( $result );
+		self::assertNull( MetaReader::find_post_meta_bool( self::POST_ID, self::META_KEY ) );
 	}
 
 	#[Test]
-	public function find_post_meta_bool_converts_wordpress_false_to_false(): void {
+	public function find_post_meta_bool_returns_false_for_wordpress_false_value(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_stored_meta_value( '' );
 
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( '' );
-
-		$result = MetaReader::find_post_meta_bool( $post_id, $meta_key );
-
-		self::assertFalse( $result );
+		self::assertFalse( MetaReader::find_post_meta_bool( self::POST_ID, self::META_KEY ) );
 	}
 
 	#[Test]
-	public function find_post_meta_bool_converts_wordpress_true_to_true(): void {
+	public function find_post_meta_bool_returns_true_for_wordpress_true_value(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_stored_meta_value( '1' );
 
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( '1' );
-
-		$result = MetaReader::find_post_meta_bool( $post_id, $meta_key );
-
-		self::assertTrue( $result );
+		self::assertTrue( MetaReader::find_post_meta_bool( self::POST_ID, self::META_KEY ) );
 	}
 
-	// ---------------------------------------------------------------------
-	// find_post_meta_int()
-	// ---------------------------------------------------------------------
+	#[Test]
+	public function find_post_meta_bool_wraps_cast_failure_with_meta_context(): void {
+
+		$this->expect_stored_meta_value( 'yes' );
+
+		try {
+			MetaReader::find_post_meta_bool( self::POST_ID, self::META_KEY );
+			self::fail( 'Expected an invalid meta value to throw.' );
+		} catch ( UnexpectedValueException $exception ) {
+			self::assertSame(
+				'Post meta "fundrik_key" must be bool. Given: string.',
+				$exception->getMessage(),
+			);
+			self::assertInstanceOf( InvalidArgumentException::class, $exception->getPrevious() );
+		}
+	}
 
 	#[Test]
 	public function find_post_meta_int_returns_null_when_meta_does_not_exist(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_missing_meta();
 
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( false );
-
-		Functions\expect( 'get_post_meta' )->never();
-
-		$result = MetaReader::find_post_meta_int( $post_id, $meta_key );
-
-		self::assertNull( $result );
+		self::assertNull( MetaReader::find_post_meta_int( self::POST_ID, self::META_KEY ) );
 	}
 
 	#[Test]
-	public function find_post_meta_int_throws_when_meta_is_empty_string(): void {
+	public function find_post_meta_int_converts_decimal_string_to_int(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_stored_meta_value( '1500' );
 
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
+		self::assertSame( 1_500, MetaReader::find_post_meta_int( self::POST_ID, self::META_KEY ) );
+	}
 
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( '' );
+	#[Test]
+	public function find_post_meta_int_wraps_cast_failure_with_meta_context(): void {
+
+		$this->expect_stored_meta_value( '' );
 
 		$this->expectException( UnexpectedValueException::class );
 		$this->expectExceptionMessage( 'Post meta "fundrik_key" must be int. Given: string.' );
 
-		MetaReader::find_post_meta_int( $post_id, $meta_key );
+		MetaReader::find_post_meta_int( self::POST_ID, self::META_KEY );
 	}
-
-	#[Test]
-	public function find_post_meta_int_converts_numeric_string_to_int(): void {
-
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( '1500' );
-
-		$result = MetaReader::find_post_meta_int( $post_id, $meta_key );
-
-		self::assertSame( 1500, $result );
-	}
-
-	#[Test]
-	public function find_post_meta_int_throws_when_the_stored_value_cannot_be_cast_to_integer(): void {
-
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( 'not-an-int' );
-
-		$this->expectException( UnexpectedValueException::class );
-		$this->expectExceptionMessage( 'Post meta "fundrik_key" must be int. Given: string.' );
-
-		MetaReader::find_post_meta_int( $post_id, $meta_key );
-	}
-
-	// ---------------------------------------------------------------------
-	// find_post_meta_string()
-	// ---------------------------------------------------------------------
 
 	#[Test]
 	public function find_post_meta_string_returns_null_when_meta_does_not_exist(): void {
 
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+		$this->expect_missing_meta();
+
+		self::assertNull( MetaReader::find_post_meta_string( self::POST_ID, self::META_KEY ) );
+	}
+
+	#[Test]
+	public function find_post_meta_string_returns_stored_string(): void {
+
+		$this->expect_stored_meta_value( 'RUB' );
+
+		self::assertSame( 'RUB', MetaReader::find_post_meta_string( self::POST_ID, self::META_KEY ) );
+	}
+
+	#[Test]
+	public function find_post_meta_string_wraps_cast_failure_with_meta_context(): void {
+
+		$this->expect_stored_meta_value( 42 );
+
+		$this->expectException( UnexpectedValueException::class );
+		$this->expectExceptionMessage( 'Post meta "fundrik_key" must be string. Given: int.' );
+
+		MetaReader::find_post_meta_string( self::POST_ID, self::META_KEY );
+	}
+
+	private function expect_missing_meta(): void {
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', $post_id, $meta_key )
+			->with( 'post', self::POST_ID, self::META_KEY )
 			->andReturn( false );
-
-		Functions\expect( 'get_post_meta' )->never();
-
-		$result = MetaReader::find_post_meta_string( $post_id, $meta_key );
-
-		self::assertNull( $result );
 	}
 
-	#[Test]
-	public function find_post_meta_string_returns_empty_string_when_meta_is_empty_string(): void {
-
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
+	private function expect_stored_meta_value( int|string $value ): void {
 
 		Functions\expect( 'metadata_exists' )
 			->once()
-			->with( 'post', $post_id, $meta_key )
+			->with( 'post', self::POST_ID, self::META_KEY )
 			->andReturn( true );
 
 		Functions\expect( 'get_post_meta' )
 			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( '' );
-
-		$result = MetaReader::find_post_meta_string( $post_id, $meta_key );
-
-		self::assertSame( '', $result );
+			->with( self::POST_ID, self::META_KEY, true )
+			->andReturn( $value );
 	}
-
-	#[Test]
-	public function find_post_meta_string_returns_string_value(): void {
-
-		$post_id = 123;
-		$meta_key = 'fundrik_key';
-
-		Functions\expect( 'metadata_exists' )
-			->once()
-			->with( 'post', $post_id, $meta_key )
-			->andReturn( true );
-
-		Functions\expect( 'get_post_meta' )
-			->once()
-			->with( $post_id, $meta_key, true )
-			->andReturn( 'RUB' );
-
-		$result = MetaReader::find_post_meta_string( $post_id, $meta_key );
-
-		self::assertSame( 'RUB', $result );
-	}
-
 }

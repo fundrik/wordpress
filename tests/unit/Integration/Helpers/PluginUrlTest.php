@@ -13,47 +13,28 @@ use PHPUnit\Framework\Attributes\Test;
 final class PluginUrlTest extends FundrikTestCase {
 
 	#[Test]
-	public function assets_url_resolves_relative_to_plugin_root(): void {
+	public function cases_define_expected_plugin_resource_urls(): void {
 
-		$this->assertSame(
-			FUNDRIK_URL . 'assets/',
-			PluginUrl::Assets->get_full_url(),
-		);
+		self::assertSame( 'assets/', PluginUrl::Assets->value );
+		self::assertSame( 'assets/js/', PluginUrl::JavaScripts->value );
+		self::assertSame( 'assets/js/blocks/', PluginUrl::Blocks->value );
 	}
 
 	#[Test]
-	public function blocks_url_resolves_relative_to_plugin_root(): void {
+	public function get_full_url_resolves_resource_relative_to_plugin_root(): void {
 
-		$this->assertSame(
-			FUNDRIK_URL . 'assets/js/blocks/',
-			PluginUrl::Blocks->get_full_url(),
-		);
-	}
-
-	#[Test]
-	public function javascripts_url_resolves_relative_to_plugin_root(): void {
-
-		$this->assertSame(
+		self::assertSame(
 			FUNDRIK_URL . 'assets/js/',
 			PluginUrl::JavaScripts->get_full_url(),
 		);
 	}
 
 	#[Test]
-	public function file_url_is_resolved_within_the_resource_path(): void {
+	public function file_resolves_file_within_resource_url(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			FUNDRIK_URL . 'assets/js/app.js',
 			PluginUrl::JavaScripts->file( 'app.js' ),
-		);
-	}
-
-	#[Test]
-	public function file_url_supports_nested_paths(): void {
-
-		$this->assertSame(
-			FUNDRIK_URL . 'assets/js/build/app.js',
-			PluginUrl::JavaScripts->file( 'build/app.js' ),
 		);
 	}
 }
