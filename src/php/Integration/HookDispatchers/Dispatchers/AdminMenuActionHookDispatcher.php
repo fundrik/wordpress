@@ -63,7 +63,7 @@ final class AdminMenuActionHookDispatcher implements HookDispatcherInterface {
 	#[Override]
 	public function register(): void {
 
-		add_action( self::HOOK_NAME, $this->dispatch( ... ) );
+		add_action( self::HOOK_NAME, [ $this, 'dispatch' ] );
 	}
 
 	/**

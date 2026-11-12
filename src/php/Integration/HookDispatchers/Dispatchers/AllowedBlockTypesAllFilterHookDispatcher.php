@@ -67,7 +67,7 @@ final class AllowedBlockTypesAllFilterHookDispatcher implements HookDispatcherIn
 	#[Override]
 	public function register(): void {
 
-		add_filter( self::HOOK_NAME, $this->dispatch( ... ), 10, 2 );
+		add_filter( self::HOOK_NAME, [ $this, 'dispatch' ], 10, 2 );
 	}
 
 	/**

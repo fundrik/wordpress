@@ -4,89 +4,97 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers\Dispatchers;
 
+use ArrayObject;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
-use Fundrik\WordPress\Tests\Fixtures\InvokableListenerSpy;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass( AdminInitActionHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 final class AdminInitActionHookDispatcherTest extends WordPressTestCase {
-
-	use DispatcherTestHelpers;
 
 	private const string HOOK_NAME = 'admin_init';
 
 	private AdminInitActionHookDispatcher $dispatcher;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
 		$this->dispatcher = new AdminInitActionHookDispatcher(
-			$this->create_logger_expect_no_errors(),
+			new HookDispatcherLogger( Mockery::mock( LoggerInterface::class ) ),
 		);
 	}
 
 	#[Test]
-	public function register_registers_action(): void {
+	public function register_registers_admin_init_action_callback(): void {
+
+		Actions\expectAdded( self::HOOK_NAME )
+			->once()
+			->with( [ $this->dispatcher, 'dispatch' ], 10, 1 );
 
 		$this->dispatcher->register();
-
-		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
-	public function handle_calls_all_listeners(): void {
+	public function dispatch_calls_attached_listeners_in_order(): void {
 
-		$this->expect_failure_message_never();
+		$calls = new ArrayObject();
 
-		$listener1 = Mockery::mock( InvokableListenerSpy::class );
-		$listener1->shouldReceive( '__invoke' )->once()->ordered();
+		$this->dispatcher->attach(
+			static function () use ( $calls ): void {
 
-		$listener2 = Mockery::mock( InvokableListenerSpy::class );
-		$listener2->shouldReceive( '__invoke' )->once()->ordered();
+				$calls[] = 'first';
+			},
+		);
+		$this->dispatcher->attach(
+			static function () use ( $calls ): void {
 
-		$this->dispatcher->attach( $listener1 );
-		$this->dispatcher->attach( $listener2 );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
+				$calls[] = 'second';
+			},
 		);
 
-		$callback();
+		$this->dispatcher->dispatch();
+
+		self::assertSame( [ 'first', 'second' ], $calls->getArrayCopy() );
 	}
 
 	#[Test]
-	public function handle_sets_failure_message_and_stops_when_listener_throws(): void {
+	public function dispatch_sets_failure_message_and_stops_after_listener_exception(): void {
 
-		$this->expect_failure_message_once();
+		$second_listener_calls = new ArrayObject();
 
-		$throwing_listener = Mockery::mock( InvokableListenerSpy::class );
-		$throwing_listener
-			->shouldReceive( '__invoke' )
+		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
-			->ordered()
-			->andThrow( new RuntimeException( 'Boom' ) );
+			->with( 'Listener failed.' );
 
-		$listener_after = Mockery::mock( InvokableListenerSpy::class );
-		$listener_after->shouldReceive( '__invoke' )->never();
+		$this->dispatcher->attach(
+			static function (): never {
 
-		$this->dispatcher->attach( $throwing_listener );
-		$this->dispatcher->attach( $listener_after );
+				throw new RuntimeException( 'Listener failed.' );
+			},
+		);
+		$this->dispatcher->attach(
+			static function () use ( $second_listener_calls ): void {
 
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
+				$second_listener_calls[] = true;
+			},
 		);
 
-		$callback();
+		$this->dispatcher->dispatch();
+
+		self::assertCount( 0, $second_listener_calls );
 	}
 }

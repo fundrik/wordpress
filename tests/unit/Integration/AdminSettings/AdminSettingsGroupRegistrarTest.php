@@ -54,8 +54,8 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			'value' => 'USD',
 			'label_for' => $option_name,
 		];
-		$section_callback = null;
-		$render_callback = null;
+		$section_callback = [ $group, 'render_section_description' ];
+		$render_callback = [ $setting, 'render' ];
 		$registration_args = null;
 
 		$this->storage->set( $option_name, 'USD' );
@@ -69,7 +69,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->with(
 				'general',
 				'General',
-				Mockery::capture( $section_callback ),
+				$section_callback,
 				AdminPageDefinitions::ROOT_MENU_SLUG,
 			);
 
@@ -78,7 +78,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->with(
 				$option_name,
 				'Currency',
-				Mockery::capture( $render_callback ),
+				$render_callback,
 				AdminPageDefinitions::ROOT_MENU_SLUG,
 				'general',
 				$field_args,
@@ -94,8 +94,6 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 
 		$this->make_registrar( $group )->register_all();
 
-		self::assertIsCallable( $section_callback );
-		self::assertIsCallable( $render_callback );
 		self::assertIsArray( $registration_args );
 		self::assertSame( WpSchemaType::String->value, $registration_args['type'] );
 		self::assertSame( 'RUB', $registration_args['default'] );
@@ -129,7 +127,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->with(
 				$option_name,
 				'Typed setting',
-				Mockery::type( 'callable' ),
+				[ $setting, 'render' ],
 				AdminPageDefinitions::ROOT_MENU_SLUG,
 				'test_group',
 				Mockery::capture( $field_args ),
@@ -164,7 +162,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->with(
 				$option_name,
 				'Currency',
-				Mockery::type( 'callable' ),
+				[ $setting, 'render' ],
 				AdminPageDefinitions::ROOT_MENU_SLUG,
 				'general',
 				Mockery::capture( $field_args ),
@@ -193,7 +191,7 @@ final class AdminSettingsGroupRegistrarTest extends WordPressTestCase {
 			->with(
 				$option_name,
 				'Currency',
-				Mockery::type( 'callable' ),
+				[ $setting, 'render' ],
 				AdminPageDefinitions::ROOT_MENU_SLUG,
 				'general',
 				Mockery::capture( $field_args ),

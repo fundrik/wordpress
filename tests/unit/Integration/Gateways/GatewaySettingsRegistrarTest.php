@@ -72,15 +72,14 @@ final class GatewaySettingsRegistrarTest extends WordPressTestCase {
 		$registrar->register_all();
 
 		$section = $this->settings_api->get_section( 'gateway_example' );
-		self::assertArrayIsIdenticalToArrayIgnoringListOfKeys(
+		self::assertSame(
 			[
 				'title' => 'Example Gateway',
+				'callback' => [ $gateway, 'render_settings_description' ],
 				'page' => AdminPageDefinitions::ROOT_MENU_SLUG,
 			],
 			$section,
-			[ 'callback' ],
 		);
-		self::assertIsCallable( $section['callback'] );
 
 		$enabled_field = $this->settings_api->get_field( 'fundrik_example_enabled_setting' );
 		self::assertArrayIsIdenticalToArrayIgnoringListOfKeys(
@@ -98,12 +97,15 @@ final class GatewaySettingsRegistrarTest extends WordPressTestCase {
 			$enabled_field,
 			[ 'callback' ],
 		);
-		self::assertIsCallable( $enabled_field['callback'] );
+		self::assertIsArray( $enabled_field['callback'] );
+		self::assertInstanceOf( GatewaySettingCheckboxField::class, $enabled_field['callback'][0] );
+		self::assertSame( 'render', $enabled_field['callback'][1] );
 
 		$declared_field = $this->settings_api->get_field( 'fundrik_example_api_key_setting' );
-		self::assertArrayIsIdenticalToArrayIgnoringListOfKeys(
+		self::assertSame(
 			[
 				'title' => 'API key',
+				'callback' => [ $field, 'render' ],
 				'page' => AdminPageDefinitions::ROOT_MENU_SLUG,
 				'section' => 'gateway_example',
 				'args' => [
@@ -114,9 +116,7 @@ final class GatewaySettingsRegistrarTest extends WordPressTestCase {
 				],
 			],
 			$declared_field,
-			[ 'callback' ],
 		);
-		self::assertIsCallable( $declared_field['callback'] );
 
 		$enabled_setting = $this->settings_api->get_setting( 'fundrik_example_enabled_setting' );
 		self::assertSame( AdminPageDefinitions::SETTINGS_PAGE_ID, $enabled_setting['group'] );

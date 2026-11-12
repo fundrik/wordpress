@@ -4,209 +4,175 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers\Dispatchers;
 
+use Brain\Monkey\Filters;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpBlockEditorContext;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use stdClass;
 use WP_Block_Editor_Context;
 
 #[CoversClass( AllowedBlockTypesAllFilterHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( InvalidHookDispatcherArgumentException::class )]
 final class AllowedBlockTypesAllFilterHookDispatcherTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
 	private const string HOOK_NAME = 'allowed_block_types_all';
 
-	private WP_Block_Editor_Context&MockInterface $editor_context;
+	private LoggerInterface&MockInterface $psr_logger;
+	private AllowedBlockTypesAllFilterHookDispatcher $dispatcher;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->editor_context = Mockery::mock( WP_Block_Editor_Context::class );
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
+		$this->dispatcher = new AllowedBlockTypesAllFilterHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
+		);
 	}
 
 	#[Test]
-	public function register_registers_filter(): void {
+	public function register_registers_allowed_block_types_all_filter_callback(): void {
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
-		);
+		Filters\expectAdded( self::HOOK_NAME )
+			->once()
+			->with( [ $this->dispatcher, 'dispatch' ], 10, 2 );
 
-		$dispatcher->register();
-
-		self::assertNotFalse( has_filter( self::HOOK_NAME ) );
+		$this->dispatcher->register();
 	}
 
 	#[Test]
-	public function handle_dispatches_to_listeners_and_returns_modified_value(): void {
+	public function dispatch_passes_each_listener_the_previous_result(): void {
 
-		$this->expect_failure_message_never();
+		$context = new WpBlockEditorContext();
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
+		$this->dispatcher->attach(
+			static function ( array $allowed, WP_Block_Editor_Context $received_context ) use ( $context ): array {
+
+				self::assertSame( [ 'core/paragraph' ], $allowed );
+				self::assertSame( $context, $received_context );
+
+				return [ ...$allowed, 'core/heading' ];
+			},
 		);
+		$this->dispatcher->attach(
+			static function ( array $allowed, WP_Block_Editor_Context $received_context ) use ( $context ): array {
 
-		$dispatcher->attach(
-			// phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter, Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-			static function ( array|bool $allowed, WP_Block_Editor_Context $context ): array|bool {
+				self::assertSame( [ 'core/paragraph', 'core/heading' ], $allowed );
+				self::assertSame( $context, $received_context );
 
-				if ( $allowed === true ) {
-					return [ 'core/paragraph' ];
-				}
-
-				return $allowed;
+				return [ ...$allowed, 'fundrik/campaign' ];
 			},
 		);
 
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
+		$result = $this->dispatcher->dispatch( [ 'core/paragraph' ], $context );
 
-		$returned = $callback( true, $this->editor_context );
-
-		self::assertSame( [ 'core/paragraph' ], $returned );
+		self::assertSame( [ 'core/paragraph', 'core/heading', 'fundrik/campaign' ], $result );
 	}
 
 	#[Test]
-	public function handle_logs_and_returns_original_when_allowed_is_invalid_scalar(): void {
+	public function dispatch_accepts_boolean_allowed_value(): void {
 
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			AllowedBlockTypesAllFilterHookDispatcher::class,
-			'allowed',
-		);
-
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
-
-		$original = 'invalid';
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, $this->editor_context );
-
-		self::assertSame( $original, $returned );
+		self::assertFalse( $this->dispatcher->dispatch( false, new WpBlockEditorContext() ) );
 	}
 
 	#[Test]
-	public function handle_logs_and_returns_original_when_allowed_is_invalid_array(): void {
+	#[DataProvider( 'invalid_allowed_cases' )]
+	public function dispatch_returns_original_value_when_allowed_is_invalid( mixed $allowed ): void {
 
-		$this->expect_failure_message_once();
+		$this->expect_invalid_argument( 'allowed' );
 
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			AllowedBlockTypesAllFilterHookDispatcher::class,
-			'allowed',
-		);
+		$result = $this->dispatcher->dispatch( $allowed, new WpBlockEditorContext() );
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
-
-		$original = [ new stdClass() ];
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, $this->editor_context );
-
-		self::assertSame( $original, $returned );
+		self::assertSame( $allowed, $result );
 	}
 
 	#[Test]
-	public function handle_logs_and_returns_original_when_editor_context_is_invalid(): void {
+	public function dispatch_returns_original_value_when_editor_context_is_invalid(): void {
 
-		$this->expect_failure_message_once();
+		$this->expect_invalid_argument( 'editor_context' );
 
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			AllowedBlockTypesAllFilterHookDispatcher::class,
-			'editor_context',
-		);
+		$result = $this->dispatcher->dispatch( [ 'core/paragraph' ], new stdClass() );
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
-
-		$original = true;
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, 'invalid-context' );
-
-		self::assertSame( $original, $returned );
+		self::assertSame( [ 'core/paragraph' ], $result );
 	}
 
 	#[Test]
-	public function handle_returns_original_when_listener_throws(): void {
+	public function dispatch_returns_original_value_when_listener_result_is_invalid(): void {
 
-		$this->expect_failure_message_once();
+		$this->expect_invalid_argument( 'allowed' );
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
-		);
+		$this->dispatcher->attach( static fn (): int => 42 );
 
-		$dispatcher->attach(
+		$result = $this->dispatcher->dispatch( [ 'core/paragraph' ], new WpBlockEditorContext() );
+
+		self::assertSame( [ 'core/paragraph' ], $result );
+	}
+
+	#[Test]
+	public function dispatch_sets_failure_message_and_returns_original_value_after_listener_exception(): void {
+
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( 'Listener failed.' );
+
+		$this->dispatcher->attach(
 			static function (): never {
-				throw new RuntimeException( 'Boom' );
+
+				throw new RuntimeException( 'Listener failed.' );
 			},
 		);
+		$this->dispatcher->attach( static fn (): array => [ 'should-not-be-returned' ] );
 
-		$original = true;
+		$result = $this->dispatcher->dispatch( [ 'core/paragraph' ], new WpBlockEditorContext() );
 
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, $this->editor_context );
-
-		self::assertSame( $original, $returned );
+		self::assertSame( [ 'core/paragraph' ], $result );
 	}
 
-	#[Test]
-	public function handle_returns_original_when_listener_returns_invalid_allowed(): void {
+	/**
+	 * Returns invalid allowed block type values.
+	 *
+	 * @return iterable<string, array{mixed}> Invalid values.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	public static function invalid_allowed_cases(): iterable {
 
-		$this->expect_failure_message_once();
+		yield 'unsupported value type' => [ 'core/paragraph' ];
+		yield 'non-string block type' => [ [ 'core/paragraph', 42 ] ];
+	}
 
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			AllowedBlockTypesAllFilterHookDispatcher::class,
-			'allowed',
-		);
+	private function expect_invalid_argument( string $argument ): void {
 
-		$dispatcher = new AllowedBlockTypesAllFilterHookDispatcher( $logger );
+		$message = sprintf( 'Invalid $%s argument in %s hook.', $argument, self::HOOK_NAME );
 
-		$dispatcher->attach(
-			static fn (): mixed => 'not-valid',
-		);
+		$this->psr_logger
+			->shouldReceive( 'error' )
+			->once()
+			->with(
+				$message,
+				Mockery::on(
+					static fn ( array $context ): bool => ( $context['invalid_argument'] ?? null ) === $argument,
+				),
+			);
 
-		$original = true;
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, $this->editor_context );
-
-		self::assertSame( $original, $returned );
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( $message );
 	}
 }

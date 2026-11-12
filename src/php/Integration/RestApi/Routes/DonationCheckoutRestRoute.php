@@ -75,8 +75,8 @@ final readonly class DonationCheckoutRestRoute implements RestRouteInterface {
 		return [
 			[
 				'methods' => WP_REST_Server::CREATABLE,
-				'permission_callback' => __return_true( ... ),
-				'callback' => $this->request_handler->handle( ... ),
+				'permission_callback' => '__return_true',
+				'callback' => [ $this->request_handler, 'handle' ],
 				'args' => $this->get_checkout_route_args(),
 			],
 		];

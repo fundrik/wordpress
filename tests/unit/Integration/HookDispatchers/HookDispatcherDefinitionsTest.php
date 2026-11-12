@@ -6,8 +6,8 @@ namespace Fundrik\WordPress\Tests\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AdminMenuActionHookDispatcher;
-use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\BlockCategoriesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
+use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\BlockCategoriesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\EnqueueBlockEditorAssetsActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDispatcher;
@@ -25,9 +25,9 @@ use PHPUnit\Framework\Attributes\Test;
 final class HookDispatcherDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_hook_dispatcher_classes(): void {
+	public function classes_returns_configured_hook_dispatcher_classes(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			[
 				AdminInitActionHookDispatcher::class,
 				AdminMenuActionHookDispatcher::class,

@@ -129,7 +129,7 @@ final readonly class GatewaySettingsRegistrar {
 		add_settings_section(
 			$this->get_section_id( $gateway ),
 			$gateway->get_label(),
-			$gateway->render_settings_description( ... ),
+			[ $gateway, 'render_settings_description' ],
 			AdminPageDefinitions::ROOT_MENU_SLUG,
 		);
 	}
@@ -151,7 +151,7 @@ final readonly class GatewaySettingsRegistrar {
 		add_settings_field(
 			$option_name,
 			$field->get_label(),
-			$field->render( ... ),
+			[ $field, 'render' ],
 			AdminPageDefinitions::ROOT_MENU_SLUG,
 			$this->get_section_id( $gateway ),
 			[

@@ -67,7 +67,7 @@ final class DeletePostActionHookDispatcher implements HookDispatcherInterface {
 	#[Override]
 	public function register(): void {
 
-		add_action( self::HOOK_NAME, $this->dispatch( ... ), 10, 2 );
+		add_action( self::HOOK_NAME, [ $this, 'dispatch' ], 10, 2 );
 	}
 
 	/**

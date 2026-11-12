@@ -77,7 +77,7 @@ final class RestPreInsertCampaignFilterHookDispatcher implements HookDispatcherI
 	#[Override]
 	public function register(): void {
 
-		add_filter( $this->hook_name, $this->dispatch( ... ), 10, 2 );
+		add_filter( $this->hook_name, [ $this, 'dispatch' ], 10, 2 );
 	}
 
 	/**

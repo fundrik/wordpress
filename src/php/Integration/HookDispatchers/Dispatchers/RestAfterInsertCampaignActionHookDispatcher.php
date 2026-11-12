@@ -76,7 +76,7 @@ final class RestAfterInsertCampaignActionHookDispatcher implements HookDispatche
 	#[Override]
 	public function register(): void {
 
-		add_action( $this->hook_name, $this->dispatch( ... ), 10, 3 );
+		add_action( $this->hook_name, [ $this, 'dispatch' ], 10, 3 );
 	}
 
 	/**

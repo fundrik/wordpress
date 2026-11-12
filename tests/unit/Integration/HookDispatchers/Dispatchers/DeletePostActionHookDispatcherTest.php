@@ -4,139 +4,145 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers\Dispatchers;
 
+use ArrayObject;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\DeletePostActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
-use Fundrik\WordPress\Tests\Fixtures\InvokableListenerSpy;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpPost;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use stdClass;
 use WP_Post;
 
 #[CoversClass( DeletePostActionHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( InvalidHookDispatcherArgumentException::class )]
 final class DeletePostActionHookDispatcherTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
 	private const string HOOK_NAME = 'delete_post';
 
+	private LoggerInterface&MockInterface $psr_logger;
 	private DeletePostActionHookDispatcher $dispatcher;
 
-	private WP_Post $post;
-
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
 		$this->dispatcher = new DeletePostActionHookDispatcher(
-			$this->create_logger_expect_no_errors(),
+			new HookDispatcherLogger( $this->psr_logger ),
 		);
-
-		$this->post = Mockery::mock( WP_Post::class );
 	}
 
 	#[Test]
-	public function register_registers_action_with_expected_hook_name(): void {
+	public function register_registers_delete_post_action_callback(): void {
+
+		Actions\expectAdded( self::HOOK_NAME )
+			->once()
+			->with( [ $this->dispatcher, 'dispatch' ], 10, 2 );
 
 		$this->dispatcher->register();
-
-		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
-	public function handle_dispatches_to_listeners_with_valid_arguments(): void {
+	public function dispatch_calls_attached_listeners_in_order_with_validated_arguments(): void {
 
-		$this->expect_failure_message_never();
+		$post = new WpPost( id: 42 );
+		$calls = new ArrayObject();
 
-		$listener = Mockery::mock( InvokableListenerSpy::class );
+		$this->dispatcher->attach(
+			static function ( int $post_id, WP_Post $received_post ) use ( $post, $calls ): void {
 
-		$listener
-			->shouldReceive( '__invoke' )
+				self::assertSame( 42, $post_id );
+				self::assertSame( $post, $received_post );
+				$calls[] = 'first';
+			},
+		);
+		$this->dispatcher->attach(
+			static function ( int $post_id, WP_Post $received_post ) use ( $post, $calls ): void {
+
+				self::assertSame( 42, $post_id );
+				self::assertSame( $post, $received_post );
+				$calls[] = 'second';
+			},
+		);
+
+		$this->dispatcher->dispatch( 42, $post );
+
+		self::assertSame( [ 'first', 'second' ], $calls->getArrayCopy() );
+	}
+
+	#[Test]
+	public function dispatch_rejects_non_integer_post_id(): void {
+
+		$this->expect_invalid_argument( 'post_id' );
+
+		$this->dispatcher->dispatch( '42', new WpPost( id: 42 ) );
+	}
+
+	#[Test]
+	public function dispatch_rejects_non_post_value(): void {
+
+		$this->expect_invalid_argument( 'post' );
+
+		$this->dispatcher->dispatch( 42, new stdClass() );
+	}
+
+	#[Test]
+	public function dispatch_sets_failure_message_and_stops_after_listener_exception(): void {
+
+		$second_listener_calls = new ArrayObject();
+
+		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
-			->ordered()
-			->with( 123, $this->post );
+			->with( 'Listener failed.' );
 
-		$this->dispatcher->attach( $listener );
+		$this->dispatcher->attach(
+			static function (): never {
 
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
+				throw new RuntimeException( 'Listener failed.' );
+			},
+		);
+		$this->dispatcher->attach(
+			static function () use ( $second_listener_calls ): void {
+
+				$second_listener_calls[] = true;
+			},
 		);
 
-		$callback( 123, $this->post );
+		$this->dispatcher->dispatch( 42, new WpPost( id: 42 ) );
+
+		self::assertCount( 0, $second_listener_calls );
 	}
 
-	#[Test]
-	public function handle_logs_and_returns_when_post_id_is_invalid(): void {
+	private function expect_invalid_argument( string $argument ): void {
 
-		$this->expect_failure_message_once();
+		$message = sprintf( 'Invalid $%s argument in %s hook.', $argument, self::HOOK_NAME );
 
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			DeletePostActionHookDispatcher::class,
-			'post_id',
-		);
-
-		$dispatcher = new DeletePostActionHookDispatcher( $logger );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$callback( 'invalid-id', $this->post );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_when_post_is_invalid(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			DeletePostActionHookDispatcher::class,
-			'post',
-		);
-
-		$dispatcher = new DeletePostActionHookDispatcher( $logger );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$callback( 123, 'invalid-post' );
-	}
-
-	#[Test]
-	public function handle_sets_failure_message_and_returns_when_listener_throws(): void {
-
-		$this->expect_failure_message_once();
-
-		$throwing_listener = Mockery::mock( InvokableListenerSpy::class );
-		$throwing_listener
-			->shouldReceive( '__invoke' )
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
-			->ordered()
-			->andThrow( new RuntimeException( 'Boom' ) );
+			->with(
+				$message,
+				Mockery::on(
+					static fn ( array $context ): bool => ( $context['invalid_argument'] ?? null ) === $argument,
+				),
+			);
 
-		$listener_after = Mockery::mock( InvokableListenerSpy::class );
-		$listener_after->shouldReceive( '__invoke' )->never();
-
-		$this->dispatcher->attach( $throwing_listener );
-		$this->dispatcher->attach( $listener_after );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
-		);
-
-		$callback( 123, $this->post );
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( $message );
 	}
 }

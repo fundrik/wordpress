@@ -6,7 +6,6 @@ namespace Fundrik\WordPress\Tests\Integration\HookDispatchers;
 
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
 use Fundrik\WordPress\Tests\FundrikTestCase;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -14,27 +13,26 @@ use PHPUnit\Framework\Attributes\Test;
 final class InvalidHookDispatcherArgumentExceptionTest extends FundrikTestCase {
 
 	#[Test]
-	public function create_sets_argument_and_hook_and_uses_default_message(): void {
+	public function constructor_sets_context_and_uses_custom_message(): void {
 
-		$e = InvalidHookDispatcherArgumentException::create( argument: 'post_id', hook: 'delete_post' );
+		$exception = new InvalidHookDispatcherArgumentException(
+			argument: 'allowed',
+			hook: 'allowed_block_types_all',
+			message: 'Custom validation message.',
+		);
 
-		self::assertInstanceOf( InvalidArgumentException::class, $e );
-		self::assertSame( 'post_id', $e->argument );
-		self::assertSame( 'delete_post', $e->hook );
-		self::assertSame( 'Invalid $post_id argument in delete_post hook.', $e->getMessage() );
+		self::assertSame( 'allowed', $exception->argument );
+		self::assertSame( 'allowed_block_types_all', $exception->hook );
+		self::assertSame( 'Custom validation message.', $exception->getMessage() );
 	}
 
 	#[Test]
-	public function constructor_uses_custom_message_when_provided(): void {
+	public function create_returns_exception_with_context_and_default_message(): void {
 
-		$e = new InvalidHookDispatcherArgumentException(
-			argument: 'allowed',
-			hook: 'allowed_block_types_all',
-			message: 'Custom message.',
-		);
+		$exception = InvalidHookDispatcherArgumentException::create( argument: 'post_id', hook: 'delete_post' );
 
-		self::assertSame( 'allowed', $e->argument );
-		self::assertSame( 'allowed_block_types_all', $e->hook );
-		self::assertSame( 'Custom message.', $e->getMessage() );
+		self::assertSame( 'post_id', $exception->argument );
+		self::assertSame( 'delete_post', $exception->hook );
+		self::assertSame( 'Invalid $post_id argument in delete_post hook.', $exception->getMessage() );
 	}
 }

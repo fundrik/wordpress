@@ -4,117 +4,130 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers\Dispatchers;
 
+use ArrayObject;
+use Brain\Monkey\Actions;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestApiInitActionHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
-use Fundrik\WordPress\Tests\Fixtures\InvokableListenerSpy;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
+use Fundrik\WordPress\Tests\Fixtures\WordPress\WpRestServer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use stdClass;
 use WP_REST_Server;
 
 #[CoversClass( RestApiInitActionHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( InvalidHookDispatcherArgumentException::class )]
 final class RestApiInitActionHookDispatcherTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
 	private const string HOOK_NAME = 'rest_api_init';
 
+	private LoggerInterface&MockInterface $psr_logger;
 	private RestApiInitActionHookDispatcher $dispatcher;
-	private WP_REST_Server $server;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
 		$this->dispatcher = new RestApiInitActionHookDispatcher(
-			$this->create_logger_expect_no_errors(),
+			new HookDispatcherLogger( $this->psr_logger ),
 		);
-
-		$this->server = Mockery::mock( WP_REST_Server::class );
 	}
 
 	#[Test]
-	public function register_registers_action_with_expected_hook_name(): void {
+	public function register_registers_rest_api_init_action_callback(): void {
+
+		Actions\expectAdded( self::HOOK_NAME )
+			->once()
+			->with( [ $this->dispatcher, 'dispatch' ], 10, 1 );
 
 		$this->dispatcher->register();
-
-		self::assertNotFalse( has_action( self::HOOK_NAME ) );
 	}
 
 	#[Test]
-	public function handle_dispatches_to_listeners_with_valid_arguments(): void {
+	public function dispatch_calls_attached_listeners_in_order_with_validated_server(): void {
 
-		$this->expect_failure_message_never();
+		$server = new WpRestServer();
+		$calls = new ArrayObject();
 
-		$listener = Mockery::mock( InvokableListenerSpy::class );
+		$this->dispatcher->attach(
+			static function ( WP_REST_Server $received_server ) use ( $server, $calls ): void {
 
-		$listener
-			->shouldReceive( '__invoke' )
+				self::assertSame( $server, $received_server );
+				$calls[] = 'first';
+			},
+		);
+		$this->dispatcher->attach(
+			static function ( WP_REST_Server $received_server ) use ( $server, $calls ): void {
+
+				self::assertSame( $server, $received_server );
+				$calls[] = 'second';
+			},
+		);
+
+		$this->dispatcher->dispatch( $server );
+
+		self::assertSame( [ 'first', 'second' ], $calls->getArrayCopy() );
+	}
+
+	#[Test]
+	public function dispatch_rejects_non_rest_server_value(): void {
+
+		$message = 'Invalid $server argument in rest_api_init hook.';
+
+		$this->psr_logger
+			->shouldReceive( 'error' )
 			->once()
-			->ordered()
-			->with( $this->server );
+			->with(
+				$message,
+				Mockery::on(
+					static fn ( array $context ): bool => ( $context['invalid_argument'] ?? null ) === 'server',
+				),
+			);
 
-		$this->dispatcher->attach( $listener );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
-		);
-
-		$callback( $this->server );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_when_server_is_invalid(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			RestApiInitActionHookDispatcher::class,
-			'server',
-		);
-
-		$dispatcher = new RestApiInitActionHookDispatcher( $logger );
-
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$callback( 'invalid-server' );
-	}
-
-	#[Test]
-	public function handle_sets_failure_message_and_returns_when_listener_throws(): void {
-
-		$this->expect_failure_message_once();
-
-		$throwing_listener = Mockery::mock( InvokableListenerSpy::class );
-		$throwing_listener
-			->shouldReceive( '__invoke' )
+		Functions\expect( 'fundrik_set_failure_message' )
 			->once()
-			->ordered()
-			->andThrow( new RuntimeException( 'Boom' ) );
+			->with( $message );
 
-		$listener_after = Mockery::mock( InvokableListenerSpy::class );
-		$listener_after->shouldReceive( '__invoke' )->never();
+		$this->dispatcher->dispatch( new stdClass() );
+	}
 
-		$this->dispatcher->attach( $throwing_listener );
-		$this->dispatcher->attach( $listener_after );
+	#[Test]
+	public function dispatch_sets_failure_message_and_stops_after_listener_exception(): void {
 
-		$callback = $this->register_and_capture_action_callback(
-			self::HOOK_NAME,
-			$this->dispatcher->register( ... ),
+		$second_listener_calls = new ArrayObject();
+
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( 'Listener failed.' );
+
+		$this->dispatcher->attach(
+			static function (): never {
+
+				throw new RuntimeException( 'Listener failed.' );
+			},
+		);
+		$this->dispatcher->attach(
+			static function () use ( $second_listener_calls ): void {
+
+				$second_listener_calls[] = true;
+			},
 		);
 
-		$callback( $this->server );
+		$this->dispatcher->dispatch( new WpRestServer() );
+
+		self::assertCount( 0, $second_listener_calls );
 	}
 }

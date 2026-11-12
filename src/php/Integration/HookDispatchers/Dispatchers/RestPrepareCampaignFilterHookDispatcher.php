@@ -77,7 +77,7 @@ final class RestPrepareCampaignFilterHookDispatcher implements HookDispatcherInt
 	#[Override]
 	public function register(): void {
 
-		add_filter( $this->hook_name, $this->dispatch( ... ), 10, 3 );
+		add_filter( $this->hook_name, [ $this, 'dispatch' ], 10, 3 );
 	}
 
 	/**

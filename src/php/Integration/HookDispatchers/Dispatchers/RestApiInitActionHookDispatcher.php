@@ -67,7 +67,7 @@ final class RestApiInitActionHookDispatcher implements HookDispatcherInterface {
 	#[Override]
 	public function register(): void {
 
-		add_action( self::HOOK_NAME, $this->dispatch( ... ), 10, 1 );
+		add_action( self::HOOK_NAME, [ $this, 'dispatch' ], 10, 1 );
 	}
 
 	/**

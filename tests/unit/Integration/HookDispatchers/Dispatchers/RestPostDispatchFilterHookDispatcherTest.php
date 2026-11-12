@@ -4,208 +4,199 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\HookDispatchers\Dispatchers;
 
+use Brain\Monkey\Filters;
+use Brain\Monkey\Functions;
+use Fundrik\WordPress\Infrastructure\Logger;
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\RestPostDispatchFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\HookDispatchers\InvalidHookDispatcherArgumentException;
-use Fundrik\WordPress\Tests\Integration\HookDispatchers\DispatcherTestHelpers;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use stdClass;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 
 #[CoversClass( RestPostDispatchFilterHookDispatcher::class )]
+#[UsesClass( Logger::class )]
 #[UsesClass( HookDispatcherLogger::class )]
 #[UsesClass( InvalidHookDispatcherArgumentException::class )]
 final class RestPostDispatchFilterHookDispatcherTest extends WordPressTestCase {
 
-	use DispatcherTestHelpers;
-
 	private const string HOOK_NAME = 'rest_post_dispatch';
 
-	private WP_REST_Request&MockInterface $request;
-	private WP_REST_Server&MockInterface $server;
+	private LoggerInterface&MockInterface $psr_logger;
+	private RestPostDispatchFilterHookDispatcher $dispatcher;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		$this->request = Mockery::mock( WP_REST_Request::class );
-		$this->server = Mockery::mock( WP_REST_Server::class );
+		$this->psr_logger = Mockery::mock( LoggerInterface::class );
+		$this->dispatcher = new RestPostDispatchFilterHookDispatcher(
+			new HookDispatcherLogger( $this->psr_logger ),
+		);
 	}
 
 	#[Test]
-	public function register_registers_filter(): void {
+	public function register_registers_rest_post_dispatch_filter_callback(): void {
 
-		$dispatcher = new RestPostDispatchFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
-		);
+		Filters\expectAdded( self::HOOK_NAME )
+			->once()
+			->with( [ $this->dispatcher, 'dispatch' ], 10, 3 );
 
-		$dispatcher->register();
-
-		self::assertNotFalse( has_filter( self::HOOK_NAME ) );
+		$this->dispatcher->register();
 	}
 
 	#[Test]
-	public function handle_dispatches_to_listeners_and_returns_modified_response(): void {
+	public function dispatch_passes_each_listener_the_previous_response(): void {
 
-		$this->expect_failure_message_never();
+		$initial_response = new WP_REST_Response( [ 'stage' => 'initial' ] );
+		$first_response = new WP_REST_Response( [ 'stage' => 'first' ] );
+		$second_response = new WP_REST_Response( [ 'stage' => 'second' ] );
+		$server = new WP_REST_Server();
+		$request = new WP_REST_Request();
 
-		$dispatcher = new RestPostDispatchFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
+		$this->dispatcher->attach(
+			static function (
+				WP_REST_Response $response,
+				WP_REST_Server $received_server,
+				WP_REST_Request $received_request,
+			) use (
+				$initial_response,
+				$first_response,
+				$server,
+				$request,
+			): WP_REST_Response {
+
+				self::assertSame( $initial_response, $response );
+				self::assertSame( $server, $received_server );
+				self::assertSame( $request, $received_request );
+
+				return $first_response;
+			},
 		);
+		$this->dispatcher->attach(
+			static function (
+				WP_REST_Response $response,
+				WP_REST_Server $received_server,
+				WP_REST_Request $received_request,
+			) use (
+				$first_response,
+				$second_response,
+				$server,
+				$request,
+			): WP_REST_Response {
 
-		$response = Mockery::mock( WP_REST_Response::class );
-		$changed = Mockery::mock( WP_REST_Response::class );
+				self::assertSame( $first_response, $response );
+				self::assertSame( $server, $received_server );
+				self::assertSame( $request, $received_request );
 
-		$dispatcher->attach(
-			// phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter, Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-			static fn ( WP_REST_Response $r, WP_REST_Server $s, WP_REST_Request $q ): WP_REST_Response => $changed,
-		);
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $response, $this->server, $this->request );
-
-		self::assertSame( $changed, $returned );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_original_when_response_is_invalid(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			RestPostDispatchFilterHookDispatcher::class,
-			'response',
-		);
-
-		$dispatcher = new RestPostDispatchFilterHookDispatcher( $logger );
-
-		$original = 'invalid-response';
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $original, $this->server, $this->request );
-
-		self::assertSame( $original, $returned );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_original_when_server_is_invalid(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			RestPostDispatchFilterHookDispatcher::class,
-			'server',
-		);
-
-		$dispatcher = new RestPostDispatchFilterHookDispatcher( $logger );
-
-		$response = Mockery::mock( WP_REST_Response::class );
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $response, 'invalid-server', $this->request );
-
-		self::assertSame( $response, $returned );
-	}
-
-	#[Test]
-	public function handle_logs_and_returns_original_when_request_is_invalid(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			RestPostDispatchFilterHookDispatcher::class,
-			'request',
-		);
-
-		$dispatcher = new RestPostDispatchFilterHookDispatcher( $logger );
-
-		$response = Mockery::mock( WP_REST_Response::class );
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $response, $this->server, 'invalid-request' );
-
-		self::assertSame( $response, $returned );
-	}
-
-	#[Test]
-	public function handle_returns_original_when_listener_returns_invalid_response(): void {
-
-		$this->expect_failure_message_once();
-
-		$logger = $this->create_logger_expect_invalid_input_error(
-			self::HOOK_NAME,
-			RestPostDispatchFilterHookDispatcher::class,
-			'response',
-		);
-
-		$dispatcher = new RestPostDispatchFilterHookDispatcher( $logger );
-
-		$dispatcher->attach(
-			static fn (): mixed => 'not-a-response',
-		);
-
-		$response = Mockery::mock( WP_REST_Response::class );
-
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
-		);
-
-		$returned = $callback( $response, $this->server, $this->request );
-
-		self::assertSame( $response, $returned );
-	}
-
-	#[Test]
-	public function handle_returns_original_when_listener_throws(): void {
-
-		$this->expect_failure_message_once();
-
-		$dispatcher = new RestPostDispatchFilterHookDispatcher(
-			$this->create_logger_expect_no_errors(),
-		);
-
-		$dispatcher->attach(
-			static function (): never {
-				throw new RuntimeException( 'Boom' );
+				return $second_response;
 			},
 		);
 
-		$response = Mockery::mock( WP_REST_Response::class );
+		$result = $this->dispatcher->dispatch( $initial_response, $server, $request );
 
-		$callback = $this->register_and_capture_filter_callback(
-			self::HOOK_NAME,
-			$dispatcher->register( ... ),
+		self::assertSame( $second_response, $result );
+	}
+
+	#[Test]
+	public function dispatch_returns_original_value_when_response_is_invalid(): void {
+
+		$response = new stdClass();
+
+		$this->expect_invalid_argument( 'response' );
+
+		$result = $this->dispatcher->dispatch( $response, new WP_REST_Server(), new WP_REST_Request() );
+
+		self::assertSame( $response, $result );
+	}
+
+	#[Test]
+	public function dispatch_returns_original_response_when_server_is_invalid(): void {
+
+		$response = new WP_REST_Response();
+
+		$this->expect_invalid_argument( 'server' );
+
+		$result = $this->dispatcher->dispatch( $response, new stdClass(), new WP_REST_Request() );
+
+		self::assertSame( $response, $result );
+	}
+
+	#[Test]
+	public function dispatch_returns_original_response_when_request_is_invalid(): void {
+
+		$response = new WP_REST_Response();
+
+		$this->expect_invalid_argument( 'request' );
+
+		$result = $this->dispatcher->dispatch( $response, new WP_REST_Server(), new stdClass() );
+
+		self::assertSame( $response, $result );
+	}
+
+	#[Test]
+	public function dispatch_returns_original_response_when_listener_result_is_invalid(): void {
+
+		$response = new WP_REST_Response();
+
+		$this->expect_invalid_argument( 'response' );
+
+		$this->dispatcher->attach( static fn (): stdClass => new stdClass() );
+
+		$result = $this->dispatcher->dispatch( $response, new WP_REST_Server(), new WP_REST_Request() );
+
+		self::assertSame( $response, $result );
+	}
+
+	#[Test]
+	public function dispatch_sets_failure_message_and_returns_original_response_after_listener_exception(): void {
+
+		$response = new WP_REST_Response();
+
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( 'Listener failed.' );
+
+		$this->dispatcher->attach(
+			static function (): never {
+
+				throw new RuntimeException( 'Listener failed.' );
+			},
 		);
+		$this->dispatcher->attach( static fn (): WP_REST_Response => new WP_REST_Response() );
 
-		$returned = $callback( $response, $this->server, $this->request );
+		$result = $this->dispatcher->dispatch( $response, new WP_REST_Server(), new WP_REST_Request() );
 
-		self::assertSame( $response, $returned );
+		self::assertSame( $response, $result );
+	}
+
+	private function expect_invalid_argument( string $argument ): void {
+
+		$message = sprintf( 'Invalid $%s argument in %s hook.', $argument, self::HOOK_NAME );
+
+		$this->psr_logger
+			->shouldReceive( 'error' )
+			->once()
+			->with(
+				$message,
+				Mockery::on(
+					static fn ( array $context ): bool => ( $context['invalid_argument'] ?? null ) === $argument,
+				),
+			);
+
+		Functions\expect( 'fundrik_set_failure_message' )
+			->once()
+			->with( $message );
 	}
 }

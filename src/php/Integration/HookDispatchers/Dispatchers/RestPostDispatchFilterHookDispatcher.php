@@ -74,7 +74,7 @@ final class RestPostDispatchFilterHookDispatcher implements HookDispatcherInterf
 	#[Override]
 	public function register(): void {
 
-		add_filter( self::HOOK_NAME, $this->dispatch( ... ), 10, 3 );
+		add_filter( self::HOOK_NAME, [ $this, 'dispatch' ], 10, 3 );
 	}
 
 	/**

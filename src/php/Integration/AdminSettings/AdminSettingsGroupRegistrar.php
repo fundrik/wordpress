@@ -78,7 +78,7 @@ final readonly class AdminSettingsGroupRegistrar {
 		add_settings_section(
 			$group->get_id(),
 			$group->get_section_title(),
-			$group->render_section_description( ... ),
+			[ $group, 'render_section_description' ],
 			AdminPageDefinitions::ROOT_MENU_SLUG,
 		);
 	}
@@ -136,7 +136,7 @@ final readonly class AdminSettingsGroupRegistrar {
 		add_settings_field(
 			$registration->option_name,
 			$registration->setting->get_label(),
-			$registration->setting->render( ... ),
+			[ $registration->setting, 'render' ],
 			AdminPageDefinitions::ROOT_MENU_SLUG,
 			$registration->group_id,
 			[
