@@ -17,33 +17,31 @@ use PHPUnit\Framework\Attributes\UsesClass;
 final class PostTypeMetaFieldTest extends FundrikTestCase {
 
 	#[Test]
-	public function constructor_sets_type_and_default(): void {
+	public function to_definition_returns_definition_without_default(): void {
 
-		$attribute = new PostTypeMetaField( WpSchemaType::Boolean, true );
+		$field = new PostTypeMetaField( WpSchemaType::Integer );
 
-		self::assertSame( WpSchemaType::Boolean, $attribute->type );
-		self::assertTrue( $attribute->default );
+		self::assertEquals(
+			new PostTypeMetaFieldDefinition(
+				'fundrik_campaign_target_amount',
+				WpSchemaType::Integer,
+			),
+			$field->to_definition( 'fundrik_campaign_target_amount' ),
+		);
 	}
 
 	#[Test]
-	public function to_definition_returns_definition_without_default_when_default_is_null(): void {
+	public function to_definition_preserves_configured_default(): void {
 
-		$attribute = new PostTypeMetaField( WpSchemaType::Number );
-		$definition = $attribute->to_definition( 'fundrik_amount' );
+		$field = new PostTypeMetaField( WpSchemaType::Boolean, false );
 
-		self::assertSame( 'fundrik_amount', $definition->meta_key );
-		self::assertSame( WpSchemaType::Number, $definition->type );
-		self::assertNull( $definition->default_value );
-	}
-
-	#[Test]
-	public function to_definition_includes_default_when_provided(): void {
-
-		$attribute = new PostTypeMetaField( WpSchemaType::Boolean, true );
-		$definition = $attribute->to_definition( 'fundrik_enabled' );
-
-		self::assertSame( 'fundrik_enabled', $definition->meta_key );
-		self::assertSame( WpSchemaType::Boolean, $definition->type );
-		self::assertTrue( $definition->default_value );
+		self::assertEquals(
+			new PostTypeMetaFieldDefinition(
+				'fundrik_campaign_accepts_donations',
+				WpSchemaType::Boolean,
+				false,
+			),
+			$field->to_definition( 'fundrik_campaign_accepts_donations' ),
+		);
 	}
 }

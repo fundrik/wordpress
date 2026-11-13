@@ -10,156 +10,199 @@ use Fundrik\WordPress\Integration\AdminPages\AdminPageDefinitions;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostMetaRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\Exceptions\PostTypeRegistrationException;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
+use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldDefinition;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\RegistrarPostTypeConfig;
 use Fundrik\WordPress\Tests\WordPressTestCase;
-use Mockery;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use WP_Error;
 
 #[CoversClass( PostTypeRegistrar::class )]
+#[UsesClass( AdminPageDefinitions::class )]
 #[UsesClass( PostTypeMetaField::class )]
+#[UsesClass( PostTypeMetaFieldDefinition::class )]
 #[UsesClass( PostTypeMetaFieldReader::class )]
 final class PostTypeRegistrarTest extends WordPressTestCase {
 
+	private const string POST_TYPE_ID = 'fixture_campaign';
+	private const string LABELS_FILTER = 'fundrik_fixture_campaign_post_type_labels';
+	private const string SLUG_FILTER = 'fundrik_fixture_campaign_post_type_slug';
+
+	private RegistrarPostTypeConfig $config;
 	private PostTypeRegistrar $registrar;
 
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
+		$this->config = new RegistrarPostTypeConfig();
 		$this->registrar = new PostTypeRegistrar( new PostTypeMetaFieldReader() );
 	}
 
 	#[Test]
-	public function it_registers_post_type_and_then_registers_all_meta_fields(): void {
+	public function register_registers_filtered_post_type_and_declared_meta_fields(): void {
 
-		$config = new GammaPostTypeConfig();
+		$filtered_labels = [
+			'name' => 'Filtered campaigns',
+			'singular_name' => 'Filtered campaign',
+		];
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_labels' )
+		Filters\expectApplied( self::LABELS_FILTER )
 			->once()
-			->with( [ 'name' => 'Gamma' ] )
-			->andReturn( [ 'name' => 'Gamma Filtered' ] );
+			->with( $this->config->get_labels() )
+			->andReturn( $filtered_labels );
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_slug' )
+		Filters\expectApplied( self::SLUG_FILTER )
 			->once()
-			->with( 'gamma' )
-			->andReturn( 'gamma-filtered' );
+			->with( 'fixture-campaigns' )
+			->andReturn( 'filtered-campaigns' );
 
 		Functions\expect( 'register_post_type' )
 			->once()
 			->with(
-				'gamma',
-				Mockery::on(
-					static fn ( array $args ): bool => $args['labels'] === [ 'name' => 'Gamma Filtered' ]
-						&& $args['rewrite'] === [ 'slug' => 'gamma-filtered' ]
-						&& $args['template'] === [ [ 'gamma/block' ] ]
-						&& $args['public'] === true
-						&& $args['menu_icon'] === 'dashicons-heart'
-						&& $args['supports'] === [ 'title', 'editor', 'thumbnail', 'custom-fields' ]
-						&& $args['show_in_menu'] === AdminPageDefinitions::ROOT_MENU_SLUG
-						&& $args['has_archive'] === true
-						&& $args['show_in_rest'] === true,
-				),
+				self::POST_TYPE_ID,
+				$this->expected_post_type_args( $filtered_labels, 'filtered-campaigns' ),
 			)
 			->andReturn( true );
 
-		Functions\expect( 'register_post_meta' )
-			->once()
-			->with(
-				'gamma',
-				'gamma_is_open',
-				[
-					'type' => 'boolean',
-					'default' => true,
-					'show_in_rest' => true,
-					'single' => true,
-				],
-			)
-			->andReturn( true );
+		$this->expect_successful_meta_registration();
 
-		Functions\expect( 'register_post_meta' )
-			->once()
-			->with(
-				'gamma',
-				'gamma_amount',
-				[
-					'type' => 'integer',
-					'default' => 0,
-					'show_in_rest' => true,
-					'single' => true,
-				],
-			)
-			->andReturn( true );
-
-		$this->registrar->register( $config );
-
-		self::assertTrue( true );
+		$this->registrar->register( $this->config );
 	}
 
 	#[Test]
-	public function it_throws_when_post_type_registration_returns_wp_error(): void {
+	public function register_uses_original_labels_when_filter_result_is_invalid(): void {
 
-		$config = new GammaPostTypeConfig();
+		$labels = $this->config->get_labels();
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_labels' )
+		Filters\expectApplied( self::LABELS_FILTER )
 			->once()
-			->with( [ 'name' => 'Gamma' ] )
-			->andReturn( [ 'name' => 'Gamma' ] );
+			->with( $labels )
+			->andReturn( 'invalid' );
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_slug' )
+		Filters\expectApplied( self::SLUG_FILTER )
 			->once()
-			->with( 'gamma' )
-			->andReturn( 'gamma' );
+			->with( 'fixture-campaigns' );
 
-		$wp_error = Mockery::mock( WP_Error::class );
-		$wp_error->shouldReceive( 'get_error_message' )->once()->andReturn( 'Boom' );
+		Functions\expect( '_doing_it_wrong' )
+			->once()
+			->with(
+				self::LABELS_FILTER,
+				'Filter must return an array of strings. Given: string.',
+				'1.0.0',
+			);
 
 		Functions\expect( 'register_post_type' )
 			->once()
-			->with( 'gamma', Mockery::type( 'array' ) )
-			->andReturn( $wp_error );
+			->with(
+				self::POST_TYPE_ID,
+				$this->expected_post_type_args( $labels, 'fixture-campaigns' ),
+			)
+			->andReturn( true );
 
-		Functions\expect( 'register_post_meta' )->never();
+		$this->expect_successful_meta_registration();
+
+		$this->registrar->register( $this->config );
+	}
+
+	#[Test]
+	public function register_uses_original_slug_when_filter_result_is_invalid(): void {
+
+		$labels = $this->config->get_labels();
+
+		Filters\expectApplied( self::LABELS_FILTER )
+			->once()
+			->with( $labels );
+
+		Filters\expectApplied( self::SLUG_FILTER )
+			->once()
+			->with( 'fixture-campaigns' )
+			->andReturn( 42 );
+
+		Functions\expect( '_doing_it_wrong' )
+			->once()
+			->with(
+				self::SLUG_FILTER,
+				'Filter must return a string. Given: int.',
+				'1.0.0',
+			);
+
+		Functions\expect( 'register_post_type' )
+			->once()
+			->with(
+				self::POST_TYPE_ID,
+				$this->expected_post_type_args( $labels, 'fixture-campaigns' ),
+			)
+			->andReturn( true );
+
+		$this->expect_successful_meta_registration();
+
+		$this->registrar->register( $this->config );
+	}
+
+	#[Test]
+	public function register_throws_when_post_type_registration_fails(): void {
+
+		$labels = $this->config->get_labels();
+
+		Filters\expectApplied( self::LABELS_FILTER )
+			->once()
+			->with( $labels );
+
+		Filters\expectApplied( self::SLUG_FILTER )
+			->once()
+			->with( 'fixture-campaigns' );
+
+		Functions\expect( 'register_post_type' )
+			->once()
+			->with(
+				self::POST_TYPE_ID,
+				$this->expected_post_type_args( $labels, 'fixture-campaigns' ),
+			)
+			->andReturn( new WP_Error( 'registration_failed', 'Database rejected the post type' ) );
 
 		$this->expectException( PostTypeRegistrationException::class );
-		$this->expectExceptionMessage( 'Cannot register post type "gamma": Boom.' );
+		$this->expectExceptionMessage(
+			'Cannot register post type "fixture_campaign": Database rejected the post type.',
+		);
 
-		$this->registrar->register( $config );
+		$this->registrar->register( $this->config );
 	}
 
 	#[Test]
-	public function it_throws_when_any_meta_field_registration_fails(): void {
+	public function register_throws_when_meta_field_registration_fails(): void {
 
-		$config = new GammaPostTypeConfig();
+		$labels = $this->config->get_labels();
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_labels' )
+		Filters\expectApplied( self::LABELS_FILTER )
 			->once()
-			->with( [ 'name' => 'Gamma' ] )
-			->andReturn( [ 'name' => 'Gamma' ] );
+			->with( $labels );
 
-		Filters\expectApplied( 'fundrik_gamma_post_type_slug' )
+		Filters\expectApplied( self::SLUG_FILTER )
 			->once()
-			->with( 'gamma' )
-			->andReturn( 'gamma' );
+			->with( 'fixture-campaigns' );
 
 		Functions\expect( 'register_post_type' )
 			->once()
-			->with( 'gamma', Mockery::type( 'array' ) )
+			->with(
+				self::POST_TYPE_ID,
+				$this->expected_post_type_args( $labels, 'fixture-campaigns' ),
+			)
 			->andReturn( true );
 
-		// Fail on the first meta registration. The second must not happen.
 		Functions\expect( 'register_post_meta' )
 			->once()
 			->with(
-				'gamma',
-				'gamma_is_open',
+				self::POST_TYPE_ID,
+				RegistrarPostTypeConfig::META_ENABLED,
 				[
 					'type' => 'boolean',
-					'default' => true,
+					'default' => false,
 					'show_in_rest' => true,
 					'single' => true,
 				],
@@ -167,8 +210,52 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 			->andReturn( false );
 
 		$this->expectException( PostMetaRegistrationException::class );
-		$this->expectExceptionMessage( 'Failed to register post meta "gamma_is_open" for post type "gamma".' );
+		$this->expectExceptionMessage(
+			'Failed to register post meta "fixture_campaign_enabled" for post type "fixture_campaign".',
+		);
 
-		$this->registrar->register( $config );
+		$this->registrar->register( $this->config );
+	}
+
+	/**
+	 * Returns expected WordPress post type registration arguments.
+	 *
+	 * @param array<string, string> $labels Post type labels.
+	 * @param string $slug Rewrite slug.
+	 *
+	 * @return array<string, mixed> Registration arguments.
+	 *
+	 * @phpcsSuppress SlevomatCodingStandard.TypeHints.DisallowMixedTypeHint.DisallowedMixedTypeHint
+	 */
+	private function expected_post_type_args( array $labels, string $slug ): array {
+
+		return [
+			'labels' => $labels,
+			'public' => true,
+			'menu_icon' => 'dashicons-heart',
+			'supports' => [ 'title', 'editor', 'thumbnail', 'custom-fields' ],
+			'has_archive' => true,
+			'rewrite' => [ 'slug' => $slug ],
+			'show_in_menu' => AdminPageDefinitions::ROOT_MENU_SLUG,
+			'show_in_rest' => true,
+			'template' => [ [ 'fixture/campaign' ] ],
+		];
+	}
+
+	private function expect_successful_meta_registration(): void {
+
+		Functions\expect( 'register_post_meta' )
+			->once()
+			->with(
+				self::POST_TYPE_ID,
+				RegistrarPostTypeConfig::META_ENABLED,
+				[
+					'type' => 'boolean',
+					'default' => false,
+					'show_in_rest' => true,
+					'single' => true,
+				],
+			)
+			->andReturn( true );
 	}
 }

@@ -10,7 +10,7 @@ use Fundrik\WordPress\Integration\Boot\Units\FilterAllowedBlocksByPostTypeBootUn
 use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\AllowedBlockTypesAllFilterHookDispatcher;
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
-use Fundrik\WordPress\Tests\Fixtures\TestPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\PostTypeConfigFixture;
 use Fundrik\WordPress\Tests\Fixtures\WordPress\WpBlockEditorContext;
 use Fundrik\WordPress\Tests\Fixtures\WordPress\WpPost;
 use Fundrik\WordPress\Tests\WordPressTestCase;
@@ -53,7 +53,7 @@ final class FilterAllowedBlocksByPostTypeBootUnitTest extends WordPressTestCase 
 			$this->hook_dispatcher,
 			$this->wp_runtime,
 			new BootUnitLogger( $this->psr_logger ),
-			new TestPostTypeConfig( self::POST_TYPE, [ self::RESTRICTED_BLOCK ] ),
+			new PostTypeConfigFixture( self::POST_TYPE, [ self::RESTRICTED_BLOCK ] ),
 		);
 	}
 

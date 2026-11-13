@@ -12,7 +12,7 @@ use Fundrik\WordPress\Integration\HookDispatchers\Dispatchers\InitActionHookDisp
 use Fundrik\WordPress\Integration\HookDispatchers\HookDispatcherLogger;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeRegistrar;
-use Fundrik\WordPress\Tests\Fixtures\TestPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\PostTypeConfigFixture;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -50,8 +50,8 @@ final class RegisterPostTypesBootUnitTest extends WordPressTestCase {
 			$this->init_hook,
 			new PostTypeRegistrar( new PostTypeMetaFieldReader() ),
 			new BootUnitLogger( $this->psr_logger ),
-			new TestPostTypeConfig( 'first', [] ),
-			new TestPostTypeConfig( 'second', [] ),
+			new PostTypeConfigFixture( 'first' ),
+			new PostTypeConfigFixture( 'second' ),
 		);
 	}
 

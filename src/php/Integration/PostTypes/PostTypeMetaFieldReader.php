@@ -62,13 +62,7 @@ final class PostTypeMetaFieldReader {
 
 		$field = $this->get_meta_field_by_config_class( $post_type_config_class, $meta_key );
 
-		if ( $field?->default_value === null ) {
-			return null;
-		}
-
-		$this->validate_meta_field_default( $post_type_config_class, $field );
-
-		return $field->default_value;
+		return $field?->default_value;
 	}
 
 	/**
@@ -146,11 +140,6 @@ final class PostTypeMetaFieldReader {
 	private function validate_meta_field_defaults( string $post_type_config_class, array $fields ): void {
 
 		foreach ( $fields as $field ) {
-
-			if ( $field->default_value === null ) {
-				continue;
-			}
-
 			$this->validate_meta_field_default( $post_type_config_class, $field );
 		}
 	}

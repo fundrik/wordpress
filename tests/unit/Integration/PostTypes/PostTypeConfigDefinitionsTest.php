@@ -14,12 +14,10 @@ use PHPUnit\Framework\Attributes\Test;
 final class PostTypeConfigDefinitionsTest extends FundrikTestCase {
 
 	#[Test]
-	public function it_exposes_expected_post_type_config_classes(): void {
+	public function classes_returns_configured_post_type_classes(): void {
 
-		$this->assertSame(
-			[
-				CampaignPostTypeConfig::class,
-			],
+		self::assertSame(
+			[ CampaignPostTypeConfig::class ],
 			PostTypeConfigDefinitions::classes(),
 		);
 	}

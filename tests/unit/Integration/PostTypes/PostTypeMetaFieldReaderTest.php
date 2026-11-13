@@ -8,13 +8,14 @@ use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaField;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldDefinition;
 use Fundrik\WordPress\Integration\PostTypes\PostTypeMetaFieldReader;
 use Fundrik\WordPress\Integration\WpSchemaType;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\AlphaPostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\BetaPostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\GammaPostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\InvalidDefaultTypePostTypeConfig;
-use Fundrik\WordPress\Tests\Fixtures\PostTypes\StringMetaWithOptionalDefaultPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\InvalidMetaFieldDefaultPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\InvalidMetaFieldKeyPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\MetaFieldsPostTypeConfig;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\PostTypeConfigFixture;
+use Fundrik\WordPress\Tests\Fixtures\PostTypes\UnsupportedMetaFieldDefaultPostTypeConfig;
 use Fundrik\WordPress\Tests\FundrikTestCase;
 use InvalidArgumentException;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -24,128 +25,117 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass( PostTypeMetaFieldDefinition::class )]
 final class PostTypeMetaFieldReaderTest extends FundrikTestCase {
 
-	#[Test]
-	public function get_meta_fields_returns_declared_meta_fields_from_constants(): void {
+	private PostTypeMetaFieldReader $reader;
 
-		$reader = new PostTypeMetaFieldReader();
-		$config = new AlphaPostTypeConfig();
+	#[Override]
+	protected function setUp(): void {
+
+		parent::setUp();
+
+		$this->reader = new PostTypeMetaFieldReader();
+	}
+
+	#[Test]
+	public function get_meta_fields_returns_declared_definitions(): void {
 
 		self::assertEquals(
 			[
-				AlphaPostTypeConfig::META_HAS_NESTED => new PostTypeMetaFieldDefinition(
-					AlphaPostTypeConfig::META_HAS_NESTED,
+				MetaFieldsPostTypeConfig::META_ENABLED => new PostTypeMetaFieldDefinition(
+					MetaFieldsPostTypeConfig::META_ENABLED,
 					WpSchemaType::Boolean,
-					true,
+					false,
 				),
-			],
-			$reader->get_meta_fields( $config ),
-		);
-	}
-
-	#[Test]
-	public function get_meta_fields_returns_empty_array_when_no_meta_fields_declared(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-		$config = new BetaPostTypeConfig();
-
-		self::assertSame( [], $reader->get_meta_fields( $config ) );
-	}
-
-	#[Test]
-	public function get_meta_default_by_config_class_returns_declared_default_value(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-
-		self::assertTrue(
-			$reader->get_meta_default_by_config_class(
-				AlphaPostTypeConfig::class,
-				AlphaPostTypeConfig::META_HAS_NESTED,
-			),
-		);
-	}
-
-	#[Test]
-	public function get_meta_default_by_config_class_returns_null_when_meta_key_is_not_declared(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-
-		self::assertNull(
-			$reader->get_meta_default_by_config_class(
-				BetaPostTypeConfig::class,
-				'beta_unknown_meta_key',
-			),
-		);
-	}
-
-	#[Test]
-	public function get_meta_default_by_config_class_returns_declared_integer_default_value(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-
-		self::assertSame(
-			0,
-			$reader->get_meta_default_by_config_class(
-				GammaPostTypeConfig::class,
-				GammaPostTypeConfig::META_AMOUNT,
-			),
-		);
-	}
-
-	#[Test]
-	public function get_meta_default_by_config_class_throws_when_default_type_does_not_match_declared_type(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-		$config = new InvalidDefaultTypePostTypeConfig();
-
-		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'must match "integer". Given: bool.' );
-
-		$reader->get_meta_default_by_config_class( $config::class, InvalidDefaultTypePostTypeConfig::META_BAD_DEFAULT );
-	}
-
-	#[Test]
-	public function get_meta_fields_throws_when_default_type_does_not_match_declared_type(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-		$config = new InvalidDefaultTypePostTypeConfig();
-
-		$this->expectException( InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'must match "integer". Given: bool.' );
-
-		$reader->get_meta_fields( $config );
-	}
-
-	#[Test]
-	public function get_meta_fields_handles_string_defaults_and_fields_without_defaults(): void {
-
-		$reader = new PostTypeMetaFieldReader();
-		$config = new StringMetaWithOptionalDefaultPostTypeConfig();
-
-		self::assertEquals(
-			[
-				StringMetaWithOptionalDefaultPostTypeConfig::META_TARGET_CURRENCY => new PostTypeMetaFieldDefinition(
-					StringMetaWithOptionalDefaultPostTypeConfig::META_TARGET_CURRENCY,
+				MetaFieldsPostTypeConfig::META_AMOUNT => new PostTypeMetaFieldDefinition(
+					MetaFieldsPostTypeConfig::META_AMOUNT,
+					WpSchemaType::Integer,
+					0,
+				),
+				MetaFieldsPostTypeConfig::META_CURRENCY => new PostTypeMetaFieldDefinition(
+					MetaFieldsPostTypeConfig::META_CURRENCY,
 					WpSchemaType::String,
 					'RUB',
 				),
-				StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET => new PostTypeMetaFieldDefinition(
-					StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET,
+				MetaFieldsPostTypeConfig::META_OPTIONAL => new PostTypeMetaFieldDefinition(
+					MetaFieldsPostTypeConfig::META_OPTIONAL,
 					WpSchemaType::Boolean,
 				),
 			],
-			$reader->get_meta_fields( $config ),
+			$this->reader->get_meta_fields( new MetaFieldsPostTypeConfig() ),
 		);
 	}
 
 	#[Test]
-	public function get_meta_default_by_config_class_returns_null_when_meta_field_has_no_default(): void {
+	public function get_meta_fields_returns_empty_array_when_no_fields_are_declared(): void {
 
-		$reader = new PostTypeMetaFieldReader();
+		self::assertSame(
+			[],
+			$this->reader->get_meta_fields( new PostTypeConfigFixture() ),
+		);
+	}
+
+	#[Test]
+	public function get_meta_fields_throws_when_meta_key_is_not_a_string(): void {
+
+		$this->expectException( InvalidArgumentException::class );
+
+		$this->reader->get_meta_fields( new InvalidMetaFieldKeyPostTypeConfig() );
+	}
+
+	#[Test]
+	public function get_meta_fields_throws_when_default_does_not_match_declared_type(): void {
+
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage(
+			'Post meta default for "fixture_invalid_default" in "'
+			. InvalidMetaFieldDefaultPostTypeConfig::class
+			. '" must match "integer". Given: bool.',
+		);
+
+		$this->reader->get_meta_fields( new InvalidMetaFieldDefaultPostTypeConfig() );
+	}
+
+	#[Test]
+	public function get_meta_fields_throws_when_default_is_declared_for_unsupported_type(): void {
+
+		$this->expectException( InvalidArgumentException::class );
+		$this->expectExceptionMessage(
+			'Post meta default for "fixture_unsupported_default" in "'
+			. UnsupportedMetaFieldDefaultPostTypeConfig::class
+			. '" must match "number". Given: int.',
+		);
+
+		$this->reader->get_meta_fields( new UnsupportedMetaFieldDefaultPostTypeConfig() );
+	}
+
+	#[Test]
+	public function get_meta_default_by_config_class_returns_declared_default(): void {
+
+		self::assertFalse(
+			$this->reader->get_meta_default_by_config_class(
+				MetaFieldsPostTypeConfig::class,
+				MetaFieldsPostTypeConfig::META_ENABLED,
+			),
+		);
+	}
+
+	#[Test]
+	public function get_meta_default_by_config_class_returns_null_when_field_has_no_default(): void {
 
 		self::assertNull(
-			$reader->get_meta_default_by_config_class(
-				StringMetaWithOptionalDefaultPostTypeConfig::class,
-				StringMetaWithOptionalDefaultPostTypeConfig::META_HAS_TARGET,
+			$this->reader->get_meta_default_by_config_class(
+				MetaFieldsPostTypeConfig::class,
+				MetaFieldsPostTypeConfig::META_OPTIONAL,
+			),
+		);
+	}
+
+	#[Test]
+	public function get_meta_default_by_config_class_returns_null_when_field_is_not_declared(): void {
+
+		self::assertNull(
+			$this->reader->get_meta_default_by_config_class(
+				MetaFieldsPostTypeConfig::class,
+				'fixture_unknown',
 			),
 		);
 	}
