@@ -75,7 +75,7 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 			$this->log_invalid_request( $e );
 			return new WP_Error( 'rest_invalid_param', $e->getMessage(), [ 'status' => 400 ] );
 		} catch ( Throwable $e ) {
-			$this->log_unexpected_failure( $e );
+			$this->log_unexpected_failure( 'normalize_request', $e );
 			return new WP_Error( 'fundrik_checkout_failed', $e->getMessage(), [ 'status' => 500 ] );
 		}
 
@@ -92,7 +92,7 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 
 			return new WP_Error( 'fundrik_checkout_failed', $e->getMessage(), [ 'status' => 500 ] );
 		} catch ( Throwable $e ) {
-			$this->log_unexpected_failure( $e );
+			$this->log_unexpected_failure( 'create_donation', $e );
 
 			return new WP_Error( 'fundrik_checkout_failed', $e->getMessage(), [ 'status' => 500 ] );
 		}
@@ -224,14 +224,15 @@ final readonly class CreateDonationCheckoutRestRequestHandler {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $operation Failed operation.
 	 * @param Throwable $exception Original unexpected exception.
 	 */
-	private function log_unexpected_failure( Throwable $exception ): void {
+	private function log_unexpected_failure( string $operation, Throwable $exception ): void {
 
 		$this->logger->log_error(
 			'Create-donation checkout request failed unexpectedly.',
 			[
-				'operation' => 'normalize_request',
+				'operation' => $operation,
 				'outcome' => 'failed',
 				'stage' => 'unexpected',
 				'exception' => $exception,

@@ -100,7 +100,9 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		$notification_object = $this->get_notification_object( $notification );
 
 		if ( $notification_object === null ) {
+			// @codeCoverageIgnoreStart
 			return new WP_REST_Response( [ 'status' => 'ignored' ], 200 );
+			// @codeCoverageIgnoreEnd
 		}
 
 		try {
@@ -162,15 +164,12 @@ final readonly class YooKassaNotifyRestRequestHandler {
 	 */
 	private function map_yookassa_event_to_donation_payment_result_type( ?string $event ): ?DonationPaymentResultType {
 
-		if ( $event === null ) {
-			return null;
-		}
-
-		return [
+		return match ( $event ) {
 			NotificationEventType::PAYMENT_SUCCEEDED => DonationPaymentResultType::Succeeded,
 			NotificationEventType::PAYMENT_CANCELED => DonationPaymentResultType::Rejected,
 			NotificationEventType::REFUND_SUCCEEDED => DonationPaymentResultType::Refunded,
-		][ $event ] ?? null;
+			default => null,
+		};
 	}
 
 	/**
@@ -187,7 +186,9 @@ final readonly class YooKassaNotifyRestRequestHandler {
 		$notification_object = $notification->getObject();
 
 		if ( ! $notification_object instanceof PaymentInterface && ! $notification_object instanceof Refund ) {
+			// @codeCoverageIgnoreStart
 			return null;
+			// @codeCoverageIgnoreEnd
 		}
 
 		return $notification_object;

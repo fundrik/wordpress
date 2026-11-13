@@ -7,7 +7,9 @@ namespace Fundrik\WordPress\Tests\Fixtures\WordPress;
 /**
  * Provides a minimal WordPress REST request for tests.
  */
-final readonly class WpRestRequest {
+final class WpRestRequest {
+
+	private string $body = '';
 
 	/**
 	 * Creates the REST request.
@@ -46,5 +48,37 @@ final readonly class WpRestRequest {
 	public function get_json_params(): array {
 
 		return $this->json_params;
+	}
+
+	/**
+	 * Returns the raw request body.
+	 */
+	public function get_body(): string {
+
+		return $this->body;
+	}
+
+	/**
+	 * Sets the raw request body.
+	 */
+	public function set_body( string $body ): void {
+
+		$this->body = $body;
+	}
+
+	/**
+	 * Returns a request parameter by name.
+	 */
+	public function get_param( string $key ): mixed {
+
+		return $this->json_params[ $key ] ?? null;
+	}
+
+	/**
+	 * Sets a request parameter by name.
+	 */
+	public function set_param( string $key, mixed $value ): void {
+
+		$this->json_params[ $key ] = $value;
 	}
 }

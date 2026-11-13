@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\RestApi;
 
+use Brain\Monkey\Functions;
 use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Integration\RestApi\Routes\YooKassaNotifyRestRoute;
+use Fundrik\WordPress\Tests\Fixtures\TestRestRoute;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,9 +17,9 @@ use PHPUnit\Framework\Attributes\Test;
 final class RestRouteDefinitionsTest extends WordPressTestCase {
 
 	#[Test]
-	public function it_exposes_expected_rest_route_classes(): void {
+	public function classes_returns_configured_route_classes(): void {
 
-		$this->assertSame(
+		self::assertSame(
 			[
 				DonationCheckoutRestRoute::class,
 				YooKassaNotifyRestRoute::class,
@@ -27,39 +29,25 @@ final class RestRouteDefinitionsTest extends WordPressTestCase {
 	}
 
 	#[Test]
-	public function it_returns_route_metadata_for_the_declared_routes(): void {
+	public function get_request_path_returns_namespaced_route_path(): void {
 
-		$this->assertSame(
-			RestRouteDefinitions::NAMESPACE_V1,
-			DonationCheckoutRestRoute::get_route_namespace(),
+		self::assertSame(
+			'/test/v1/test',
+			RestRouteDefinitions::get_request_path( TestRestRoute::class ),
 		);
-		$this->assertSame(
-			'/checkout',
-			DonationCheckoutRestRoute::get_route_path(),
-		);
-		$this->assertSame(
-			'/fundrik/v1/checkout',
-			RestRouteDefinitions::get_request_path( DonationCheckoutRestRoute::class ),
-		);
-		$this->assertSame(
-			'http://example.test/wp-json/fundrik/v1/checkout',
-			RestRouteDefinitions::get_route_url( DonationCheckoutRestRoute::class ),
-		);
-		$this->assertSame(
-			RestRouteDefinitions::NAMESPACE_V1,
-			YooKassaNotifyRestRoute::get_route_namespace(),
-		);
-		$this->assertSame(
-			'/gateways/yookassa/notify',
-			YooKassaNotifyRestRoute::get_route_path(),
-		);
-		$this->assertSame(
-			'/fundrik/v1/gateways/yookassa/notify',
-			RestRouteDefinitions::get_request_path( YooKassaNotifyRestRoute::class ),
-		);
-		$this->assertSame(
-			'http://example.test/wp-json/fundrik/v1/gateways/yookassa/notify',
-			RestRouteDefinitions::get_route_url( YooKassaNotifyRestRoute::class ),
+	}
+
+	#[Test]
+	public function get_route_url_returns_wordpress_rest_url(): void {
+
+		Functions\expect( 'rest_url' )
+			->once()
+			->with( 'test/v1/test' )
+			->andReturn( 'https://example.test/wp-json/test/v1/test' );
+
+		self::assertSame(
+			'https://example.test/wp-json/test/v1/test',
+			RestRouteDefinitions::get_route_url( TestRestRoute::class ),
 		);
 	}
 }

@@ -91,11 +91,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 
 		Functions\expect( '_doing_it_wrong' )
 			->once()
-			->with(
-				self::LABELS_FILTER,
-				'Filter must return an array of strings. Given: string.',
-				'1.0.0',
-			);
+			->with( self::LABELS_FILTER, 'Filter must return an array of strings. Given: string.', '1.0.0' );
 
 		Functions\expect( 'register_post_type' )
 			->once()
@@ -126,11 +122,7 @@ final class PostTypeRegistrarTest extends WordPressTestCase {
 
 		Functions\expect( '_doing_it_wrong' )
 			->once()
-			->with(
-				self::SLUG_FILTER,
-				'Filter must return a string. Given: int.',
-				'1.0.0',
-			);
+			->with( self::SLUG_FILTER, 'Filter must return a string. Given: int.', '1.0.0' );
 
 		Functions\expect( 'register_post_type' )
 			->once()
