@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests\Integration\Services;
 
-use Brain\Monkey\Functions;
-use DateTimeImmutable;
-use DateTimeZone;
-use Fundrik\Core\Components\Donations\Application\ReadModels\Donation;
+use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
+use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCampaign;
+use Fundrik\Core\Components\Donations\Application\Ports\DonationRead\DonationReadPort;
+use Fundrik\Core\Components\Donations\Application\ReadModels\Donation as CoreDonation;
 use Fundrik\Core\Components\Donations\Application\ReadModels\PaginatedDonations;
 use Fundrik\Core\Components\Donations\Application\Services\DonationQueryService;
-use Fundrik\Core\Components\Donations\Application\Ports\DonationRead\DonationReadPort;
 use Fundrik\Core\Components\Donations\Application\UseCases\ReadDonationById\ReadDonationByIdHandler;
 use Fundrik\Core\Components\Donations\Application\UseCases\ReadPaginatedDonations\ReadPaginatedDonationsHandler;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
-use Fundrik\WordPress\Infrastructure\Ports\Database\DatabasePort;
-use Fundrik\WordPress\Infrastructure\Repositories\CampaignReadRepository\CampaignReadRepository;
+use Fundrik\Core\Components\Shared\Domain\EntityId;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
+use Fundrik\WordPress\Components\Campaigns\Domain\Exceptions\InvalidCampaignIdException;
+use Fundrik\WordPress\Components\Donations\Domain\DonationId;
+use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
 use Fundrik\WordPress\Integration\ReadModels\DonationAdminListItem;
 use Fundrik\WordPress\Integration\ReadModels\PaginatedDonationsAdminList;
 use Fundrik\WordPress\Integration\Services\DonationsAdminListService;
@@ -23,163 +24,303 @@ use Fundrik\WordPress\Presentation\Formatters\DateTimeFormatter;
 use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
+use Mockery\MockInterface;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\LoggerInterface;
 
 #[CoversClass( DonationsAdminListService::class )]
+#[UsesClass( CampaignId::class )]
+#[UsesClass( InvalidCampaignIdException::class )]
+#[UsesClass( DonationId::class )]
+#[UsesClass( InvalidDonationIdException::class )]
+#[UsesClass( DonationAdminListItem::class )]
+#[UsesClass( PaginatedDonationsAdminList::class )]
+#[UsesClass( DateTimeFormatter::class )]
+#[UsesClass( MoneyFormatter::class )]
 final class DonationsAdminListServiceTest extends WordPressTestCase {
 
+	private const string FIRST_DONATION_ID = '5b023809-1232-407e-a021-44db014c4395';
+
+	private const string SECOND_DONATION_ID = 'c5f71a81-e7ef-49f1-bd41-9e980d6dd9b1';
+
+	private const string THIRD_DONATION_ID = 'ccddd545-df5b-4a4d-9324-2850451a4490';
+
+	private DonationReadPort&MockInterface $donation_read;
+	private CampaignReadPort&MockInterface $campaign_read;
+	private LoggerInterface&MockInterface $logger;
+	private DonationsAdminListService $service;
+
+	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		Functions\when( 'admin_url' )->alias(
-			static fn ( string $path = '' ): string => 'https://example.test/wp-admin/' . ltrim( $path, '/' ),
+		$this->stub_admin_url();
+		$this->stub_wp_date();
+		$this->stub_number_format_i18n();
+
+		$this->donation_read = Mockery::mock( DonationReadPort::class );
+		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
+		$this->logger = Mockery::mock( LoggerInterface::class );
+		$this->service = new DonationsAdminListService(
+			new DonationQueryService(
+				new ReadDonationByIdHandler( $this->donation_read ),
+				new ReadPaginatedDonationsHandler( $this->donation_read ),
+			),
+			$this->campaign_read,
+			$this->logger,
+			new DateTimeFormatter(),
+			new MoneyFormatter(),
 		);
 	}
 
 	#[Test]
 	public function paginate_batches_campaign_lookup_and_maps_display_rows(): void {
 
-		$donation_read = Mockery::mock( DonationReadPort::class );
-		$donation_query_handler = new ReadPaginatedDonationsHandler( $donation_read );
-		$donation_query = new DonationQueryService(
-			new ReadDonationByIdHandler( $donation_read ),
-			$donation_query_handler,
+		$this->expect_donation_page(
+			[
+				$this->make_core_donation_read_model(
+					id: self::FIRST_DONATION_ID,
+					campaign_id: 7,
+					amount: 2_000,
+					status: 'succeeded',
+					created_at: '2026-06-08 21:08:26',
+					updated_at: '2026-06-08 21:27:01',
+				),
+				$this->make_core_donation_read_model(
+					id: self::SECOND_DONATION_ID,
+					campaign_id: 7,
+					amount: 1_000,
+					status: 'pending',
+					created_at: '2026-06-08 21:08:14',
+				),
+				$this->make_core_donation_read_model(
+					id: self::THIRD_DONATION_ID,
+					campaign_id: 8,
+					amount: 4_000,
+					status: 'succeeded',
+					created_at: '2026-05-07 21:14:57',
+				),
+			],
+			page: 2,
+			per_page: 20,
+			total: 45,
+		);
+		$this->expect_campaign_lookup(
+			[ 7, 8 ],
+			[
+				$this->make_core_campaign_read_model( id: 7, title: 'Campaign 7' ),
+				$this->make_core_campaign_read_model( id: 8, title: 'Campaign 8' ),
+			],
 		);
 
-		$database = Mockery::mock( DatabasePort::class );
-		$campaign_read = new CampaignReadRepository( $database );
-		$logger = Mockery::mock( LoggerInterface::class );
+		$result = $this->service->paginate( 2, 20 );
 
-		$service = new DonationsAdminListService(
-			$donation_query,
-			$campaign_read,
-			$logger,
-			new DateTimeFormatter(),
-			new MoneyFormatter(),
+		self::assertSame(
+			[
+				'page' => 2,
+				'per_page' => 20,
+				'total' => 45,
+			],
+			[
+				'page' => $result->get_page(),
+				'per_page' => $result->get_per_page(),
+				'total' => $result->get_total(),
+			],
 		);
 
-		$donation_read
+		$items = $result->get_items();
+
+		self::assertCount( 3, $items );
+		self::assertSame(
+			[ self::FIRST_DONATION_ID, self::SECOND_DONATION_ID, self::THIRD_DONATION_ID ],
+			array_map(
+				static fn ( DonationAdminListItem $item ): string => $item->get_id(),
+				$items,
+			),
+		);
+		self::assertSame(
+			[
+				'campaign_title' => 'Campaign 7',
+				'campaign_edit_url' => 'https://example.test/wp-admin/post.php?post=7&action=edit',
+				'amount' => '20.00 RUB',
+				'status' => 'succeeded',
+				'created_at' => '2026-06-08 21:08:26',
+				'updated_at' => '2026-06-08 21:27:01',
+			],
+			[
+				'campaign_title' => $items[0]->get_campaign_title(),
+				'campaign_edit_url' => $items[0]->get_campaign_edit_url(),
+				'amount' => $items[0]->get_amount(),
+				'status' => $items[0]->get_status(),
+				'created_at' => $items[0]->get_created_at(),
+				'updated_at' => $items[0]->get_updated_at(),
+			],
+		);
+		self::assertNull( $items[1]->get_updated_at() );
+		self::assertSame( 'Campaign 8', $items[2]->get_campaign_title() );
+	}
+
+	#[Test]
+	public function paginate_skips_row_and_logs_error_when_donation_id_is_invalid(): void {
+
+		$this->expect_donation_page( [ $this->make_core_donation_read_model( id: 123, campaign_id: 7 ) ] );
+		$this->allow_empty_campaign_lookup();
+		$this->expect_error_log(
+			message: 'Donation row skipped because donation ID is invalid.',
+			operation: 'normalize_donation_id',
+			outcome: 'invalid',
+			extra_context: [ 'donation_id' => 123 ],
+		);
+
+		$result = $this->service->paginate( 1, 20 );
+
+		self::assertSame( [], $result->get_items() );
+	}
+
+	#[Test]
+	public function paginate_skips_row_and_logs_error_when_campaign_id_is_invalid(): void {
+
+		$this->expect_donation_page(
+			[ $this->make_core_donation_read_model( id: self::FIRST_DONATION_ID, campaign_id: '7' ) ],
+		);
+		$this->allow_empty_campaign_lookup();
+		$this->expect_error_log(
+			message: 'Donation row skipped because campaign ID is invalid.',
+			operation: 'normalize_campaign_id',
+			outcome: 'invalid',
+			extra_context: [
+				'donation_id' => self::FIRST_DONATION_ID,
+				'campaign_id' => '7',
+			],
+		);
+
+		$result = $this->service->paginate( 1, 20 );
+
+		self::assertSame( [], $result->get_items() );
+	}
+
+	#[Test]
+	public function paginate_skips_row_and_logs_error_when_campaign_is_missing(): void {
+
+		$this->expect_donation_page(
+			[ $this->make_core_donation_read_model( id: self::FIRST_DONATION_ID, campaign_id: 7 ) ],
+		);
+		$this->expect_campaign_lookup( [ 7 ], [] );
+		$this->expect_missing_campaign_log();
+
+		$result = $this->service->paginate( 1, 20 );
+
+		self::assertSame( [], $result->get_items() );
+	}
+
+	#[Test]
+	public function paginate_treats_campaign_with_invalid_id_as_missing(): void {
+
+		$this->expect_donation_page(
+			[ $this->make_core_donation_read_model( id: self::FIRST_DONATION_ID, campaign_id: 7 ) ],
+		);
+		$this->expect_campaign_lookup(
+			[ 7 ],
+			[ $this->make_core_campaign_read_model( id: '7' ) ],
+		);
+		$this->expect_missing_campaign_log();
+
+		$result = $this->service->paginate( 1, 20 );
+
+		self::assertSame( [], $result->get_items() );
+	}
+
+	/**
+	 * Configures the donation page returned by the read port.
+	 *
+	 * @param list<CoreDonation> $donations Donation read models.
+	 */
+	private function expect_donation_page(
+		array $donations,
+		int $page = 1,
+		int $per_page = 20,
+		?int $total = null,
+	): void {
+
+		$this->donation_read
 			->shouldReceive( 'paginate' )
 			->once()
-			->with( 2, 20 )
-			->andReturn(
-				new PaginatedDonations(
-					[
-						$this->make_donation( '5b023809-1232-407e-a021-44db014c4395', 7, 2000, 'RUB', 'succeeded', '2026-06-08 21:08:26', '2026-06-08 21:27:01' ),
-						$this->make_donation( 'c5f71a81-e7ef-49f1-bd41-9e980d6dd9b1', 7, 1000, 'RUB', 'pending', '2026-06-08 21:08:14', null ),
-						$this->make_donation( 'ccddd545-df5b-4a4d-9324-2850451a4490', 8, 4000, 'RUB', 'succeeded', '2026-05-07 21:14:57', '2026-05-07 21:15:30' ),
-					],
-					2,
-					20,
-					3,
-				),
-			);
+			->with( $page, $per_page )
+			->andReturn( new PaginatedDonations( $donations, $page, $per_page, $total ?? count( $donations ) ) );
+	}
 
-		$database
-			->shouldReceive( 'get_all_by_ids' )
+	/**
+	 * Configures the campaigns returned for a batch of campaign IDs.
+	 *
+	 * @param list<int> $expected_ids Expected campaign IDs.
+	 * @param list<CoreCampaign> $campaigns Campaign read models.
+	 */
+	private function expect_campaign_lookup( array $expected_ids, array $campaigns ): void {
+
+		$this->campaign_read
+			->shouldReceive( 'find_by_ids' )
 			->once()
 			->with(
-				'fundrik_campaigns',
-				7,
-				8,
+				Mockery::on(
+					static fn ( array $ids ): bool => array_map(
+						static fn ( EntityId $id ): int => $id->get_as_int(),
+						$ids,
+					) === $expected_ids,
+				),
 			)
-			->andReturn(
-				[
-					$this->campaign_row( 7, 'Campaign 7' ),
-				],
-			);
+			->andReturn( $campaigns );
+	}
 
-		$logger
+	private function allow_empty_campaign_lookup(): void {
+
+		$this->campaign_read
+			->shouldReceive( 'find_by_ids' )
+			->with( [] )
+			->andReturn( [] );
+	}
+
+	private function expect_missing_campaign_log(): void {
+
+		$this->expect_error_log(
+			message: 'Donation row skipped because campaign could not be loaded.',
+			operation: 'resolve_campaign',
+			outcome: 'missing',
+			extra_context: [
+				'donation_id' => self::FIRST_DONATION_ID,
+				'campaign_id' => 7,
+			],
+		);
+	}
+
+	/**
+	 * Expects an error log with the common service context.
+	 *
+	 * @param array<string, int|string> $extra_context Additional context entries.
+	 */
+	private function expect_error_log(
+		string $message,
+		string $operation,
+		string $outcome,
+		array $extra_context,
+	): void {
+
+		$this->logger
 			->shouldReceive( 'error' )
 			->once()
 			->with(
-				'Donation row skipped because campaign could not be loaded.',
-				Mockery::on(
-					static fn ( array $context ): bool => $context['service_class'] === DonationsAdminListService::class
-						&& $context['component'] === 'donations_list'
-						&& $context['layer'] === 'integration'
-						&& $context['system'] === 'wordpress'
-						&& $context['operation'] === 'resolve_campaign'
-						&& $context['outcome'] === 'missing'
-						&& $context['donation_id'] === 'ccddd545-df5b-4a4d-9324-2850451a4490'
-						&& $context['campaign_id'] === 8,
-				),
+				$message,
+				[
+					'service_class' => DonationsAdminListService::class,
+					'component' => 'donations_list',
+					'layer' => 'integration',
+					'system' => 'wordpress',
+					'operation' => $operation,
+					'outcome' => $outcome,
+				] + $extra_context,
 			);
-
-		$result = $service->paginate( 2, 20 );
-
-		self::assertInstanceOf( PaginatedDonationsAdminList::class, $result );
-		self::assertSame( 2, $result->get_page() );
-		self::assertSame( 20, $result->get_per_page() );
-		self::assertSame( 3, $result->get_total() );
-		self::assertSame( 1, $result->get_total_pages() );
-
-		$items = $result->get_items();
-		self::assertCount( 2, $items );
-		self::assertInstanceOf( DonationAdminListItem::class, $items[0] );
-		self::assertSame( '5b023809-1232-407e-a021-44db014c4395', $items[0]->get_id() );
-		self::assertSame( 'Campaign 7', $items[0]->get_campaign_title() );
-		self::assertSame( 'https://example.test/wp-admin/post.php?post=7&action=edit', $items[0]->get_campaign_edit_url() );
-		self::assertSame( '20.00 RUB', $items[0]->get_amount() );
-		self::assertSame( 'succeeded', $items[0]->get_status() );
-		self::assertSame( '2026-06-08 21:08:26', $items[0]->get_created_at() );
-		self::assertSame( '2026-06-08 21:27:01', $items[0]->get_updated_at() );
-		self::assertSame( 'pending', $items[1]->get_status() );
-		self::assertNull( $items[1]->get_updated_at() );
-	}
-
-	/**
-	 * Returns a donation read model.
-	 *
-	 * @return Donation Donation read model.
-	 */
-	private function make_donation(
-		int|string $id,
-		int|string $campaign_id,
-		int $amount,
-		string $currency_code,
-		string $status,
-		string $created_at,
-		?string $updated_at,
-	): Donation {
-
-		return new Donation(
-			id: $id,
-			campaign_id: $campaign_id,
-			amount: $amount,
-			currency_code: $currency_code,
-			status: $status,
-			created_at: UtcDateTime::create(
-				new DateTimeImmutable( $created_at, new DateTimeZone( 'UTC' ) ),
-			),
-			updated_at: $updated_at === null
-				? null
-				: UtcDateTime::create(
-					new DateTimeImmutable( $updated_at, new DateTimeZone( 'UTC' ) ),
-				),
-		);
-	}
-
-	/**
-	 * Returns a campaign persistence row.
-	 *
-	 * @return array<string, string|null> Campaign persistence row.
-	 */
-	private function campaign_row( int $id, string $title ): array {
-
-		return [
-			'id' => (string) $id,
-			'title' => $title,
-			'accepts_donations' => '1',
-			'currency_code' => 'RUB',
-			'target_amount' => null,
-			'collected_amount' => '0',
-			'donations_count' => '0',
-			'created_at' => '2026-03-21 10:00:00',
-			'updated_at' => null,
-		];
 	}
 }

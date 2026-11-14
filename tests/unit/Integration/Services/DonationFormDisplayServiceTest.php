@@ -6,74 +6,121 @@ namespace Fundrik\WordPress\Tests\Integration\Services;
 
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
-use DateTimeImmutable;
-use DateTimeZone;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
+use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignQueryService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\ReadCampaignByIdHandler;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
-use Fundrik\WordPress\Infrastructure\Ports\Storage\StoragePort;
-use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
-use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsFieldRenderer;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Integration\AdminSettings\AdminSettingsReader;
+use Fundrik\WordPress\Integration\AdminSettings\Groups\CheckoutSettingsGroup;
 use Fundrik\WordPress\Integration\AdminSettings\Groups\DonationFormSettingsGroup;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutCancelUrlSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\Checkout\CheckoutSuccessUrlSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountLabelSetting;
 use Fundrik\WordPress\Integration\AdminSettings\Settings\DonationForm\DonationFormDefaultAmountSetting;
+use Fundrik\WordPress\Integration\AdminSettings\Settings\General\SelectedGatewaySetting;
+use Fundrik\WordPress\Integration\Gateways\GatewayInterface;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolutionException;
+use Fundrik\WordPress\Integration\Gateways\GatewayResolver;
 use Fundrik\WordPress\Integration\Helpers\OptionReader;
-use Fundrik\WordPress\Integration\Gateways\YooKassa\YooKassaSettingsReader;
-use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
-use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Integration\Helpers\SettingOptionName;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
+use Fundrik\WordPress\Integration\RestApi\RestRouteDefinitions;
 use Fundrik\WordPress\Integration\RestApi\Routes\DonationCheckoutRestRoute;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Integration\Services\DonationFormDisplayService;
-use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderData;
+use Fundrik\WordPress\Presentation\Renderers\DonationForm\DonationFormRenderer;
+use Fundrik\WordPress\Tests\Fixtures\FakeStorage;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\NullLogger;
 
 #[CoversClass( DonationFormDisplayService::class )]
+#[UsesClass( CampaignId::class )]
+#[UsesClass( AdminSettingsReader::class )]
+#[UsesClass( CheckoutSettingsGroup::class )]
+#[UsesClass( DonationFormSettingsGroup::class )]
+#[UsesClass( CheckoutCancelUrlSetting::class )]
+#[UsesClass( CheckoutSuccessUrlSetting::class )]
+#[UsesClass( DonationFormDefaultAmountLabelSetting::class )]
+#[UsesClass( DonationFormDefaultAmountSetting::class )]
+#[UsesClass( SelectedGatewaySetting::class )]
+#[UsesClass( GatewayResolutionException::class )]
+#[UsesClass( GatewayResolver::class )]
+#[UsesClass( OptionReader::class )]
+#[UsesClass( SettingOptionName::class )]
+#[UsesClass( Campaign::class )]
+#[UsesClass( RestRouteDefinitions::class )]
+#[UsesClass( DonationCheckoutRestRoute::class )]
+#[UsesClass( CampaignLookupService::class )]
+#[UsesClass( DonationFormRenderData::class )]
+#[UsesClass( DonationFormRenderer::class )]
 final class DonationFormDisplayServiceTest extends WordPressTestCase {
 
-	private CampaignReadPort&MockInterface $campaign_read;
+	private const int CAMPAIGN_ID = 42;
 
-	private DonationFormDisplayService $donation_form_display;
+	private const string GATEWAY_ID = 'example';
+
+	private const string CHECKOUT_URL = 'https://example.test/wp-json/fundrik/v1/checkout';
+
+	private CampaignReadPort&MockInterface $campaign_read;
+	private FakeStorage $storage;
+	private DonationFormDisplayService $service;
 
 	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		Functions\when( 'get_post_field' )->alias(
-			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
-				$field === 'post_name' ? 'campaign-' . $post_id : null,
-		);
-		Functions\when( 'get_permalink' )->alias(
-			static fn ( int $post_id ): string => 'https://example.test/campaign-' . $post_id . '/',
-		);
-		Functions\when( 'get_post_thumbnail_id' )->alias(
-			static fn ( int $post_id ): int => $post_id === 42 ? 99 : 0,
-		);
-		Functions\when( 'wp_get_attachment_image_url' )->alias(
-			static fn ( int $attachment_id, string $size = 'full' ): string => 'https://example.test/media/' . $attachment_id . '.jpg',
-		);
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/campaigns/help-the-shelter/' );
+		Functions\when( 'get_post_thumbnail_id' )->justReturn( 91 );
 
 		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
-		$this->donation_form_display = new DonationFormDisplayService(
+		$this->storage = new FakeStorage(
+			[
+				'fundrik_donation_form_default_amount_setting' => 25,
+				'fundrik_donation_form_default_amount_label_setting' => 'Contribution',
+				'fundrik_checkout_selected_gateway_setting' => self::GATEWAY_ID,
+				'fundrik_example_enabled_setting' => true,
+			],
+		);
+
+		$gateway = Mockery::mock( GatewayInterface::class );
+		$gateway->shouldReceive( 'get_id' )->andReturn( self::GATEWAY_ID );
+		$option_reader = new OptionReader( $this->storage );
+		$settings_reader = new AdminSettingsReader(
+			$option_reader,
+			new DonationFormSettingsGroup(
+				new DonationFormDefaultAmountSetting(),
+				new DonationFormDefaultAmountLabelSetting(),
+			),
+			new CheckoutSettingsGroup(
+				new SelectedGatewaySetting( $gateway ),
+				new CheckoutSuccessUrlSetting(),
+				new CheckoutCancelUrlSetting(),
+			),
+		);
+
+		$this->service = new DonationFormDisplayService(
 			new CampaignLookupService(
-				new CampaignQueryService(
-					new ReadCampaignByIdHandler( $this->campaign_read ),
-				),
-				new WordPressRuntime(),
+				new CampaignQueryService( new ReadCampaignByIdHandler( $this->campaign_read ) ),
+				Mockery::mock( WordPressRuntimeInterface::class ),
 				new NullLogger(),
 			),
-			$this->create_settings_reader( 10, 'Amount' ),
-			$this->create_yookassa_settings_reader( true ),
+			$settings_reader,
+			new GatewayResolver(
+				$settings_reader,
+				$option_reader,
+				$gateway,
+			),
 			new DonationFormRenderer(),
 		);
 	}
@@ -81,159 +128,116 @@ final class DonationFormDisplayServiceTest extends WordPressTestCase {
 	#[Test]
 	public function render_returns_empty_string_when_campaign_is_missing(): void {
 
-		Filters\expectApplied( 'fundrik_get_campaign' )->never();
-		Filters\expectApplied( 'fundrik_donation_form_render_data' )->never();
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( null );
+		$this->expect_campaign_read( null );
 
-		self::assertSame( '', $this->donation_form_display->render( 42 ) );
+		self::assertSame( '', $this->service->render( self::CAMPAIGN_ID ) );
 	}
 
 	#[Test]
-	public function render_returns_rendered_markup_for_the_given_campaign(): void {
+	public function render_returns_empty_string_when_campaign_does_not_accept_donations(): void {
 
-		$checkout_route = DonationCheckoutRestRoute::get_route_namespace() . DonationCheckoutRestRoute::get_route_path();
+		$this->expect_campaign_read(
+			$this->make_core_campaign_read_model( accepts_donations: false ),
+		);
 
-		Functions\expect( 'rest_url' )
-			->once()
-			->with( $checkout_route )
-			->andReturn( 'http://example.test/wp-json/' . $checkout_route );
+		self::assertSame( '', $this->service->render( self::CAMPAIGN_ID ) );
+	}
 
-		$campaign = $this->make_campaign( 42 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign'
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $campaign ) );
+	#[Test]
+	public function render_returns_empty_string_when_active_gateway_is_unavailable(): void {
+
+		$this->expect_campaign_read( $this->make_core_campaign_read_model() );
+		$this->storage->set( 'fundrik_example_enabled_setting', false );
+
+		self::assertSame( '', $this->service->render( self::CAMPAIGN_ID ) );
+	}
+
+	#[Test]
+	public function render_uses_filtered_render_data_for_campaign(): void {
+
+		$this->expect_campaign_read( $this->make_core_campaign_read_model() );
+		$this->expect_checkout_url();
+
+		$filtered_render_data = new DonationFormRenderData(
+			campaign_id: 77,
+			checkout_url: 'https://example.test/custom-checkout/',
+			default_amount: 50,
+			amount_label: 'Custom amount',
+		);
+
 		Filters\expectApplied( 'fundrik_donation_form_render_data' )
 			->once()
 			->with(
-			Mockery::on(
-				static fn ( DonationFormRenderData $render_data ): bool => $render_data->campaign_id === 42
-					&& $render_data->checkout_url === 'http://example.test/wp-json/' . $checkout_route
-					&& $render_data->default_amount === 10
-					&& $render_data->amount_label === 'Amount',
-			),
 				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign'
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
+					static fn ( DonationFormRenderData $data ): bool => self::matches_default_render_data( $data ),
+				),
+				Mockery::on(
+					static fn ( Campaign $campaign ): bool => $campaign->get_id() === self::CAMPAIGN_ID,
 				),
 			)
-			->andReturn(
-				new DonationFormRenderData(
-					campaign_id: 42,
-					checkout_url: 'http://example.test/wp-json/' . $checkout_route,
-					default_amount: 25,
-					amount_label: 'Custom amount',
-				),
+			->andReturn( $filtered_render_data );
+
+		$markup = $this->service->render( self::CAMPAIGN_ID );
+
+		self::assertStringContainsString( 'data-checkout-url="https://example.test/custom-checkout/"', $markup );
+		self::assertStringContainsString( 'data-campaign-id="77"', $markup );
+		self::assertStringContainsString( 'value="50"', $markup );
+		self::assertStringContainsString( '>Custom amount</label>', $markup );
+	}
+
+	#[Test]
+	public function render_uses_original_render_data_when_filter_result_is_invalid(): void {
+
+		$this->expect_campaign_read( $this->make_core_campaign_read_model() );
+		$this->expect_checkout_url();
+
+		Filters\expectApplied( 'fundrik_donation_form_render_data' )
+			->once()
+			->with( Mockery::type( DonationFormRenderData::class ), Mockery::type( Campaign::class ) )
+			->andReturn( 'invalid' );
+
+		Functions\expect( '_doing_it_wrong' )
+			->once()
+			->with(
+				'fundrik_donation_form_render_data',
+				'Filter must return donation form render data. Given: string.',
+				'1.0.0',
 			);
+
+		$markup = $this->service->render( self::CAMPAIGN_ID );
+
+		self::assertStringContainsString( 'data-checkout-url="' . self::CHECKOUT_URL . '"', $markup );
+		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
+		self::assertStringContainsString( 'value="25"', $markup );
+		self::assertStringContainsString( '>Contribution</label>', $markup );
+	}
+
+	private function expect_campaign_read( ?CoreCampaign $campaign ): void {
+
 		$this->campaign_read
 			->shouldReceive( 'find_by_id' )
 			->once()
 			->with(
 				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
+					static fn ( EntityId $id ): bool => $id->get_value() === self::CAMPAIGN_ID,
 				),
 			)
 			->andReturn( $campaign );
-
-		$markup = $this->donation_form_display->render( 42 );
-
-		self::assertStringContainsString( 'class="fundrik-donation-form"', $markup );
-		self::assertStringContainsString(
-			'data-checkout-url="http://example.test/wp-json/' . $checkout_route . '"',
-			$markup,
-		);
-		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
-		self::assertStringNotContainsString( 'data-donation-id=', $markup );
-		self::assertStringContainsString( '>Custom amount</label>', $markup );
-		self::assertStringContainsString( 'value="25"', $markup );
 	}
 
-	private function create_settings_reader( int $default_amount, string $default_amount_label ): AdminSettingsReader {
+	private function expect_checkout_url(): void {
 
-		$storage = Mockery::mock( StoragePort::class );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_donation_form_default_amount_setting' )
-			->andReturn( $default_amount );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_donation_form_default_amount_label_setting' )
-			->andReturn( $default_amount_label );
-
-		$field_renderer = new AdminSettingsFieldRenderer();
-
-		return new AdminSettingsReader(
-			new OptionReader( $storage ),
-			new DonationFormSettingsGroup(
-				new DonationFormDefaultAmountSetting( $field_renderer ),
-				new DonationFormDefaultAmountLabelSetting( $field_renderer ),
-			),
-		);
+		Functions\expect( 'rest_url' )
+			->once()
+			->with( 'fundrik/v1/checkout' )
+			->andReturn( self::CHECKOUT_URL );
 	}
 
-	private function create_yookassa_settings_reader( bool $enabled ): YooKassaSettingsReader {
+	private static function matches_default_render_data( DonationFormRenderData $data ): bool {
 
-		$storage = Mockery::mock( StoragePort::class );
-		$storage
-			->shouldReceive( 'get' )
-			->zeroOrMoreTimes()
-			->with( 'fundrik_yookassa_enabled_setting' )
-			->andReturn( $enabled );
-
-		return new YooKassaSettingsReader( new OptionReader( $storage ) );
-	}
-
-	private function make_campaign( int $id ): Campaign {
-
-		return new Campaign(
-			id: $id,
-			title: 'Campaign',
-			accepts_donations: true,
-			currency_code: 'RUB',
-			target_amount: 1_000,
-			collected_amount: 0,
-			donations_count: 0,
-			created_at: UtcDateTime::create(
-				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
-			),
-			updated_at: null,
-		);
-	}
-
-	private function make_campaign_view( Campaign $campaign ): WpCampaign {
-
-		return new WpCampaign(
-			id: $campaign->get_id(),
-			title: $campaign->get_title(),
-			accepts_donations: $campaign->accepts_donations(),
-			currency_code: $campaign->get_currency_code(),
-			target_amount: $campaign->get_target_amount(),
-			collected_amount: $campaign->get_collected_amount(),
-			donations_count: $campaign->get_donations_count(),
-			created_at: $campaign->get_created_at(),
-			updated_at: $campaign->get_updated_at(),
-			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
-			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
-		);
+		return $data->campaign_id === self::CAMPAIGN_ID
+			&& $data->checkout_url === self::CHECKOUT_URL
+			&& $data->default_amount === 25
+			&& $data->amount_label === 'Contribution';
 	}
 }

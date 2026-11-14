@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Fundrik\WordPress\Tests;
 
+use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CampaignReadModel;
 use Fundrik\Core\Components\Campaigns\Domain\Campaign;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignTarget;
 use Fundrik\Core\Components\Campaigns\Domain\CampaignTitle;
+use Fundrik\Core\Components\Donations\Application\ReadModels\Donation as DonationReadModel;
 use Fundrik\Core\Components\Donations\Domain\Donation;
 use Fundrik\Core\Components\Donations\Domain\DonationStatus;
 use Fundrik\Core\Components\Donations\Domain\PaymentId;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
 use Fundrik\Core\Components\Shared\Domain\EntityVersion;
 use Fundrik\Core\Components\Shared\Domain\Money;
+use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use InvalidArgumentException;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
@@ -40,6 +43,65 @@ abstract class FundrikTestCase extends PHPUnitTestCase {
 			title: CampaignTitle::create( $title ),
 			accepts_donations: $accepts_donations,
 			target: CampaignTarget::create( $currency_code, $target_amount ),
+		);
+	}
+
+	/**
+	 * Returns a valid core campaign read model with optional field overrides.
+	 */
+	protected function make_core_campaign_read_model(
+		int|string $id = 42,
+		string $title = 'Help the shelter',
+		bool $accepts_donations = true,
+		string $currency_code = 'RUB',
+		?int $target_amount = 100_000,
+		int $collected_amount = 25_000,
+		int $donations_count = 17,
+		?UtcDateTime $created_at = null,
+		?UtcDateTime $updated_at = null,
+	): CampaignReadModel {
+
+		return new CampaignReadModel(
+			id: $id,
+			title: $title,
+			accepts_donations: $accepts_donations,
+			currency_code: $currency_code,
+			target_amount: $target_amount,
+			collected_amount: $collected_amount,
+			donations_count: $donations_count,
+			created_at: $created_at ?? UtcDateTime::create_from_format(
+				'2026-11-01 10:00:00',
+				'Y-m-d H:i:s',
+			),
+			updated_at: $updated_at,
+		);
+	}
+
+	/**
+	 * Returns a valid core donation read model with optional field overrides.
+	 */
+	protected function make_core_donation_read_model(
+		int|string $id = '123e4567-e89b-42d3-a456-426614174000',
+		int|string $campaign_id = 7,
+		int $amount = 1_000,
+		string $currency_code = 'RUB',
+		string $status = 'pending',
+		?string $payment_id = null,
+		string $created_at = '2026-11-01 10:00:00',
+		?string $updated_at = null,
+	): DonationReadModel {
+
+		return new DonationReadModel(
+			id: $id,
+			campaign_id: $campaign_id,
+			amount: $amount,
+			currency_code: $currency_code,
+			status: $status,
+			payment_id: $payment_id,
+			created_at: UtcDateTime::create_from_format( $created_at, 'Y-m-d H:i:s' ),
+			updated_at: $updated_at === null
+				? null
+				: UtcDateTime::create_from_format( $updated_at, 'Y-m-d H:i:s' ),
 		);
 	}
 

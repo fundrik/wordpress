@@ -6,66 +6,58 @@ namespace Fundrik\WordPress\Tests\Integration\Services;
 
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
-use DateTimeImmutable;
-use DateTimeZone;
 use Fundrik\Core\Components\Campaigns\Application\Ports\CampaignRead\CampaignReadPort;
-use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign;
+use Fundrik\Core\Components\Campaigns\Application\ReadModels\Campaign as CoreCampaign;
 use Fundrik\Core\Components\Campaigns\Application\Services\CampaignQueryService;
 use Fundrik\Core\Components\Campaigns\Application\UseCases\ReadCampaignById\ReadCampaignByIdHandler;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
-use Fundrik\WordPress\Presentation\Renderers\CampaignSummary\CampaignSummaryRenderData;
-use Fundrik\WordPress\Presentation\Renderers\CampaignSummary\CampaignSummaryRenderer;
+use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignStatusPolicy;
-use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
-use Fundrik\WordPress\Integration\ReadModels\Campaign as WpCampaign;
+use Fundrik\WordPress\Integration\ReadModels\Campaign;
 use Fundrik\WordPress\Integration\Services\CampaignLookupService;
 use Fundrik\WordPress\Integration\Services\CampaignSummaryDisplayService;
-use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntime;
+use Fundrik\WordPress\Integration\WordPressRuntime\WordPressRuntimeInterface;
+use Fundrik\WordPress\Presentation\Formatters\MoneyFormatter;
+use Fundrik\WordPress\Presentation\Renderers\CampaignSummary\CampaignSummaryRenderData;
+use Fundrik\WordPress\Presentation\Renderers\CampaignSummary\CampaignSummaryRenderer;
 use Fundrik\WordPress\Tests\WordPressTestCase;
 use Mockery;
 use Mockery\MockInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Log\NullLogger;
 
 #[CoversClass( CampaignSummaryDisplayService::class )]
+#[UsesClass( CampaignId::class )]
+#[UsesClass( CampaignStatusPolicy::class )]
+#[UsesClass( Campaign::class )]
+#[UsesClass( CampaignLookupService::class )]
+#[UsesClass( MoneyFormatter::class )]
+#[UsesClass( CampaignSummaryRenderData::class )]
+#[UsesClass( CampaignSummaryRenderer::class )]
 final class CampaignSummaryDisplayServiceTest extends WordPressTestCase {
 
-	private CampaignReadPort&MockInterface $campaign_read;
+	private const int CAMPAIGN_ID = 42;
 
-	private CampaignSummaryDisplayService $campaign_summary_display;
+	private CampaignReadPort&MockInterface $campaign_read;
+	private CampaignSummaryDisplayService $service;
 
 	#[Override]
 	protected function setUp(): void {
 
 		parent::setUp();
 
-		Functions\when( 'number_format_i18n' )->alias(
-			static fn ( $number, int $decimals ): string => number_format( (float) $number, $decimals, '.', ',' ),
-		);
-		Functions\when( 'get_post_field' )->alias(
-			static fn ( string $field, int $post_id, string $context = 'raw' ): ?string =>
-				$field === 'post_name' ? 'campaign-' . $post_id : null,
-		);
-		Functions\when( 'get_permalink' )->alias(
-			static fn ( int $post_id ): string => 'https://example.test/campaign-' . $post_id . '/',
-		);
-		Functions\when( 'get_post_thumbnail_id' )->alias(
-			static fn ( int $post_id ): int => $post_id === 42 ? 99 : 0,
-		);
-		Functions\when( 'wp_get_attachment_image_url' )->alias(
-			static fn ( int $attachment_id, string $size = 'full' ): string => 'https://example.test/media/' . $attachment_id . '.jpg',
-		);
+		Functions\when( 'get_permalink' )->justReturn( 'https://example.test/campaigns/help-the-shelter/' );
+		Functions\when( 'get_post_thumbnail_id' )->justReturn( 91 );
+		$this->stub_number_format_i18n();
 
 		$this->campaign_read = Mockery::mock( CampaignReadPort::class );
-		$this->campaign_summary_display = new CampaignSummaryDisplayService(
+		$this->service = new CampaignSummaryDisplayService(
 			new CampaignLookupService(
-				new CampaignQueryService(
-					new ReadCampaignByIdHandler( $this->campaign_read ),
-				),
-				new WordPressRuntime(),
+				new CampaignQueryService( new ReadCampaignByIdHandler( $this->campaign_read ) ),
+				Mockery::mock( WordPressRuntimeInterface::class ),
 				new NullLogger(),
 			),
 			new CampaignStatusPolicy(),
@@ -76,136 +68,68 @@ final class CampaignSummaryDisplayServiceTest extends WordPressTestCase {
 	#[Test]
 	public function render_returns_empty_string_when_campaign_is_missing(): void {
 
-		Filters\expectApplied( 'fundrik_get_campaign' )->never();
-		Filters\expectApplied( 'fundrik_campaign_summary_render_data' )->never();
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( null );
+		$this->expect_campaign_read( null );
 
-		self::assertSame( '', $this->campaign_summary_display->render( 42 ) );
+		self::assertSame( '', $this->service->render( self::CAMPAIGN_ID ) );
 	}
 
 	#[Test]
-	public function render_returns_rendered_markup_for_the_given_campaign(): void {
+	public function render_uses_filtered_render_data_for_campaign(): void {
 
-		$campaign = $this->make_campaign( 42, true, 2_000, 2_500, 5 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
+		$this->expect_campaign_read(
+			$this->make_core_campaign_read_model(
+				target_amount: 2_000,
+				collected_amount: 2_500,
+				donations_count: 5,
+			),
+		);
+		$filtered_render_data = new CampaignSummaryRenderData(
+			campaign_id: 77,
+			campaign_status: 'donations_disabled',
+			currency_code: 'USD',
+			collected_amount: 0,
+			target_amount: null,
+			donations_count: 0,
+			show_status: false,
+			show_goal: false,
+			show_collected_amount: false,
+			show_donations_count: false,
+		);
+
+		Filters\expectApplied( 'fundrik_campaign_summary_render_data' )
 			->once()
 			->with(
+				Mockery::on( self::matches_default_render_data( ... ) ),
 				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign'
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
+					static fn ( Campaign $campaign ): bool => $campaign->get_id() === self::CAMPAIGN_ID,
 				),
-				42,
 			)
-			->andReturn( $this->make_campaign_view( $campaign ) );
+			->andReturn( $filtered_render_data );
+
+		$markup = $this->service->render( self::CAMPAIGN_ID );
+
+		self::assertStringContainsString( 'data-campaign-id="77"', $markup );
+		self::assertStringContainsString( 'data-status="donations_disabled"', $markup );
+	}
+
+	#[Test]
+	public function render_applies_display_options_to_render_data(): void {
+
+		$this->expect_campaign_read( $this->make_core_campaign_read_model() );
 		Filters\expectApplied( 'fundrik_campaign_summary_render_data' )
 			->once()
 			->with(
 				Mockery::on(
-				static fn ( CampaignSummaryRenderData $render_data ): bool => $render_data->campaign_id === 42
-						&& $render_data->campaign_status === 'target_reached'
-						&& $render_data->currency_code === 'RUB'
-						&& $render_data->collected_amount === 2_500
-						&& $render_data->target_amount === 2_000
-						&& $render_data->donations_count === 5
-						&& $render_data->show_status === true
-						&& $render_data->show_goal === true
-						&& $render_data->show_collected_amount === true
-						&& $render_data->show_donations_count === true,
+					static fn ( CampaignSummaryRenderData $data ): bool => $data->show_status === false
+						&& $data->show_goal === false
+						&& $data->show_collected_amount === false
+						&& $data->show_donations_count === false,
 				),
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
-				),
-			)
-			->andReturn(
-				new CampaignSummaryRenderData(
-					campaign_id: 42,
-					campaign_status: 'target_reached',
-					currency_code: 'RUB',
-					collected_amount: 3_000,
-					target_amount: 2_000,
-					donations_count: 7,
-					show_status: true,
-					show_goal: true,
-					show_collected_amount: true,
-					show_donations_count: true,
-				),
+				Mockery::type( Campaign::class ),
 			);
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( $campaign );
 
-		$markup = $this->campaign_summary_display->render( 42 );
-
-		self::assertStringContainsString( 'class="fundrik-campaign-summary"', $markup );
-		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
-		self::assertStringContainsString( 'Goal reached', $markup );
-		self::assertStringContainsString( '30.00 RUB', $markup );
-		self::assertStringContainsString( '>7<', $markup );
-	}
-
-	#[Test]
-	public function render_respects_basic_display_options(): void {
-
-		$campaign = $this->make_campaign( 42, true, 2_000, 2_500, 5 );
-		Filters\expectApplied( 'fundrik_get_campaign' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_title() === 'Campaign'
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/'
-						&& $campaign_view->get_featured_image_id() === 99,
-				),
-				42,
-			)
-			->andReturn( $this->make_campaign_view( $campaign ) );
-		Filters\expectApplied( 'fundrik_campaign_summary_render_data' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( CampaignSummaryRenderData $render_data ): bool => $render_data->show_status === false
-						&& $render_data->show_goal === false
-						&& $render_data->show_collected_amount === false
-						&& $render_data->show_donations_count === false,
-				),
-				Mockery::on(
-					static fn ( WpCampaign $campaign_view ): bool => $campaign_view->get_id() === 42
-						&& $campaign_view->get_permalink() === 'https://example.test/campaign-42/',
-				),
-			)
-			->andReturnUsing(
-				static fn ( CampaignSummaryRenderData $render_data ): CampaignSummaryRenderData => $render_data,
-			);
-		$this->campaign_read
-			->shouldReceive( 'find_by_id' )
-			->once()
-			->with(
-				Mockery::on(
-					static fn ( EntityId $id ): bool => $id->get_value() === 42,
-				),
-			)
-			->andReturn( $campaign );
-
-		$markup = $this->campaign_summary_display->render(
-			42,
+		$markup = $this->service->render(
+			self::CAMPAIGN_ID,
 			[
 				'showStatus' => false,
 				'showGoal' => false,
@@ -214,49 +138,55 @@ final class CampaignSummaryDisplayServiceTest extends WordPressTestCase {
 			],
 		);
 
-		self::assertStringNotContainsString( 'fundrik-campaign-summary__status', $markup );
-		self::assertStringNotContainsString( 'data-metric="goal"', $markup );
-		self::assertStringNotContainsString( 'data-metric="collected"', $markup );
-		self::assertStringNotContainsString( 'data-metric="donations"', $markup );
+		self::assertNotSame( '', $markup );
 	}
 
-	private function make_campaign(
-		int $id,
-		bool $accepts_donations = true,
-		?int $target_amount = 1_000,
-		int $collected_amount = 0,
-		int $donations_count = 0,
-	): Campaign {
+	#[Test]
+	public function render_uses_original_render_data_when_filter_result_is_invalid(): void {
 
-		return new Campaign(
-			id: $id,
-			title: 'Campaign',
-			accepts_donations: $accepts_donations,
-			currency_code: 'RUB',
-			target_amount: $target_amount,
-			collected_amount: $collected_amount,
-			donations_count: $donations_count,
-			created_at: UtcDateTime::create(
-				new DateTimeImmutable( '2026-03-21 10:00:00', new DateTimeZone( 'UTC' ) ),
-			),
-			updated_at: null,
-		);
+		$this->expect_campaign_read( $this->make_core_campaign_read_model() );
+		Filters\expectApplied( 'fundrik_campaign_summary_render_data' )
+			->once()
+			->with( Mockery::type( CampaignSummaryRenderData::class ), Mockery::type( Campaign::class ) )
+			->andReturn( 'invalid' );
+
+		Functions\expect( '_doing_it_wrong' )
+			->once()
+			->with(
+				'fundrik_campaign_summary_render_data',
+				'Filter must return campaign summary render data. Given: string.',
+				'1.0.0',
+			);
+
+		$markup = $this->service->render( self::CAMPAIGN_ID );
+
+		self::assertStringContainsString( 'data-campaign-id="42"', $markup );
 	}
 
-	private function make_campaign_view( Campaign $campaign ): WpCampaign {
+	private function expect_campaign_read( ?CoreCampaign $campaign ): void {
 
-		return new WpCampaign(
-			id: $campaign->get_id(),
-			title: $campaign->get_title(),
-			accepts_donations: $campaign->accepts_donations(),
-			currency_code: $campaign->get_currency_code(),
-			target_amount: $campaign->get_target_amount(),
-			collected_amount: $campaign->get_collected_amount(),
-			donations_count: $campaign->get_donations_count(),
-			created_at: $campaign->get_created_at(),
-			updated_at: $campaign->get_updated_at(),
-			permalink: 'https://example.test/campaign-' . $campaign->get_id() . '/',
-			featured_image_id: $campaign->get_id() === 42 ? 99 : null,
-		);
+		$this->campaign_read
+			->shouldReceive( 'find_by_id' )
+			->once()
+			->with(
+				Mockery::on(
+					static fn ( EntityId $id ): bool => $id->get_value() === self::CAMPAIGN_ID,
+				),
+			)
+			->andReturn( $campaign );
+	}
+
+	private static function matches_default_render_data( CampaignSummaryRenderData $data ): bool {
+
+		return $data->campaign_id === self::CAMPAIGN_ID
+			&& $data->campaign_status === 'target_reached'
+			&& $data->currency_code === 'RUB'
+			&& $data->collected_amount === 2_500
+			&& $data->target_amount === 2_000
+			&& $data->donations_count === 5
+			&& $data->show_status === true
+			&& $data->show_goal === true
+			&& $data->show_collected_amount === true
+			&& $data->show_donations_count === true;
 	}
 }

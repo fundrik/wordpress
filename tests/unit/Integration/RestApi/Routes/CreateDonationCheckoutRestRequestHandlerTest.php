@@ -28,7 +28,6 @@ use Fundrik\Core\Components\Shared\Application\Exceptions\InvalidUrlException;
 use Fundrik\Core\Components\Shared\Application\Ports\EventBus\ApplicationEventBusPort;
 use Fundrik\Core\Components\Shared\Application\Url;
 use Fundrik\Core\Components\Shared\Domain\EntityId;
-use Fundrik\Core\Components\Shared\Domain\UtcDateTime;
 use Fundrik\WordPress\Components\Campaigns\Domain\CampaignId;
 use Fundrik\WordPress\Components\Donations\Domain\DonationId;
 use Fundrik\WordPress\Components\Donations\Domain\Exceptions\InvalidDonationIdException;
@@ -125,7 +124,7 @@ final class CreateDonationCheckoutRestRequestHandlerTest extends WordPressTestCa
 	#[Test]
 	public function handle_creates_checkout_and_returns_created_response(): void {
 
-		$this->expect_campaign_lookup( $this->make_core_campaign() );
+		$this->expect_campaign_lookup( $this->make_core_campaign_read_model() );
 		$this->expect_donation_created();
 
 		$this->gateway
@@ -215,7 +214,7 @@ final class CreateDonationCheckoutRestRequestHandlerTest extends WordPressTestCa
 	public function handle_returns_checkout_failure_when_configured_url_is_invalid(): void {
 
 		$this->storage->set( 'fundrik_checkout_success_url_setting', 'invalid-url' );
-		$this->expect_campaign_lookup( $this->make_core_campaign() );
+		$this->expect_campaign_lookup( $this->make_core_campaign_read_model() );
 		$this->expect_log(
 			level: 'error',
 			message: 'Create-donation checkout URL is invalid.',
@@ -266,7 +265,7 @@ final class CreateDonationCheckoutRestRequestHandlerTest extends WordPressTestCa
 	#[Test]
 	public function handle_returns_checkout_failure_when_checkout_creation_fails(): void {
 
-		$this->expect_campaign_lookup( $this->make_core_campaign() );
+		$this->expect_campaign_lookup( $this->make_core_campaign_read_model() );
 		$this->expect_donation_created();
 
 		$this->gateway
@@ -300,7 +299,7 @@ final class CreateDonationCheckoutRestRequestHandlerTest extends WordPressTestCa
 	#[Test]
 	public function handle_returns_checkout_failure_for_unexpected_checkout_error(): void {
 
-		$this->expect_campaign_lookup( $this->make_core_campaign() );
+		$this->expect_campaign_lookup( $this->make_core_campaign_read_model() );
 		$this->expect_donation_created();
 
 		$this->gateway
@@ -384,20 +383,6 @@ final class CreateDonationCheckoutRestRequestHandlerTest extends WordPressTestCa
 		$request->set_param( 'amount', $amount );
 
 		return $request;
-	}
-
-	private function make_core_campaign(): CoreCampaign {
-
-		return new CoreCampaign(
-			id: self::CAMPAIGN_ID,
-			title: 'Help the shelter',
-			accepts_donations: true,
-			currency_code: 'RUB',
-			target_amount: 100_000,
-			collected_amount: 25_000,
-			donations_count: 17,
-			created_at: UtcDateTime::create_from_format( '2026-11-01 10:00:00', 'Y-m-d H:i:s' ),
-		);
 	}
 
 	private function expect_campaign_lookup( ?CoreCampaign $campaign ): void {
